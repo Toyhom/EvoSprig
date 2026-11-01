@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "evosprig"
+version = "0.1.0.dev0"
+description = "Build, inspect and export agent workflows."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3"]
+
+[project.optional-dependencies]
+models = ["httpx==0.28.1"]
+server = ["httpx==0.28.1", "fastapi==0.121.0", "uvicorn==0.38.0"]
+dev = ["httpx==0.28.1", "fastapi==0.121.0", "uvicorn==0.38.0", "pytest==8.4.2", "pytest-asyncio==1.2.0", "build==1.3.0", "ruff==0.14.3"]
+
+[project.scripts]
+evosprig = "evosprig.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evosprig"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests", "/examples", "/spec", "/docs", "/scripts", "/README.md", "/pyproject.toml", "/requirements*.lock", "/THIRD_PARTY_NOTICES.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

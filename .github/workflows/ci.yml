@@ -1,0 +1,39 @@
+name: Offline contracts
+on: [push, pull_request]
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.lock
+      - run: python -m pip install --no-deps -e .
+      - run: ruff check src tests examples scripts
+      - run: pytest -q
+      - run: python -m build
+      - run: python scripts/release/audit.py --artifacts dist
+      - run: |
+          evosprig export examples/hello/agent.yaml --out "$RUNNER_TEMP/hello-export"
+          python -m venv "$RUNNER_TEMP/export-venv"
+          "$RUNNER_TEMP/export-venv/bin/pip" install -r "$RUNNER_TEMP/hello-export/requirements.lock"
+          "$RUNNER_TEMP/export-venv/bin/pip" install --no-deps "$RUNNER_TEMP/hello-export"
+          "$RUNNER_TEMP/export-venv/bin/python" "$RUNNER_TEMP/hello-export/app.py" --mock --input '{"question":"hello"}'
+  studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.lock && python -m pip install --no-deps -e .
+      - run: npm ci && npm run build && npx playwright install --with-deps chromium --only-shell
+        working-directory: apps/studio
+      - run: npm test
+        working-directory: apps/studio
+        env:
+          EVOSPRIG_TEST_WORKSPACE: ${{ runner.temp }}/studio

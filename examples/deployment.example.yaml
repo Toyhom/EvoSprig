@@ -1,0 +1,9 @@
+models:
+  main-model:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    timeout_seconds: 45.0
+    capabilities: [text, tool_calling, structured_output]
+    options:
+      thinking: {type: disabled}

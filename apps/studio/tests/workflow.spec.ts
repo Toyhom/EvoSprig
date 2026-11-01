@@ -1,0 +1,68 @@
+import { test, expect } from '@playwright/test';
+import path from 'node:path';
+
+test('edit, save, run, export and preserve edits on conflicts', async ({ page, context }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: '＋ 新建项目' }).click();
+  await expect(page.locator('h1')).toContainText('agent-');
+  const id = (await page.locator('h1').innerText()).trim();
+  await page.locator('.react-flow__node').click();
+  await page.getByLabel('指令', { exact: true }).fill('Answer in one sentence.');
+  await page.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  await page.getByRole('button', { name: '▷ 运行', exact: true }).click();
+  await expect(page.locator('.results')).toContainText('Mock:');
+  await expect(page.getByRole('status')).toContainText('succeeded');
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: '导出 Python ↗' }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe(`${id}.zip`);
+  await download.saveAs(test.info().outputPath('agent.zip'));
+
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.getByRole('button').filter({ hasText: id }).click();
+  await other.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(other.getByRole('status')).toContainText('已保存');
+  await page.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('版本冲突');
+  await page.getByRole('button', { name: '规格', exact: true }).click();
+  await expect(page.getByLabel('AgentSpec JSON')).toContainText('Answer in one sentence.');
+  await other.close();
+  expect(errors).toEqual([]);
+});
+
+test('spec draft survives tab switching, graph roundtrip preserves hash and screenshot', async ({ page, request }) => {
+  await page.goto('/');
+  await page.getByRole('button').filter({ hasText: /^◇hello/ }).click();
+  const before = await (await request.get('/api/projects/hello')).json();
+  await page.getByRole('button', { name: '自动排列' }).click();
+  await page.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const after = await (await request.get('/api/projects/hello')).json();
+  expect(after.spec_hash).toBe(before.spec_hash);
+  const handleWidth = await page.locator('.react-flow__handle.source').first().evaluate(node => node.getBoundingClientRect().width);
+  expect(handleWidth).toBeLessThanOrEqual(12);
+  const measure = await page.getByTestId('rf__node-measure').boundingBox();
+  const assistant = await page.getByTestId('rf__node-assistant').boundingBox();
+  expect(measure!.x).toBeLessThan(assistant!.x);
+  await page.getByRole('button', { name: '规格', exact: true }).click();
+  const editor = page.getByLabel('AgentSpec JSON');
+  const draft = JSON.parse(await editor.inputValue());
+  draft.graph.nodes.assistant.instructions = 'Draft preserved across views';
+  await editor.fill(JSON.stringify(draft, null, 2));
+  await page.getByRole('button', { name: '画布', exact: true }).click();
+  await page.getByRole('button', { name: '规格', exact: true }).click();
+  await expect(editor).toContainText('Draft preserved across views');
+  await page.getByRole('button', { name: '重新加载', exact: true }).first().click();
+  await page.getByRole('button', { name: '画布', exact: true }).click();
+  await page.getByRole('button', { name: '▷ 运行', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('succeeded');
+  const dir = process.env.EVOSPRIG_EVIDENCE_DIR;
+  if (dir) await page.screenshot({ path: path.join(dir, 'studio-desktop.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('button', { name: '▷ 运行', exact: true })).toBeVisible();
+  if (dir) await page.screenshot({ path: path.join(dir, 'studio-mobile.png'), fullPage: true });
+});
