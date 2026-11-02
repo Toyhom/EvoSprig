@@ -5,6 +5,7 @@ import { ReactFlow, Background, Controls, MiniMap, Position, addEdge, applyEdgeC
 import '@xyflow/react/dist/style.css';
 import './style.css';
 import { orderedNodes, starter, nodeTemplate, type Document, type NodeSpec, type NodeKind, type Spec, type Run } from './types';
+import { useDraftGuard } from './draft-guard';
 import { Icon, FitWorkflowView, nodeTypes, tabIcons } from './studio-ui';
 import { ResourcesPanel, MemoryPanel, RunsPanel, RunDetails, ImprovePanel, VersionsPanel } from './panels';
 
@@ -51,7 +52,7 @@ function App() {
   const [nodeKind,setNodeKind]=useState<NodeKind>('model'); const [selectedEdge,setSelectedEdge]=useState<string|null>(null);
   const [allowWrites,setAllowWrites]=useState(false); const [useRelease,setUseRelease]=useState(false);
   const [specText, setSpecText] = useState(''); const [code, setCode] = useState('');
-  const [nodeText, setNodeText] = useState(''); const [input, setInput] = useState('{"question": "What can we build together?"}');
+  const [nodeText, setNodeText] = useState(''); const [nodeDraftDirty, setNodeDraftDirty] = useState(false); const [input, setInput] = useState('{"question": "What can we build together?"}');
   const [mock, setMock] = useState(true); const [result, setResult] = useState<Run | null>(null);
   const [runId, setRunId] = useState<string | null>(null); const [status, setStatus] = useState(t.ready);
   const [busy, setBusy] = useState(false); const [dirty, setDirty] = useState(false);
@@ -105,7 +106,7 @@ function App() {
     setSidebarOpen(false); setDoc(next); setNodes(orderedNodes(next.spec).map(([id, config], index) => ({ id, sourcePosition: Position.Right, targetPosition: Position.Left,
       position: next.layout[id] ?? { x: index * 300 + 40, y: 140 }, data: { label: `${id} · ${config.type}`, config } })));
     setEdges(flowEdges(next.spec));
-    setSpecText(JSON.stringify(next.spec, null, 2)); setSelected(null);setSelectedEdge(null); setDirty(false); setResult(null);
+    setSpecText(JSON.stringify(next.spec, null, 2)); setSelected(null);setSelectedEdge(null); setDirty(false); setNodeDraftDirty(false); setResult(null);
   };
   const refresh = useCallback(async () => {
     const items: Document[] = await (await api('/projects')).json(); setProjects(items); return items;
@@ -115,18 +116,29 @@ function App() {
   const currentSpec = (): Spec => {
     if (!doc) throw new Error('Select a project');
     return { ...doc.spec, graph: { ...doc.spec.graph,
-      nodes: Object.fromEntries(nodes.map(node => [node.id, node.data.config])),
+      nodes: Object.fromEntries(nodes.map(node => [node.id, node.id === selected && nodeDraftDirty ? parseNodeDraft() : node.data.config])),
       edges: edges.map(({source,target,data})=>({source,target,...(typeof data?.when==='boolean'?{when:data.when}:{} )})) } };
+  };
+  const parseNodeDraft = (): NodeSpec => {
+    const value = JSON.parse(nodeText);
+    if (!value || typeof value !== 'object' || Array.isArray(value) || typeof value.type !== 'string') {
+      throw new Error(lang === 'zh' ? '节点 JSON 必须是包含 type 的对象。' : 'Node JSON must be an object with a type.');
+    }
+    return value;
+  };
+  const commitNodeDraft = () => {
+    if (!nodeDraftDirty) return true;
+    try { applyNode(parseNodeDraft()); return true; } catch (e) { error(e); return false; }
   };
   const mutate = () => setDirty(true);
   const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => {
     setNodes(items => applyNodeChanges(changes, items));
     if (changes.some(change => change.type !== 'select' && change.type !== 'dimensions')) setDirty(true);
   }, []);
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => { setEdges(items => applyEdgeChanges(changes, items)); setDirty(true); }, []);
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => { setEdges(items => applyEdgeChanges(changes, items)); if (changes.some(change => change.type !== 'select')) setDirty(true); }, []);
   const onConnect = useCallback((connection: Connection) => { const conditional=nodes.find(n=>n.id===connection.source)?.data.config.type==='condition'; setEdges(items => addEdge({...connection,data:conditional?{when:true}:{},label:conditional?'true':undefined}, items)); setDirty(true); }, [nodes]);
   const chooseTab = async (next: typeof tab) => {
-    if (!doc) return;
+    if (!doc || !commitNodeDraft()) return;
     if (tab === 'spec' && next !== 'spec') {
       try {
         const draft: Spec = JSON.parse(specText);
@@ -146,16 +158,18 @@ function App() {
     }
     setTab(next);
   };
-  const save = async () => {
-    if (!doc) return;
+  const save = async (): Promise<boolean> => {
+    if (!doc) return false;
     setBusy(true);
     try {
       const spec = tab === 'spec' ? JSON.parse(specText) : currentSpec();
       const next = await (await api(`/projects/${doc.id}`, { method: 'PUT', body: JSON.stringify({ spec,
         revision: doc.revision, resources:doc.resources, layout: Object.fromEntries(nodes.map(node => [node.id, node.position])) }) })).json();
-      load(next); await refresh(); setStatus(`${t.saved} · r${next.revision}`);
-    } catch (e) { error(e); } finally { setBusy(false); }
+      load(next); await refresh(); setStatus(`${t.saved} · r${next.revision}`); return true;
+    } catch (e) { error(e); return false; } finally { setBusy(false); }
   };
+  const { guard, prompt } = useDraftGuard(dirty || nodeDraftDirty, save, status, lang);
+  const replaceProject = (action: () => void | Promise<unknown>) => { setSidebarOpen(false); guard(action); };
   const addNode = () => {
     if (!doc) return;
     const id = 'node' + (Math.max(0, ...nodes.map(node => Number(node.id.replace('node', '')) || 0)) + 1);
@@ -169,9 +183,9 @@ function App() {
     setNodes(items => [...items, { id, sourcePosition: Position.Right, targetPosition: Position.Left, position: { x: 60 + nodes.length * 260, y: 150 }, data: { label: `${id} · ${nodeKind}`, config } }]);
     mutate();
   };
-  const select = (node: FlowNode) => { setSelectedEdge(null);setSelected(node.id); setNodeText(JSON.stringify(node.data.config, null, 2)); };
+  const select = (node: FlowNode) => { if (node.id === selected || !commitNodeDraft()) return; setSelectedEdge(null);setSelected(node.id); setNodeText(JSON.stringify(node.data.config, null, 2)); };
   const applyNode = (config: NodeSpec) => { setNodes(items => items.map(item => item.id === selected ? { ...item,
-    data: { label: `${item.id} · ${config.type}`, config } } : item)); setNodeText(JSON.stringify(config, null, 2)); mutate(); };
+    data: { label: `${item.id} · ${config.type}`, config } } : item)); setNodeText(JSON.stringify(config, null, 2)); setNodeDraftDirty(false); mutate(); };
   const active = nodes.find(node => node.id === selected);
   const watchRun = async (id:string) => {
     if(poll.current) clearTimeout(poll.current);
@@ -208,34 +222,34 @@ function App() {
       <label className="project-search"><Icon name="search"/><input aria-label="Search projects" placeholder={lang==='zh'?'搜索项目…':'Search projects…'} value={projectQuery} onChange={e=>setProjectQuery(e.target.value)}/></label>
       <div className="sidebar-section"><span>{lang==='zh'?'项目':'Projects'}</span><span>{projects.length}</span></div>
       <div className="projects">{visibleProjects.map(item => <button key={item.id} className={doc?.id === item.id ? 'project active' : 'project'} aria-current={doc?.id===item.id?'page':undefined} title={item.id}
-        disabled={!!runId} onClick={async () => { try { load(await (await api(`/projects/${item.id}`)).json()); } catch (e) { error(e); } }}>
+        disabled={!!runId || busy} onClick={() => replaceProject(async () => { try { load(await (await api(`/projects/${item.id}`)).json()); } catch (e) { error(e); } })}>
         <Icon name="folder"/><span className="project-name">{item.id}</span><small>r{item.revision}</small></button>)}{!visibleProjects.length&&<p className="sidebar-empty">{lang==='zh'?(projectQuery?'没有匹配的项目':'创建第一个项目'):(projectQuery?'No matching projects':'Create your first project')}</p>}</div>
-      <div className="project-actions"><button className="new-project" aria-label={'＋ '+t.create} disabled={!!runId} onClick={async () => {
+      <div className="project-actions"><button className="new-project" aria-label={'＋ '+t.create} disabled={!!runId || busy} onClick={() => replaceProject(async () => {
         try { const id = `agent-${Date.now().toString(36)}`; setProjectQuery(''); load(await (await api('/projects', { method: 'POST', body: JSON.stringify({ spec: starter(id) }) })).json()); await refresh(); }
         catch (e) { error(e); }
-      }}><Icon name="plus"/>{t.create}</button>
+      })}><Icon name="plus"/>{t.create}</button>
       <label className="new-project import-project"><Icon name="upload"/>{lang==='zh'?'导入工程':'Import project'}<input aria-label="Import project ZIP" type="file" accept=".zip" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{const item=await(await api('/import/inspect',{method:'POST',headers:{'Content-Type':'application/zip'},body:file})).json();setImported(item);setImportId(item.spec.id+'-import');setSidebarOpen(false);}catch(err){error(err);}e.target.value='';}}/></label></div>
       <div className="sidebar-bottom"><details className="connection-settings"><summary><Icon name="settings"/>{t.settings}</summary>
         <input aria-label={t.token} placeholder={t.token} type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} />
-        <button onClick={() => refresh().then(items => { if (items.length) load(items[0]); }).catch(error)}>{t.reload}</button>
+        <button disabled={busy || !!runId} onClick={() => replaceProject(() => refresh().then(items => { if (items.length) load(items[0]); }).catch(error))}>{t.reload}</button>
       </details><div className="sidebar-meta"><span>Alpha 0.1</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
     </aside>
-    <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty?' is-dirty':''}`}>{dirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
-      <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => doc && api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error)} disabled={!doc || !!runId}><Icon name="refresh"/></button>
-        <button onClick={save} disabled={!doc || busy || !!runId}>{t.save}</button><span className="action-separator"/><select aria-label="Export target" value={exportTarget} onChange={e=>setExportTarget(e.target.value)}><option value="python">Python</option><option value="http">HTTP service</option><option value="container">Container</option></select><button className="export-button" aria-label={(exportTarget==='python'?t.export:(lang==='zh'?'导出 ':'Export ')+exportTarget)+' ↗'} onClick={()=>exportProject()} disabled={!doc || dirty || busy}><Icon name="download"/>{lang==='zh'?'导出':'Export'}</button></div></header>
-      {imported&&<section className="panel"><h2>{lang==='zh'?'检查导入工程':'Review imported project'}</h2><p>{lang==='zh'?'已校验规格、资源和文件哈希。外部服务需要在部署配置中绑定。':'Spec, resources and file hashes verified. Bind external services in your deployment profile.'}</p><label>Project ID<input aria-label="Imported project ID" value={importId} onChange={e=>setImportId(e.target.value)}/></label><pre className="json-block">{JSON.stringify(imported.report,null,2)}</pre><button onClick={async()=>{try{const created=await(await api('/projects',{method:'POST',body:JSON.stringify({spec:{...imported.spec,id:importId},resources:imported.resources})})).json();load(created);await refresh();setImported(null);}catch(e){error(e);}}}>{lang==='zh'?'创建导入项目':'Create imported project'}</button><button onClick={()=>setImported(null)}>{lang==='zh'?'关闭':'Close'}</button></section>}
+    <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty || nodeDraftDirty?' is-dirty':''}`}>{dirty || nodeDraftDirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
+      <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => replaceProject(async () => { if (doc) await api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error); })} disabled={!doc || !!runId || busy}><Icon name="refresh"/></button>
+        <button onClick={save} disabled={!doc || busy || !!runId}>{t.save}</button><span className="action-separator"/><select aria-label="Export target" value={exportTarget} onChange={e=>setExportTarget(e.target.value)}><option value="python">Python</option><option value="http">HTTP service</option><option value="container">Container</option></select><button className="export-button" aria-label={(exportTarget==='python'?t.export:(lang==='zh'?'导出 ':'Export ')+exportTarget)+' ↗'} onClick={()=>exportProject()} disabled={!doc || dirty || nodeDraftDirty || busy}><Icon name="download"/>{lang==='zh'?'导出':'Export'}</button></div></header>
+      {imported&&<section className="panel"><h2>{lang==='zh'?'检查导入工程':'Review imported project'}</h2><p>{lang==='zh'?'已校验规格、资源和文件哈希。外部服务需要在部署配置中绑定。':'Spec, resources and file hashes verified. Bind external services in your deployment profile.'}</p><label>Project ID<input aria-label="Imported project ID" value={importId} onChange={e=>setImportId(e.target.value)}/></label><pre className="json-block">{JSON.stringify(imported.report,null,2)}</pre><button disabled={busy || !!runId} onClick={()=>replaceProject(async()=>{try{const created=await(await api('/projects',{method:'POST',body:JSON.stringify({spec:{...imported.spec,id:importId},resources:imported.resources})})).json();load(created);await refresh();setImported(null);}catch(e){error(e);}})}>{lang==='zh'?'创建导入项目':'Create imported project'}</button><button onClick={()=>setImported(null)}>{lang==='zh'?'关闭':'Close'}</button></section>}
       {!doc ? <div className="empty"><div className="empty-symbol"><Icon name="grid" size={25}/></div><h2>{lang==='zh'?'开始构建你的智能体':'Build your first agent'}</h2><p>{t.empty}</p></div> : <>
         <nav className="tabs">{(['canvas','spec','code','resources','runs','memory','improve','versions'] as const).map(key => <button key={key} aria-current={tab===key?'page':undefined} className={tab === key ? 'selected' : ''} onClick={() => chooseTab(key)}><Icon name={tabIcons[key]} size={15}/>{t[key]}</button>)}
           <span className="revision">r{doc.revision}</span></nav>
         {tab==='resources' ? <ResourcesPanel key={doc.id} doc={{...doc,spec:currentSpec()}} api={api} lang={lang} onError={error} onChange={next=>{setDoc(next);setNodes(items=>items.map(node=>({...node,data:{...node.data,config:next.spec.graph.nodes[node.id]}})));mutate();}}/>
         :tab==='memory'?<MemoryPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>
         :tab==='runs'?<RunsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>
-        :tab==='improve'?<ImprovePanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} dirty={dirty}/>
+        :tab==='improve'?<ImprovePanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} dirty={dirty || nodeDraftDirty}/>
         :tab==='versions'?<VersionsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onExport={exportProject} onRun={run}/>
         :<div className="editor">
           <section className="workspace">
             {tab === 'canvas' ? <><div className="canvas-tools"><span className="canvas-title">{lang==='zh'?'工作流':'Workflow'}</span><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','human'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button onClick={() => { const order = orderedNodes(currentSpec()).map(([id]) => id); setNodes(items => items.map(node => ({ ...node, position: { x: order.indexOf(node.id) * 280 + 40, y: 150 } }))); mutate(); }}><Icon name="grid"/>{t.layout}</button></div></div>
-              <ReactFlow key={`${doc.id}:${doc.revision}`} nodes={displayNodes} nodeTypes={nodeTypes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => select(node)} onEdgeClick={(_,edge)=>{setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.2} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
+              <ReactFlow key={`${doc.id}:${doc.revision}`} nodes={displayNodes} nodeTypes={nodeTypes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => select(node)} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.2} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
               : tab === 'spec' ? <textarea className="source-editor" aria-label="AgentSpec JSON" value={specText} onChange={e => { setSpecText(e.target.value); mutate(); }} spellCheck={false}/>
                 : <pre className="source-editor code-view">{dirty ? `${t.runHint}\n\n` : ''}{code}</pre>}
           </section>
@@ -244,13 +258,13 @@ function App() {
             {active ? <><h3>{active.id}<span className="pill">{active.data.config.type}</span></h3>
               {typeof active.data.config.instructions === 'string' && ['model','agent'].includes(active.data.config.type) && <label>{t.instructions}<textarea aria-label={t.instructions} value={active.data.config.instructions} onChange={e => applyNode({ ...active.data.config, instructions: e.target.value })}/></label>}
               {active.data.config.model && <label>{t.binding}<select value={active.data.config.model} onChange={e => applyNode({ ...active.data.config, model: e.target.value })}>{Object.keys(doc.spec.models).map(name => <option key={name}>{name}</option>)}</select></label>}
-              <label>{t.nodeJson}<textarea className="node-json" aria-label={t.nodeJson} value={nodeText} onChange={e => setNodeText(e.target.value)}/></label>
-              <button onClick={() => { try { applyNode(JSON.parse(nodeText)); } catch (e) { error(e); } }}>{t.apply}</button></> : <div className="inspector-empty"><span className="empty-symbol"><Icon name="settings" size={21}/></span><strong>{lang==='zh'?'选择一个节点':'Select a node'}</strong><p>{lang==='zh'?'点击画布中的节点，查看和编辑参数。':'Click a node on the canvas to edit its properties.'}</p></div>}
+              <label>{t.nodeJson}<textarea className="node-json" aria-label={t.nodeJson} value={nodeText} onChange={e => { setNodeText(e.target.value); setNodeDraftDirty(true); }}/></label>
+              <button onClick={() => { try { applyNode(parseNodeDraft()); } catch (e) { error(e); } }}>{t.apply}</button></> : <div className="inspector-empty"><span className="empty-symbol"><Icon name="settings" size={21}/></span><strong>{lang==='zh'?'选择一个节点':'Select a node'}</strong><p>{lang==='zh'?'点击画布中的节点，查看和编辑参数。':'Click a node on the canvas to edit its properties.'}</p></div>}
             <div className="divider"/><div className="section-label input-heading"><Icon name="play" size={14}/>{t.input}</div><label><textarea aria-label={t.input} value={input} onChange={e => setInput(e.target.value)}/></label>
             <select aria-label="Run mode" value={mock ? 'mock' : 'live'} onChange={e => setMock(e.target.value === 'mock')}><option value="mock">{t.offline}</option><option value="live">{t.live} · deepseek-flash</option></select>
             <label className="check"><input type="checkbox" checked={allowWrites} onChange={e=>setAllowWrites(e.target.checked)}/>{lang==='zh'?'允许已配置的写入工具':'Allow configured write tools'}</label>
             <label className="check"><input type="checkbox" checked={useRelease} onChange={e=>setUseRelease(e.target.checked)}/>{lang==='zh'?'运行发布版本':'Run active release'}</label>
-            <button className="primary run" aria-label={'▷ '+t.run} onClick={()=>run()} disabled={dirty || !!runId}><Icon name="play" size={14}/>{t.run}</button>
+            <button className="primary run" aria-label={'▷ '+t.run} onClick={()=>run()} disabled={dirty || nodeDraftDirty || !!runId}><Icon name="play" size={14}/>{t.run}</button>
             {runId && <button onClick={() => api(`/runs/${runId}/cancel`, { method: 'POST' }).catch(error)}>{t.cancel}</button>}
             <p className="hint">{t.runHint}</p>
           </aside>
@@ -261,6 +275,7 @@ function App() {
       </>}
       <footer role="status"><span className="status-message"><span className="dot"/>{status}</span><span className="footer-meta">EvoSprig Studio</span></footer>
     </main>
+    {prompt}
   </div>;
 }
 

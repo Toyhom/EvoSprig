@@ -52,7 +52,7 @@ def main():
     serve.add_argument("--project", type=Path)
     serve.add_argument("--studio-dir", type=Path)
     serve.add_argument("--profile", type=Path)
-    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--port", type=int, default=18766)
     serve.add_argument(
         "--auth-file", type=Path, help="YAML principal and token environment references"
     )

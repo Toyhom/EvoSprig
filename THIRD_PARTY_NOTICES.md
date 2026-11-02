@@ -19,7 +19,7 @@ EvoSprig Alpha uses these separately installed packages. Exact direct and transi
 
 Model HTTP contracts follow the [DeepSeek API documentation](https://api-docs.deepseek.com/) and the compatible chat-completion format. The product contains original workflow/runtime code and uses the dependencies above through their public APIs.
 
-The local release candidate uses Apache-2.0. Public distribution is handled separately by the project owner.
+EvoSprig is distributed under Apache-2.0. Optional dependency and example licenses are listed below.
 
 MCP support optionally uses the official `mcp` Python SDK 1.30.0 (MIT) and its
 separately installed dependencies. The base runtime does not import the SDK. The

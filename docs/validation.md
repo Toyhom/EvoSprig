@@ -1,11 +1,11 @@
 # Alpha validation
 
-本记录对应本地 `0.1.0a1` 发行候选，2026-11-02。源码、wheel/sdist 和独立应用均在 Linux x86_64 / Python 3.12 验证；Studio 使用 Node.js 20。
+本记录对应 `0.1.0a1` 源码 Alpha，2026-11-02。源码、wheel/sdist 和独立应用均在 Linux x86_64 / Python 3.12 验证；Studio 使用 Node.js 20。
 
 | 场景 | 证据与范围 |
 | --- | --- |
-| Python 契约 | 113 项通过（71.62 秒）；规格、运行、租约/崩溃恢复、权限、记忆删除、预算、进化、发布 CAS、导出和导入 |
-| Studio | 5 条 Playwright 流程通过；包含条件边哈希往返、人工恢复、资源与记忆、改进/候选、ZIP 导入和容器目标下载、冲突保留、桌面/移动页面 |
+| Python 契约 | 128 项通过（92.20 秒）；规格、运行、租约/崩溃恢复、权限、记忆删除、预算、进化、发布 CAS、导出和导入 |
+| Studio | 9 个 Playwright 场景通过（7 条原有流程回归 + 2 条草稿保护定向复测）；包含条件边哈希往返、人工恢复、资源与记忆、改进/候选、ZIP 导入和容器目标下载、冲突保留、桌面/移动页面 |
 | MCP | 官方 SDK 1.30.0 / 2025-11-25，真实本机 Streamable HTTP 服务与独立工程调用 |
 | DeepSeek | 官方 deepseek-flash；文本、JSON、工具、流式；两种真实进化方法与人工基线 |
 | vLLM | 0.10.2 + Qwen3-0.6B / H100，4 次请求：文本、JSON、流式、运行器，共 83 输入 / 14 输出 tokens；[脱敏记录](vllm-validation.json) |
@@ -22,10 +22,12 @@ vLLM 验证沿用既有安装；0.10.2 的 NVML 设备查找不支持调度器�
 
 复现：`pytest -q`；`npm --prefix apps/studio test`；`python scripts/release/export_examples.py --out <new-directory>`；`python scripts/release/package.py --out <artifacts-directory>`。真实 API 调用需要自己的凭据，普通测试不产生模型费用。
 
-## Studio redesign follow-up · 2026-11-02
+## Studio interface and publication checks
 
-DEV-018 introduces the neutral Studio interface, project search, informative workflow cards and a keyboard-accessible mobile drawer. TypeScript/Vite build passes; JS is about 134.88 kB gzip. Existing dependencies and Python runtime are unchanged.
+The neutral Studio redesign covers workflow, resources, history, memory, evaluation and version pages. Browser coverage includes editing, conflicts, conditional graphs, human recovery, evaluation, import/export, project search, long names and keyboard navigation. Responsive checks use 1440, 1024, 390 and 320 pixel widths; the canvas refits after container resizing. These checks do not constitute a full accessibility audit.
 
-The six-scenario browser regression passed in 121.43 seconds. Visual inspection then confirmed desktop/mobile canvas, mobile navigation and version comparison. A final node-draft fallback was checked with the two workflow regressions and an additional unsupported-kind recovery scenario. That new test initially expected the invalid value in a deliberately sanitized API error; it now checks the validation category and passed in a focused rerun. Seven distinct browser scenarios have passed across these runs. Width checks cover 1440, 1024, 390 and 320 pixels, with a node-visibility check after canvas resize. This is targeted keyboard/responsive validation, not a full accessibility audit.
+Draft protection covers project changes, reload, invalid node JSON and page navigation. A failed save keeps the draft and the confirmation dialog open. The default control-plane port is 18766; `--port` and the Vite `EVOSPRIG_API_PORT` override support other local services.
 
-The earlier Alpha archives retain their original contents. Build the latest Studio from this source revision; the Python validation above remains the unchanged Alpha baseline. Design rationale and official reference links are in [Studio interface](studio-design.md).
+Publication checks inspect source files, build artifacts and all reachable Git history, including deleted files and annotated tags. The public repository contains curated validation summaries; raw development logs, private deployments and user data remain excluded. See [open-source scope](open-source-scope.md) and [interface design](studio-design.md).
+
+发布前验证：Ruff、TypeScript/Vite 构建通过；默认 18766 端口实际启动、健康检查和 hello 离线运行通过。公开界面截图来自仅含 hello 示例的独立演示工作区。

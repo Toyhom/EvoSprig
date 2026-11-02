@@ -11,7 +11,7 @@ npm --prefix apps/studio run build
 evosprig serve --workspace ./state --project examples/hello/agent.yaml --studio-dir apps/studio/dist --max-concurrent-runs 4
 ```
 
-默认绑定 `127.0.0.1:8765`，通过 SSH 转发访问。`--profile deployment.yaml` 绑定模型和工具。使用 `--token-env EVOSPRIG_API_TOKEN` 配置单工作区令牌，在 Studio 连接页输入相同值。多人部署使用 `--auth-file principals.yaml`：
+默认绑定 `127.0.0.1:18766`，通过 SSH 转发访问。`--profile deployment.yaml` 绑定模型和工具。使用 `--token-env EVOSPRIG_API_TOKEN` 配置单工作区令牌，在 Studio 连接页输入相同值。多人部署使用 `--auth-file principals.yaml`：
 
 ```yaml
 - user: alice

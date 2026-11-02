@@ -1,3 +1,9 @@
+# Unreleased · Public Alpha preparation
+
+- Move the local control plane to port 18766 and support a configurable Vite API target.
+- Protect unsaved project and node JSON drafts across project changes and page navigation.
+- Add publication-scope documentation, private security reporting and Git-history audit checks.
+
 # Unreleased · Studio redesign
 
 - Neutral white/gray surfaces, compact project navigation, consistent controls and data pages.

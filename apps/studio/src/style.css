@@ -300,3 +300,10 @@ th { background: #fafafa; color: #767983; font-size: 11px; font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+.draft-dialog { width: min(470px, calc(100vw - 32px)); padding: 26px; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 60px #20212425; color: #303136; }
+.draft-dialog::backdrop { background: #20212455; }
+.draft-dialog h2 { font-size: 18px; margin: 0 0 12px; }
+.draft-dialog p { font-size: 13px; line-height: 1.8; color: #666973; }
+.draft-dialog .draft-error { color: #a44742; max-height: 180px; overflow: auto; }
+.dialog-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 23px; }

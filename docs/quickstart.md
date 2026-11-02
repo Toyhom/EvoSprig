@@ -44,10 +44,10 @@ cd apps/studio
 npm ci
 npm run build
 cd ../..
-evosprig serve --workspace ../local-data/studio --project examples/hello/agent.yaml --studio-dir apps/studio/dist
+evosprig serve --workspace .evosprig/studio --project examples/hello/agent.yaml --studio-dir apps/studio/dist
 ```
 
-打开 `http://127.0.0.1:8765`。远程开发可在本机建立 SSH 端口转发，再通过本机 loopback 地址打开。CLI 固定绑定 loopback。
+打开 `http://127.0.0.1:18766`。远程开发可在本机建立 SSH 端口转发，再通过本机 loopback 地址打开。CLI 固定绑定 loopback。
 
 1. 选择示例或新建项目。拖动节点、连接端口，点击节点编辑参数。
 2. 在「规格」编辑输入输出、工具、资源引用、入口和执行预算。新增图节点后建立显式连线；校验会拒绝循环、断开的图和未知引用。
@@ -56,17 +56,19 @@ evosprig serve --workspace ../local-data/studio --project examples/hello/agent.y
 5. 对比候选，在版本页手动启用或回滚；选择 Python、HTTP 或 Container 导出。
 6. 运行历史支持人工输入、恢复与取消，记忆页管理当前用户项目的事实和资料。
 
+切换项目、新建/导入项目或重新加载前，Studio 会提示保存、继续编辑或明确放弃草稿；关闭/刷新浏览器页面也会提示未保存状态。节点 JSON 草稿可直接随项目保存，非法 JSON 保存失败时仍保留原文。
+
 revision 冲突返回 HTTP 409，页面保留本地修改。复制本地规格后重新加载比较。布局变化不改变规格哈希。「Python」页显示已保存版本的 Builder 代码。
 
 可用 `--token-env EVOSPRIG_API_TOKEN` 为 API 添加 bearer token；在 Studio「连接」中输入相同令牌。它仅保存在页面内存。多用户身份配置、持久目录和备份说明见 [部署文档](deployment.md)。
 
-前端热更新：另启 `npm run dev`，代理到默认 API 端口 8765。
+前端热更新：运行 `npm --prefix apps/studio run dev`，代理到默认 API 端口 18766。自定义后端端口时同时设置 `EVOSPRIG_API_PORT=端口号`；例如后端使用 `evosprig serve --port 18767`，前端使用 `EVOSPRIG_API_PORT=18767 npm --prefix apps/studio run dev`。端口冲突时更换端口，不停止已有服务。
 
 ## 独立导出
 
 ```bash
-evosprig export examples/hello/agent.yaml --out ../local-data/hello-export
-cd ../local-data/hello-export
+evosprig export examples/hello/agent.yaml --out .evosprig/exports/hello
+cd .evosprig/exports/hello
 python -m pip install -r requirements.lock
 python -m pip install --no-deps .
 python app.py --mock --input '{"question":"Hello"}'

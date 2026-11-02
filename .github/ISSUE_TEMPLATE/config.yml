@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Toyhom/EvoSprig/security/advisories/new
+    about: Send a private report without disclosing secrets in public issues.

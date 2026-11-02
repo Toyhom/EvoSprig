@@ -58,6 +58,7 @@ test('spec draft survives tab switching, graph roundtrip preserves hash and scre
   await page.getByRole('button', { name: '规格', exact: true }).click();
   await expect(editor).toContainText('Draft preserved across views');
   await page.getByRole('button', { name: '重新加载', exact: true }).first().click();
+  await page.getByRole('button', { name: '放弃修改', exact: true }).click();
   await page.getByRole('button', { name: '画布', exact: true }).click();
   await page.getByRole('button', { name: '▷ 运行', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('succeeded');

@@ -13,6 +13,11 @@ authors = [{name = "EvoSprig contributors"}]
 requires-python = ">=3.12"
 dependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3"]
 
+[project.urls]
+Repository = "https://github.com/Toyhom/EvoSprig"
+Issues = "https://github.com/Toyhom/EvoSprig/issues"
+Documentation = "https://github.com/Toyhom/EvoSprig/tree/main/docs"
+
 [project.optional-dependencies]
 models = ["httpx==0.28.1"]
 mcp = ["mcp==1.30.0"]
@@ -28,7 +33,7 @@ evosprig = "evosprig.cli:main"
 packages = ["src/evosprig"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/tests", "/examples", "/spec", "/docs", "/scripts", "/README.md", "/pyproject.toml", "/requirements*.lock", "/THIRD_PARTY_NOTICES.md", "/LICENSE", "/NOTICE", "/CHANGELOG.md", "/CONTRIBUTING.md", "/apps", "/.github"]
+include = ["/src", "/tests", "/examples", "/spec", "/docs", "/scripts", "/README.md", "/pyproject.toml", "/requirements*.lock", "/THIRD_PARTY_NOTICES.md", "/LICENSE", "/NOTICE", "/CHANGELOG.md", "/CONTRIBUTING.md", "/SECURITY.md", "/apps", "/.github"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

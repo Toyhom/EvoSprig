@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible problem in EvoSprig.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Use synthetic inputs. For vulnerabilities, use Security → Report a vulnerability. Do not attach credentials, private conversations or databases."
+  - type: input
+    id: version
+    attributes:
+      label: Version and environment
+      description: Commit/version, Python/Node versions and operating system.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Steps or a small AgentSpec with synthetic inputs; use mock models where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Sanitized error output
+      render: text
