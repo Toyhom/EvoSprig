@@ -76,9 +76,7 @@ MCP writes have no generic idempotency guarantee, so receipt-unknown writes paus
 under the same reconciliation rules as non-idempotent Python tools.
 
 The official SDK allows method-preserving redirects on the same origin. Credentials
-remain environment references. Verification uses an actual local FastMCP HTTP server
-for handshake, tool call, resource, prompt and schema-change rejection. Contract
-coverage does not imply compatibility with every third-party MCP implementation.
+remain environment references. The adapter rejects tool schemas that differ from the pinned deployment contract.
 
 Sources: [MCP specification](https://modelcontextprotocol.io/specification/2025-11-25),
 [official Python SDK](https://github.com/modelcontextprotocol/python-sdk).
@@ -94,3 +92,56 @@ The job ID is journaled before polling; resume queries the saved ID. The remote 
 must atomically bind an idempotency key to its original arguments. See the short-film
 renderer for an executable example. Imported/exported bindings contain environment
 references, and restored runs reject binding changes.
+
+## Read-only SQLite
+
+Use the same database tools in CLI runs, Studio and exported applications:
+
+```yaml
+models: {}  # Add your model binding here.
+tools:
+  database.schema:
+    kind: sqlite
+    name: database.schema
+    operation: schema
+    path_env: EVOSPRIG_SQLITE_PATH
+    tables: [orders]
+  database.query:
+    kind: sqlite
+    name: database.query
+    operation: query
+    path_env: EVOSPRIG_SQLITE_PATH
+    tables: [orders]
+    max_rows: 200
+    max_vm_steps: 1000000
+```
+
+The database path is resolved from the environment. SQLite opens read-only; an
+authorizer blocks writes, attachments, extensions and tables outside the allowlist.
+`schema` takes `{}`. `query` takes `{"sql":"SELECT ...","parameters":[]}` and returns
+`columns`, `rows` and `truncated`. Aggregate large datasets instead of requesting
+all rows. An empty table allowlist permits reading all tables in the database.
+
+To prepare a database from a CSV, use `evosprig data load-csv orders.csv --database
+shop.sqlite --table orders`. Headers must be unique SQL identifiers. The importer
+creates a new table transactionally and refuses to overwrite an existing table.
+SQLite NUMERIC affinity converts numeric-looking values, including leading-zero
+identifiers; use a preconfigured database when you need explicit column types.
+Database files are never included in exports. See the [data analyst](../examples/data-analyst/).
+
+## Let an agent correct a tool call
+
+AgentSpec 0.3 agent nodes can set `tool_errors: feedback`. Invalid arguments and
+explicit `ToolFeedbackError` rejections from read-only tools become tool observations:
+
+```json
+{"error":{"code":"sql_error","message":"no such column: sales"}}
+```
+
+The model can then correct its call. Rejections are journaled and the normal run
+budgets bound retries. Custom read-only tools may raise `ToolFeedbackError(code,
+message)` with a brief message intended for the model. Keep credentials and private
+transport details out of that message. General exceptions, output-schema failures
+and tool-allowlist violations still stop the run. Write operations with an unknown
+outcome pause for reconciliation. The default `tool_errors: raise` preserves the
+existing fail-fast behavior.

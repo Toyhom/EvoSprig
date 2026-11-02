@@ -1,0 +1,561 @@
+{
+  "$defs": {
+    "Edge": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        }
+      },
+      "required": [
+        "source",
+        "target"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "Execution": {
+      "additionalProperties": false,
+      "properties": {
+        "max_steps": {
+          "default": 32,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Max Steps",
+          "type": "integer"
+        },
+        "max_model_calls": {
+          "default": 8,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Max Model Calls",
+          "type": "integer"
+        },
+        "max_total_tokens": {
+          "default": 8192,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Max Total Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 512,
+          "maximum": 32768,
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 60.0,
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Timeout Seconds",
+          "type": "number"
+        },
+        "max_parallel_nodes": {
+          "default": 1,
+          "maximum": 32,
+          "minimum": 1,
+          "title": "Max Parallel Nodes",
+          "type": "integer"
+        },
+        "max_parallel_tools": {
+          "default": 1,
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Max Parallel Tools",
+          "type": "integer"
+        },
+        "allow_side_effects": {
+          "default": false,
+          "title": "Allow Side Effects",
+          "type": "boolean"
+        }
+      },
+      "title": "Execution",
+      "type": "object"
+    },
+    "Graph": {
+      "additionalProperties": false,
+      "properties": {
+        "entry": {
+          "title": "Entry",
+          "type": "string"
+        },
+        "nodes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Node"
+          },
+          "maxProperties": 128,
+          "minProperties": 1,
+          "title": "Nodes",
+          "type": "object"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/Edge"
+          },
+          "maxItems": 1024,
+          "title": "Edges",
+          "type": "array"
+        },
+        "output": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Ref"
+              },
+              {
+                "$ref": "#/$defs/Value"
+              }
+            ]
+          },
+          "title": "Output",
+          "type": "object"
+        }
+      },
+      "required": [
+        "entry",
+        "nodes",
+        "output"
+      ],
+      "title": "Graph",
+      "type": "object"
+    },
+    "ModelRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+          "title": "Binding",
+          "type": "string"
+        },
+        "requires": {
+          "items": {
+            "enum": [
+              "text",
+              "tool_calling",
+              "structured_output"
+            ],
+            "type": "string"
+          },
+          "title": "Requires",
+          "type": "array"
+        }
+      },
+      "required": [
+        "binding"
+      ],
+      "title": "ModelRequirement",
+      "type": "object"
+    },
+    "Node": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "model",
+            "agent",
+            "tool",
+            "transform",
+            "condition",
+            "join",
+            "loop",
+            "parallel",
+            "map",
+            "human"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "inputs": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Ref"
+              },
+              {
+                "$ref": "#/$defs/Value"
+              }
+            ]
+          },
+          "title": "Inputs",
+          "type": "object"
+        },
+        "output_schema": {
+          "additionalProperties": true,
+          "title": "Output Schema",
+          "type": "object"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceRef"
+            }
+          ],
+          "default": "",
+          "title": "Instructions"
+        },
+        "tools": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool"
+        },
+        "response_format": {
+          "default": "text",
+          "enum": [
+            "text",
+            "json"
+          ],
+          "title": "Response Format",
+          "type": "string"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Predicate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Graph"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "branches": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Graph"
+          },
+          "maxProperties": 16,
+          "title": "Branches",
+          "type": "object"
+        },
+        "max_iterations": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Iterations",
+          "type": "integer"
+        },
+        "until": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Predicate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "join": {
+          "default": "all",
+          "enum": [
+            "all",
+            "selected"
+          ],
+          "title": "Join",
+          "type": "string"
+        },
+        "items": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "$ref": "#/$defs/Value"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Items"
+        },
+        "max_items": {
+          "default": 32,
+          "maximum": 256,
+          "minimum": 1,
+          "title": "Max Items",
+          "type": "integer"
+        },
+        "tool_errors": {
+          "default": "raise",
+          "enum": [
+            "raise",
+            "feedback"
+          ],
+          "title": "Tool Errors",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "output_schema"
+      ],
+      "title": "Node",
+      "type": "object"
+    },
+    "Predicate": {
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "$ref": "#/$defs/Value"
+            }
+          ],
+          "title": "Left"
+        },
+        "op": {
+          "enum": [
+            "eq",
+            "ne",
+            "lt",
+            "le",
+            "gt",
+            "ge",
+            "contains",
+            "truthy"
+          ],
+          "title": "Op",
+          "type": "string"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "$ref": "#/$defs/Value"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Right"
+        }
+      },
+      "required": [
+        "left",
+        "op"
+      ],
+      "title": "Predicate",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "title": "Ref",
+          "type": "string"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "default": null,
+          "title": "Default"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "Resource": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "default": "prompt",
+          "enum": [
+            "prompt",
+            "skill"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "Resource",
+      "type": "object"
+    },
+    "ResourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "resource": {
+          "title": "Resource",
+          "type": "string"
+        }
+      },
+      "required": [
+        "resource"
+      ],
+      "title": "ResourceRef",
+      "type": "object"
+    },
+    "ToolBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "plugin": {
+          "title": "Plugin",
+          "type": "string"
+        },
+        "version": {
+          "default": "1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plugin"
+      ],
+      "title": "ToolBinding",
+      "type": "object"
+    },
+    "Value": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "Value",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "spec_version": {
+      "default": "0.1",
+      "enum": [
+        "0.1",
+        "0.2",
+        "0.3"
+      ],
+      "title": "Spec Version",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "input_schema": {
+      "additionalProperties": true,
+      "title": "Input Schema",
+      "type": "object"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "Output Schema",
+      "type": "object"
+    },
+    "models": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ModelRequirement"
+      },
+      "title": "Models",
+      "type": "object"
+    },
+    "tools": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ToolBinding"
+      },
+      "title": "Tools",
+      "type": "object"
+    },
+    "resources": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Resource"
+      },
+      "title": "Resources",
+      "type": "object"
+    },
+    "graph": {
+      "$ref": "#/$defs/Graph"
+    },
+    "execution": {
+      "$ref": "#/$defs/Execution"
+    }
+  },
+  "required": [
+    "id",
+    "input_schema",
+    "output_schema",
+    "graph"
+  ],
+  "title": "AgentSpec",
+  "type": "object"
+}

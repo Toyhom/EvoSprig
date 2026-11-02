@@ -20,15 +20,16 @@ EvoSprig 将可视化工作流、持久记忆和评测驱动的自进化放在�
 
 ## 可以构建什么？
 
-| 应用 | 工作流 |
+| 应用 | 试着让它做什么 |
 | --- | --- |
-| **[视频制作工作室](examples/video-studio/)** | VideoClaw 类型的流程：剧本 → 角色资产 → 并行镜头 → 分镜审核 → 视频任务 → 剪辑 → 合成；支持单镜头重做。 |
-| **[研究团队](examples/research-team/)** | 检索证据，分析师与质疑者并行工作，作者整理带引用的报告，编辑审核。 |
-| **[客服助手](examples/customer-support/)** | 查询订单、提出处理方案、人工审核、幂等退款；拒绝后不会执行退款。 |
-| **[个人记忆助手](examples/personal-memory/)** | 跨会话保存偏好，结合上下文块、当前事实与关系历史回答问题。 |
-| **[自进化研究助手](examples/research-assistant/)** | 工具调用与证据问答，优化指令，比较候选版本后启用。 |
+| **[数据分析助手](examples/data-analyst/)** | “哪个地区增长最快？”直接提问，查看数据结果和查询 SQL。 |
+| **[文档问答](examples/document-chat/)** | 把团队手册、会议记录和产品资料变成带来源的回答。 |
+| **[调研团队](examples/research-team/)** | 拆分一个大问题，分工查资料，整理成由你审阅的报告。 |
+| **[视频工作室](examples/video-studio/)** | 从创意到剧本、分镜、视频和合成，接入自己的媒体工具，随时重做某个镜头。 |
+| **[客服助手](examples/customer-support/)** | 查询订单、回答客户问题，由人工确认退款。 |
+| **[个人助手](examples/personal-memory/)** | 记住偏好，在下次会话中继续使用。 |
 
-安装方法、运行入口和适配说明统一放在 **[案例库](examples/README.md)**。视频案例采用可替换的异步工具协议，内置模拟器验证编排，不生成媒体。
+打开 **[案例库](examples/README.md)**，选一个模板，开始开发自己的应用。每个模板都由 EvoSprig 的 SDK、AgentSpec 和运行器执行。
 
 ## 核心能力
 
@@ -56,16 +57,9 @@ evosprig serve --project examples/hello/agent.yaml \
 
 打开 **http://127.0.0.1:18766**，在侧栏选择 **中文**；浏览器会记住语言设置。真实模型使用环境变量和[部署配置](examples/deployment.example.yaml)。
 
-## 改进智能体
+## 改进你的智能体
 
-```bash
-evosprig improve examples/research-assistant/agent.yaml \
-  --suite examples/research-assistant/suite.yaml \
-  --method self_refine --resource instructions --rounds 3 \
-  --profile examples/deployment.example.yaml --workspace .evosprig
-```
-
-搜索、候选选择、发布验证与测试报告使用独立数据划分。在 Studio 比较资源差异和分数，再启用或回滚版本。[方法说明](docs/evolution.md)。
+准备应用需要处理的任务，选择允许改进的提示词或技能，在 Studio 中比较候选版本。可以使用 OPRO、GEPA、EvoPrompt GA/DE、Self-Refine 或 ACE，审阅结果后启用新版本。[自进化指南](docs/evolution.md)介绍完整用法。
 
 ## 参与开发
 

@@ -85,6 +85,11 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
 
             config = MCPToolConfig.model_validate(raw)
             tool = mcp_tool(config)
+        elif raw.get("kind") == "sqlite":
+            from evosprig.plugins.sqlite_tools import SQLiteToolConfig, sqlite_tool
+
+            config = SQLiteToolConfig.model_validate(raw)
+            tool = sqlite_tool(config)
         else:
             raise ValueError("unknown tool binding kind")
         if name != config.name:

@@ -20,15 +20,16 @@ EvoSprig brings visual workflows, persistent memory and evaluation-driven improv
 
 ## What you can build
 
-| Application | Explore the workflow |
+| Application | Try this |
 | --- | --- |
-| **[Video production studio](examples/video-studio/)** | A VideoClaw-style pipeline: script → character assets → parallel shots → frame approval → video jobs → editing → composition. Retake one shot and keep the rest. |
-| **[Research team](examples/research-team/)** | Retrieve evidence, run analyst and critic roles in parallel, then write and review a cited brief. |
-| **[Customer support](examples/customer-support/)** | Look up an order, propose an action, require human approval and execute an idempotent refund. |
-| **[Personal assistant](examples/personal-memory/)** | Remember preferences across sessions and answer with current facts, named context blocks and relationship history. |
-| **[Evolving research assistant](examples/research-assistant/)** | Run tool-backed tasks, optimize instructions and compare candidates before enabling a new version. |
+| **[Data analyst](examples/data-analyst/)** | “Which region grew fastest?” Ask questions about your database and inspect the SQL behind the answer. |
+| **[Chat with your documents](examples/document-chat/)** | Turn handbooks, notes and product docs into answers with sources. |
+| **[Research team](examples/research-team/)** | Delegate a big question, explore your documents in parallel and review a useful brief. |
+| **[Video studio](examples/video-studio/)** | Turn an idea into a script, approve frames, create clips and retake a scene with your media tools. |
+| **[Customer support](examples/customer-support/)** | Look up orders, answer customers and approve refunds. |
+| **[Personal assistant](examples/personal-memory/)** | Remember preferences and use them in the next conversation. |
 
-See the **[example gallery](examples/README.md)** for setup, runnable demos and integration guides. Video tools use a provider-neutral job contract; the included simulator exercises orchestration without generating media.
+Open the **[example gallery](examples/README.md)**, choose an application and make it your own. Each template uses EvoSprig's SDK, AgentSpec and runtime.
 
 ## Why EvoSprig?
 
@@ -62,18 +63,9 @@ Open **http://127.0.0.1:18766**. Studio starts in English; switch to **中文** 
 
 For live models, configure environment-based credentials in a [deployment profile](examples/deployment.example.yaml). Follow the [quickstart](docs/quickstart.md) for model connections and export.
 
-## Improve an agent
+## Improve your agent
 
-Choose a task suite and the resources the optimizer may edit:
-
-```bash
-evosprig improve examples/research-assistant/agent.yaml \
-  --suite examples/research-assistant/suite.yaml \
-  --method self_refine --resource instructions --rounds 3 \
-  --profile examples/deployment.example.yaml --workspace .evosprig
-```
-
-Each study separates search, selection, release validation and test reporting. Inspect the diff and scores in Studio, then enable or roll back a version. See [method details and configuration](docs/evolution.md).
+Define the tasks your agent should handle, select its editable prompts or skills, and compare candidate versions in Studio. Choose OPRO, GEPA, EvoPrompt GA/DE, Self-Refine or ACE, then review the results before enabling a new version. Follow the **[evolution guide](docs/evolution.md)** to set up your own improvement loop.
 
 ## Documentation
 

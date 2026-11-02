@@ -21,7 +21,7 @@ def test_builder_canvas_and_yaml_roundtrip(spec, example_root):
 
 
 def test_schema_matches_model(spec, example_root):
-    frozen = json.loads((example_root.parents[1] / "spec/agent-spec-0.2.schema.json").read_text())
+    frozen = json.loads((example_root.parents[1] / "spec/agent-spec-0.3.schema.json").read_text())
     assert frozen == AgentSpec.model_json_schema()
     Draft202012Validator(frozen).validate(spec.model_dump())
     legacy = json.loads((example_root.parents[1] / "spec/agent-spec-0.1.schema.json").read_text())

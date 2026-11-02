@@ -1,162 +1,71 @@
-execution:
-  allow_side_effects: false
-  max_model_calls: 8
-  max_output_tokens: 512
-  max_parallel_nodes: 1
-  max_parallel_tools: 1
-  max_steps: 32
-  max_total_tokens: 8192
-  timeout_seconds: 60.0
-graph:
-  edges:
-  - source: context
-    target: facts
-    when: null
-  - source: facts
-    target: relations
-    when: null
-  - source: relations
-    target: answer
-    when: null
-  entry: context
-  nodes:
-    answer:
-      body: null
-      branches: {}
-      condition: null
-      inputs:
-        context:
-          default: null
-          optional: false
-          ref: nodes.context.output
-        facts:
-          default: null
-          optional: false
-          ref: nodes.facts.output
-        question:
-          default: null
-          optional: false
-          ref: input.question
-        relations:
-          default: null
-          optional: false
-          ref: nodes.relations.output
-      instructions:
-        resource: persona
-      join: all
-      max_iterations: 1
-      model: main
-      output_schema:
-        additionalProperties: false
-        properties:
-          text:
-            type: string
-        required:
-        - text
-        type: object
-      response_format: text
-      tool: null
-      tools: []
-      type: model
-      until: null
-    context:
-      body: null
-      branches: {}
-      condition: null
-      inputs: {}
-      instructions: ''
-      join: all
-      max_iterations: 1
-      model: null
-      output_schema:
-        type: object
-      response_format: text
-      tool: context
-      tools: []
-      type: tool
-      until: null
-    facts:
-      body: null
-      branches: {}
-      condition: null
-      inputs:
-        query:
-          default: null
-          optional: false
-          ref: input.question
-      instructions: ''
-      join: all
-      max_iterations: 1
-      model: null
-      output_schema:
-        type: object
-      response_format: text
-      tool: search
-      tools: []
-      type: tool
-      until: null
-    relations:
-      body: null
-      branches: {}
-      condition: null
-      inputs:
-        subject:
-          default: null
-          optional: false
-          ref: input.subject
-      instructions: ''
-      join: all
-      max_iterations: 1
-      model: null
-      output_schema:
-        type: object
-      response_format: text
-      tool: relations
-      tools: []
-      type: tool
-      until: null
-  output:
-    text:
-      default: null
-      optional: false
-      ref: nodes.answer.output.text
+spec_version: '0.3'
 id: personal-memory
 input_schema:
-  additionalProperties: false
+  type: object
   properties:
     question:
       type: string
-    subject:
-      type: string
+      minLength: 1
   required:
   - question
-  - subject
-  type: object
-models:
-  main:
-    binding: main
-    requires:
-    - text
-output_schema:
   additionalProperties: false
+output_schema:
+  type: object
   properties:
     text:
       type: string
   required:
   - text
-  type: object
-resources:
-  persona:
-    path: prompts/persona.md
-    role: prompt
-spec_version: '0.2'
+  additionalProperties: false
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
 tools:
-  context:
-    plugin: memory.context
-    version: '1'
-  relations:
-    plugin: memory.relations
-    version: '1'
   search:
     plugin: memory.search
-    version: '1'
+  remember:
+    plugin: memory.write
+  context:
+    plugin: memory.context
+  relations:
+    plugin: memory.relations
+resources:
+  instructions:
+    path: prompts/persona.md
+graph:
+  entry: assistant
+  nodes:
+    assistant:
+      type: agent
+      inputs:
+        question:
+          ref: input.question
+      output_schema:
+        type: object
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        additionalProperties: false
+      model: main
+      instructions:
+        resource: instructions
+      tools:
+      - context
+      - search
+      - relations
+      - remember
+      tool_errors: feedback
+  output:
+    text:
+      ref: nodes.assistant.output.text
+execution:
+  max_model_calls: 10
+  max_total_tokens: 24000
+  max_output_tokens: 1200
+  timeout_seconds: 180.0
+  allow_side_effects: true

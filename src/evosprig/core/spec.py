@@ -105,7 +105,16 @@ class Predicate(Contract):
 
 class Node(Contract):
     type: Literal[
-        "model", "agent", "tool", "transform", "condition", "join", "loop", "parallel", "human"
+        "model",
+        "agent",
+        "tool",
+        "transform",
+        "condition",
+        "join",
+        "loop",
+        "parallel",
+        "map",
+        "human",
     ]
     inputs: dict[str, Ref | Value] = Field(default_factory=dict)
     output_schema: dict[str, Any]
@@ -120,6 +129,9 @@ class Node(Contract):
     max_iterations: int = Field(default=1, ge=1, le=100)
     until: Predicate | None = None
     join: Literal["all", "selected"] = "all"
+    items: Ref | Value | None = None
+    max_items: int = Field(default=32, ge=1, le=256)
+    tool_errors: Literal["raise", "feedback"] = "raise"
 
     @model_validator(mode="after")
     def valid_node(self):
@@ -148,8 +160,14 @@ class Node(Contract):
             raise ValueError(
                 "condition nodes require a predicate; other nodes cannot set condition"
             )
-        if (self.type == "loop") != (self.body is not None):
-            raise ValueError("loop nodes require a body graph")
+        if (self.type in {"loop", "map"}) != (self.body is not None):
+            raise ValueError("loop and map nodes require a body graph")
+        if (self.type == "map") != (self.items is not None):
+            raise ValueError("map nodes require an items binding")
+        if self.type != "map" and self.max_items != 32:
+            raise ValueError("max_items belongs to map nodes")
+        if self.type != "agent" and self.tool_errors != "raise":
+            raise ValueError("tool feedback belongs to agent nodes")
         if self.type != "loop" and (self.until is not None or self.max_iterations != 1):
             raise ValueError("iteration settings belong to loop nodes")
         if (self.type == "parallel") != bool(self.branches):
@@ -186,7 +204,7 @@ class Execution(Contract):
 
 
 class AgentSpec(Contract):
-    spec_version: Literal["0.1", "0.2"] = "0.1"
+    spec_version: Literal["0.1", "0.2", "0.3"] = "0.1"
     id: str
     input_schema: dict[str, Any]
     output_schema: dict[str, Any]
@@ -240,6 +258,8 @@ class AgentSpec(Contract):
                 raise ValueError("conditional edges must originate from a condition node")
         for node_id in order:
             node = graph.nodes[node_id]
+            if self.spec_version != "0.3" and (node.type == "map" or node.tool_errors != "raise"):
+                raise ValueError("map nodes and tool feedback require spec_version 0.3")
             if node.model and node.model not in self.models:
                 raise ValueError(f"{node_id}: unknown model {node.model}")
             for tool in [node.tool] if node.tool else node.tools:
@@ -251,6 +271,8 @@ class AgentSpec(Contract):
             ):
                 raise ValueError(f"{node_id}: unknown instruction resource")
             self._check_refs(node.inputs, ancestors[node_id], node_id)
+            if node.items:
+                self._check_refs({"items": node.items}, ancestors[node_id], node_id)
             if node.condition:
                 self._check_refs(
                     {"left": node.condition.left, "right": node.condition.right},
@@ -316,6 +338,9 @@ class AgentSpec(Contract):
         def normalize(graph):
             graph["edges"].sort(key=lambda edge: (edge["source"], edge["target"]))
             for node in graph["nodes"].values():
+                if self.spec_version != "0.3":
+                    for key in ("items", "max_items", "tool_errors"):
+                        node.pop(key)
                 if node["body"]:
                     normalize(node["body"])
                 for branch in node["branches"].values():

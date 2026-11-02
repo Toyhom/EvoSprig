@@ -118,3 +118,17 @@ semantic = HybridMemory(memory, provider)
 ```
 
 Install the `models` extra for the HTTP client. This synchronous memory adapter should run in a worker/thread when called from an asynchronous application. Its requests have explicit timeouts, bounded response sizes and no automatic retries.
+
+## Load a document collection
+
+```bash
+evosprig data add-documents ./documents --project document-chat --workspace .evosprig/docs
+```
+
+The shared loader accepts a text file or a folder of `.md`/`.txt` files (up to 128
+files, 1 MB each). It preserves source labels and excerpt offsets for citations.
+Adding unchanged files is idempotent. A changed file creates a new document version;
+remove obsolete records in Studio when replacing a collection. The CLI uses the
+local identity. In an authenticated deployment, add documents through the signed-in
+user's Studio/API to retain that user's scope. Run the agent with the same workspace
+and project ID. See [Chat with your documents](../examples/document-chat/).

@@ -1,0 +1,27 @@
+models:
+  main:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    capabilities:
+    - text
+    - tool_calling
+    - structured_output
+    options:
+      thinking:
+        type: disabled
+tools:
+  database.schema:
+    kind: sqlite
+    name: database.schema
+    operation: schema
+    path_env: EVOSPRIG_SQLITE_PATH
+    tables:
+    - orders
+  database.query:
+    kind: sqlite
+    name: database.query
+    operation: query
+    path_env: EVOSPRIG_SQLITE_PATH
+    tables:
+    - orders

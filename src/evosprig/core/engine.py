@@ -10,11 +10,18 @@ import time
 import uuid
 from dataclasses import asdict
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, ValidationError
 
-from .expressions import predicate, resolve_inputs
+from .expressions import predicate, resolve_inputs, resolve_value
 from .journal import TERMINAL, LeaseLost, MemoryJournal, Scope, check_lease
-from .protocols import BudgetExceeded, ExecutionError, ExternalStatus, ExternalTool, ModelRequest
+from .protocols import (
+    BudgetExceeded,
+    ExecutionError,
+    ExternalStatus,
+    ExternalTool,
+    ModelRequest,
+    ToolFeedbackError,
+)
 from .spec import ResourceRef, canonical_json, digest
 from .version import AgentVersion
 
@@ -392,6 +399,29 @@ class ExecutionSession:
                     )
                     raise fatal
                 output = dict(zip(names, values))
+            elif node.type == "map":
+                items = resolve_value(node.items, context)
+                if not isinstance(items, list) or len(items) > node.max_items:
+                    raise ExecutionError("map items must be a list within max_items")
+                semaphore = asyncio.Semaphore(self.spec.execution.max_parallel_nodes)
+
+                async def mapped(index, item):
+                    async with semaphore:
+                        return await self.graph(
+                            node.body,
+                            {"item": item, "index": index, "context": arguments},
+                            f"{path}/item-{index}",
+                        )
+
+                values = await asyncio.gather(
+                    *(mapped(i, item) for i, item in enumerate(items)), return_exceptions=True
+                )
+                errors = [value for value in values if isinstance(value, BaseException)]
+                if errors:
+                    raise next(
+                        (error for error in errors if not isinstance(error, Suspended)), errors[0]
+                    )
+                output = {"items": values}
             elif node.type == "tool":
                 output = await self.tool(node.tool, arguments, path, "direct")
             else:
@@ -529,13 +559,37 @@ class ExecutionSession:
                 call = calls[slot["tool_index"]]
                 if call["name"] not in node.tools:
                     raise ExecutionError("tool call is outside this node's allowlist")
-                output = await self.tool(
-                    call["name"],
-                    call["arguments"],
-                    path,
-                    call["id"],
-                    operation_key=f"model-{slot['turn']}:{call['id']}",
-                )
+                try:
+                    # Argument feedback happens before an operation can have side effects.
+                    try:
+                        Draft202012Validator(self.bound_tools[call["name"]].input_schema).validate(
+                            call["arguments"]
+                        )
+                    except ValidationError as exc:
+                        if node.tool_errors != "feedback":
+                            raise
+                        raise ToolFeedbackError(
+                            "invalid_arguments",
+                            f"Input does not satisfy {exc.validator} at {list(exc.path)}",
+                        ) from None
+                    output = await self.tool(
+                        call["name"],
+                        call["arguments"],
+                        path,
+                        call["id"],
+                        operation_key=f"model-{slot['turn']}:{call['id']}",
+                    )
+                except ToolFeedbackError as exc:
+                    if node.tool_errors != "feedback":
+                        raise
+                    output = exc.observation()
+                    self.save(
+                        "tool.feedback",
+                        path,
+                        tool=call["name"],
+                        call_id=call["id"],
+                        feedback=output,
+                    )
                 slot["messages"].append(
                     {"role": "tool", "tool_call_id": call["id"], "content": canonical_json(output)}
                 )
@@ -571,6 +625,9 @@ class ExecutionSession:
             raise ExecutionError("operation identity does not match its original intent")
         if operation["status"] == "succeeded":
             return operation["output"]
+        if operation["status"] == "rejected":
+            feedback = operation["feedback"]["error"]
+            raise ToolFeedbackError(feedback["code"], feedback["message"])
         response_path = path + "/operation-" + operation_id
         if response_path in self.cp["responses"]:
             output = self.cp["responses"][response_path]
@@ -681,7 +738,7 @@ class ExecutionSession:
                             }
                         )
                     raise
-                except Exception:
+                except Exception as exc:
                     if tool.side_effect != "read_only":
                         self.journal.operation(
                             self.lease, operation_id, update={"status": "unknown"}
@@ -694,6 +751,13 @@ class ExecutionSession:
                             tool=alias,
                             schema=tool.output_schema,
                         )
+                    if isinstance(exc, ToolFeedbackError):
+                        self.journal.operation(
+                            self.lease,
+                            operation_id,
+                            update={"status": "rejected", "feedback": exc.observation()},
+                        )
+                        self.save("tool.rejected", path, tool=alias, operation_id=operation_id)
                     raise
         canonical_json(output)
         Draft202012Validator(tool.output_schema).validate(output)

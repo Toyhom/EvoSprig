@@ -134,3 +134,48 @@ def test_memory_tool_export_starts_with_empty_data_and_runs_independently(tmp_pa
         capture_output=True,
     )
     assert json.loads(result.stdout)["output"] == {"content": "portable memory"}
+
+
+def test_exported_document_application_can_load_its_own_data(tmp_path):
+    from evosprig.sdk import Builder
+
+    spec = (
+        Builder("portable-docs", {"type": "object"}, {"type": "object"})
+        .tool("search", "documents.search")
+        .node(
+            "search",
+            "tool",
+            tool="search",
+            inputs={"query": {"ref": "input.query"}},
+            output_schema={"type": "object"},
+        )
+        .output(citations={"ref": "nodes.search.output.citations"})
+        .build_spec()
+    )
+    target = tmp_path / "export"
+    export_python(compile_agent(spec), target)
+    doc = tmp_path / "handbook.md"
+    doc.write_text("The annual learning budget is $600.")
+    environment = {**os.environ, "PYTHONPATH": str(target / "src")}
+    subprocess.run(
+        [sys.executable, "app.py", "--documents", str(doc)],
+        cwd=target,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    result = subprocess.run(
+        [sys.executable, "app.py", "--input", '{"query":"learning"}'],
+        cwd=target,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    citations = json.loads(result.stdout)["output"]["citations"]
+    assert citations[0]["text"] == doc.read_text()
+    assert citations[0]["source"] == "documents/handbook.md"
+    assert not (target / "src/evosprig/server/app.py").exists()

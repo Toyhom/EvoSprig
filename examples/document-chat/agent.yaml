@@ -1,0 +1,60 @@
+spec_version: '0.3'
+id: document-chat
+input_schema:
+  type: object
+  properties:
+    question:
+      type: string
+      minLength: 1
+  required:
+  - question
+  additionalProperties: false
+output_schema:
+  type: object
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  additionalProperties: false
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+tools:
+  search:
+    plugin: documents.search
+resources:
+  instructions:
+    path: prompts/assistant.md
+graph:
+  entry: answer
+  nodes:
+    answer:
+      type: agent
+      inputs:
+        question:
+          ref: input.question
+      output_schema:
+        type: object
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        additionalProperties: false
+      model: main
+      instructions:
+        resource: instructions
+      tools:
+      - search
+      tool_errors: feedback
+  output:
+    text:
+      ref: nodes.answer.output.text
+execution:
+  max_total_tokens: 24000
+  max_output_tokens: 1800
+  timeout_seconds: 180.0

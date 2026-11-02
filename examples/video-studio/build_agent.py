@@ -33,7 +33,7 @@ PLAN = obj(
     title=TEXT,
     style=TEXT,
     characters={"type": "array", "items": obj(id=TEXT, description=TEXT)},
-    shots={"type": "array", "items": SHOT, "minItems": 3, "maxItems": 3},
+    shots={"type": "array", "items": SHOT, "minItems": 1, "maxItems": 12},
 )
 TIMELINE = obj(
     clips={"type": "array", "items": ASSET, "minItems": 1, "maxItems": 20},
@@ -122,35 +122,27 @@ def production():
         },
         output_schema=CATALOG,
     )
-    branches = {}
-    for i in range(3):
-        graph = shot_builder().data["graph"]
-        # Each branch receives the parent input mapping; bind this shot in a transform.
-        graph["nodes"]["input"] = {
-            "type": "transform",
-            "inputs": {
-                "shot": {"ref": f"input.plan.shots.{i}"},
-                "catalog": {"ref": "input.catalog"},
-                "style": {"ref": "input.plan.style"},
-            },
-            "output_schema": shot_builder().data["input_schema"],
-        }
-        graph["entry"] = "input"
-        graph["edges"].insert(0, {"source": "input", "target": "frame"})
-        for name in ("frame", "frame_review", "clip"):
-            for binding in graph["nodes"][name]["inputs"].values():
-                if binding.get("ref", "").startswith("input."):
-                    binding["ref"] = binding["ref"].replace("input.", "nodes.input.output.", 1)
-        branches[f"shot_{i + 1}"] = graph
-    b.node(
+    body = shot_builder().data["graph"]
+    # A map body receives one shot plus shared production context.
+    for node in body["nodes"].values():
+        for binding in node["inputs"].values():
+            if binding.get("ref") == "input.shot":
+                binding["ref"] = "input.item"
+            elif binding.get("ref") in {"input.catalog", "input.style"}:
+                binding["ref"] = binding["ref"].replace("input.", "input.context.", 1)
+    body["output"]["shot"] = {"ref": "input.item"}
+    b.map(
         "shots",
-        "parallel",
+        items={"ref": "nodes.script_review.output.shots"},
         inputs={
-            "plan": {"ref": "nodes.script_review.output"},
+            "style": {"ref": "nodes.script_review.output.style"},
             "catalog": {"ref": "nodes.characters.output"},
         },
-        branches=branches,
-        output_schema=obj(**{name: shot_builder().data["output_schema"] for name in branches}),
+        body=body,
+        max_items=12,
+        output_schema=obj(
+            items={"type": "array", "items": obj(shot=SHOT, clip=ASSET, first_frame=ASSET)}
+        ),
     )
     b.node(
         "edit_review",
@@ -182,11 +174,12 @@ def production():
         )
         .execution(
             allow_side_effects=True,
-            max_steps=80,
+            max_steps=240,
             max_model_calls=1,
             max_total_tokens=8192,
-            max_output_tokens=2048,
+            max_output_tokens=4096,
             max_parallel_nodes=3,
+            max_parallel_tools=3,
             timeout_seconds=3600,
         )
         .build_spec()

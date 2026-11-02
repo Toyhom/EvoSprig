@@ -58,11 +58,16 @@ def main():
     )
     serve.add_argument("--token-env", help="Optional API bearer-token environment variable")
     serve.add_argument("--max-concurrent-runs", type=int, default=4)
+    from evosprig import data_cli
     from evosprig.evolution.cli import add_commands, run_command
 
     add_commands(commands)
+    data_cli.add_commands(commands)
     args = parser.parse_args()
     try:
+        if args.command == "data":
+            data_cli.run_command(args)
+            return
         if args.command == "import":
             from evosprig.core.spec import save_spec
             from evosprig.exporters.importer import inspect_archive

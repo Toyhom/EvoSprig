@@ -1,13 +1,24 @@
-# Personal memory assistant
+# Personal assistant
 
-A persistent assistant combines named context blocks, retrieved facts and changing relationships. It adapts the managed-context and long-term-memory patterns found in [Letta](https://github.com/letta-ai/letta) and [Mem0](https://github.com/mem0ai/mem0) using EvoSprig's own scoped storage.
+**An assistant that remembers what you ask it to remember.**
+
+Save a preference today and use it in a later session. The agent chooses when to look up a saved fact and can consult the context blocks and relationships you maintain in Studio.
+
+## Try it
+
+After installing EvoSprig and setting `DEEPSEEK_API_KEY`:
 
 ```bash
-python examples/personal-memory/run_demo.py --workspace .evosprig/personal
-# Reuse the workspace to retain the same profile across sessions.
-python examples/personal-memory/run_demo.py --workspace .evosprig/personal
+evosprig run examples/personal-memory/agent.yaml --allow-writes \
+  --workspace .evosprig/personal \
+  --input '{"question":"Remember that I prefer vegetarian lunches."}'
+evosprig run examples/personal-memory/agent.yaml --allow-writes \
+  --workspace .evosprig/personal \
+  --input '{"question":"Suggest a lunch based on my preferences."}'
 ```
 
-The example records that Alice moved from project Orion to Atlas. Current retrieval returns Atlas; a historical query at the earlier timestamp returns Orion. A profile block carries the user's preferred response style. Add `--live` for the configured model.
+Reuse the workspace to retain memory. `--allow-writes` enables the save tool declared in this workflow. The prompt asks the agent to save only explicit requests; it is editable application behavior. Use Studio's Memory page to inspect and remove saved records.
 
-`memory.context`, `memory.search` and `memory.relations` are ordinary runtime tools. Their identity is bound by the deployment, so model arguments cannot select another user's records. Swap BM25 for `HybridMemory` with an embedding provider when semantic matching is needed. See [memory configuration](../../docs/memory.md).
+## Make it yours
+
+Change `prompts/persona.md`, add useful tools, and configure a profile block for your assistant's working context. An authenticated deployment binds memory to the current user and project. See the [memory guide](../../docs/memory.md) for retrieval and relationship options.

@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 
 import httpx
-from build_agent import profile
+import yaml
 
 from evosprig.core.protocols import ToolRegistry
 from evosprig.plugins.external_http import ExternalHTTPConfig, external_http_tool
@@ -114,7 +114,10 @@ class MediaSimulator:
 
     def registry(self):
         registry = ToolRegistry()
-        for name, raw in profile()["tools"].items():
+        profile = (
+            Path(__file__).resolve().parents[3] / "examples/video-studio/deployment.example.yaml"
+        )
+        for name, raw in yaml.safe_load(profile.read_text())["tools"].items():
             raw = {**raw, "auth_env": None}
             registry.register(
                 external_http_tool(

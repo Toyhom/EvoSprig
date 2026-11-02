@@ -1,25 +1,26 @@
-# Example gallery
+# Build your next agent
 
-Build a complete application, inspect its workflow and replace the model or tools with your own services.
+Start with an application, connect your model and tools, then make it your own.
 
-| Example | Pattern | Run |
+| I want to… | Start here | Make it yours |
 | --- | --- | --- |
-| [Video studio](video-studio/) | VideoClaw-style staged production, parallel shots, approvals and retakes | `python examples/video-studio/run_demo.py --workspace .evosprig/video` |
-| [Research team](research-team/) | Researcher, critic and writer collaboration | `python examples/research-team/run_demo.py --workspace .evosprig/team` |
-| [Customer support](customer-support/) | Tool lookup, routing, approval and transactional action | `python examples/customer-support/run_demo.py --workspace .evosprig/support --scenario approved` |
-| [Personal memory](personal-memory/) | Persistent profile, facts and temporal relationships | `python examples/personal-memory/run_demo.py --workspace .evosprig/memory` |
-| [Research assistant](research-assistant/) | Tool-backed answers and instruction optimization | [Evaluation and improvement commands](research-assistant/README.md) |
-| [Motion graphics](motion-graphics/) | Storyboard approval and an external CPU render job | [Render an MP4](motion-graphics/README.md) |
-| [Hello](hello/) | First Builder/AgentSpec workflow | `evosprig run examples/hello/agent.yaml --mock --input '{"question":"Hello"}'` |
+| Ask questions about business data | [Data analyst](data-analyst/) | Connect a SQLite database or import your own CSV |
+| Find answers in team documents | [Chat with your documents](document-chat/) | Add handbooks, notes or product documentation |
+| Turn a big question into a useful brief | [Research team](research-team/) | Let a planner delegate research and review the final draft |
+| Make videos from an idea | [Video studio](video-studio/) | Connect your image and video tools, approve shots and retake a scene |
+| Help customers with orders | [Customer support](customer-support/) | Connect order lookup and refund services |
+| Remember preferences across sessions | [Personal assistant](personal-memory/) | Save what matters and use it in the next conversation |
 
-Install `python -m pip install -e '.[server,evolution,mcp]'` first. Demo commands use deterministic model/tool fixtures by default; the research, support and memory demos accept `--live` for the configured model. Video production includes a replaceable media job contract and an offline orchestration simulator. Motion graphics generates an actual MP4 using the optional `media` dependencies.
+All six applications run on EvoSprig's AgentSpec and runtime. Open the same workflow in Studio, edit prompts and tools, or export it as a standalone application.
 
-Every application uses the same runtime as Studio. Open a workflow with:
+## Start running
+
+Install `python -m pip install -e '.[server]'` and configure a compatible model API. The examples use `DEEPSEEK_API_KEY` by default; [deployment profiles](../docs/deployment.md) let you choose another provider. Each example has its own data or tool setup instructions.
+
+For a first run without a model connection, try [Hello](hello/):
 
 ```bash
-evosprig serve --project examples/video-studio/agent.yaml \
-  --profile examples/video-studio/deployment.example.yaml \
-  --studio-dir apps/studio/dist --workspace .evosprig/studio
+evosprig run examples/hello/agent.yaml --mock --input '{"question":"Hello"}'
 ```
 
-Connect the media service before running the video project in Studio. The offline demo drives the same specification directly with a simulator. Original application code is included here; linked upstream projects identify the workflow patterns being adapted.
+Want a local renderer? [Motion graphics](motion-graphics/) creates a short animation with Pillow and FFmpeg.

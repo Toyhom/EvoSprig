@@ -170,12 +170,19 @@ function App() {
     } catch (e) { error(e); return false; } finally { setBusy(false); }
   };
   const { guard, prompt } = useDraftGuard(dirty || nodeDraftDirty, save, status, lang);
-  const replaceProject = (action: () => void | Promise<unknown>) => { setSidebarOpen(false); guard(action); };
+  const replaceProject = (action: () => void | Promise<unknown>) => {
+    setSidebarOpen(false);
+    guard(async () => {
+      setBusy(true);
+      try { await action(); } finally { setBusy(false); }
+    });
+  };
   const addNode = () => {
     if (!doc) return;
     const id = 'node' + (Math.max(0, ...nodes.map(node => Number(node.id.replace('node', '')) || 0)) + 1);
     const spec=structuredClone(doc.spec);
-    if(!['model','agent','tool'].includes(nodeKind)) spec.spec_version='0.2';
+    if(nodeKind==='map') spec.spec_version='0.3';
+    else if(!['model','agent','tool'].includes(nodeKind) && spec.spec_version==='0.1') spec.spec_version='0.2';
     if(['model','agent'].includes(nodeKind)&&!Object.keys(spec.models).length) spec.models.main={binding:'main-model',requires:['text']};
     if(nodeKind==='tool'&&!Object.keys(spec.tools).length) spec.tools.add={plugin:'builtin.add',version:'1'};
     const config = nodeTemplate(nodeKind,Object.keys(spec.models)[0],Object.keys(spec.tools)[0]);
@@ -249,7 +256,7 @@ function App() {
         :tab==='versions'?<VersionsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onExport={exportProject} onRun={run}/>
         :<div className="editor">
           <section className="workspace">
-            {tab === 'canvas' ? <><div className="canvas-tools"><span className="canvas-title">{lang==='zh'?'工作流':'Workflow'}</span><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','human'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button onClick={() => { const order = orderedNodes(currentSpec()).map(([id]) => id); setNodes(items => items.map(node => ({ ...node, position: { x: order.indexOf(node.id) * 280 + 40, y: 150 } }))); mutate(); }}><Icon name="grid"/>{t.layout}</button></div></div>
+            {tab === 'canvas' ? <><div className="canvas-tools"><span className="canvas-title">{lang==='zh'?'工作流':'Workflow'}</span><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','map','human'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button onClick={() => { const order = orderedNodes(currentSpec()).map(([id]) => id); setNodes(items => items.map(node => ({ ...node, position: { x: order.indexOf(node.id) * 280 + 40, y: 150 } }))); mutate(); }}><Icon name="grid"/>{t.layout}</button></div></div>
               <ReactFlow key={`${doc.id}:${doc.revision}`} nodes={displayNodes} nodeTypes={nodeTypes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => select(node)} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.2} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
               : tab === 'spec' ? <textarea className="source-editor" aria-label="AgentSpec JSON" value={specText} onChange={e => { setSpecText(e.target.value); mutate(); }} spellCheck={false}/>
                 : <pre className="source-editor code-view">{dirty ? `${t.runHint}\n\n` : ''}{code}</pre>}

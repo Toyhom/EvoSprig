@@ -79,12 +79,14 @@ def inspect_archive(data: bytes):
         from evosprig.plugins.external_http import ExternalHTTPConfig
         from evosprig.plugins.http_tools import HTTPToolConfig
         from evosprig.plugins.mcp_tools import MCPToolConfig
+        from evosprig.plugins.sqlite_tools import SQLiteToolConfig
 
         for name, binding in bindings.items():
             cls = {
                 "http": HTTPToolConfig,
                 "mcp": MCPToolConfig,
                 "external_http": ExternalHTTPConfig,
+                "sqlite": SQLiteToolConfig,
             }.get(binding.get("kind"))
             if cls is None or cls.model_validate(binding).name != name:
                 raise ValueError("unknown tool binding")

@@ -66,7 +66,7 @@ class OrderService:
 async def demo(workspace, scenario="approved", live=False):
     workspace = Path(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
-    root = Path(__file__).parent
+    root = Path(__file__).resolve().parents[3] / "examples/customer-support"
     spec = load_spec(root / "agent.yaml")
     service = OrderService(workspace / "orders.sqlite")
     tools = ToolRegistry()

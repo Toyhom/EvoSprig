@@ -1,2 +1,1 @@
-ROLE: writer
-Write a concise research brief from the analyst and critic reports. Include verifiable citation IDs, resolve contradictions, and separate evidence from unanswered questions.
+Write a useful brief answering the original question. Combine the researchers' findings, preserve the exact source citations, surface conflicts and missing information, and recommend practical next steps. Do not introduce unsupported facts. Write in the user's language.

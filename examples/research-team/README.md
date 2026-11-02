@@ -1,13 +1,26 @@
 # Research team
 
-A research-and-writing team follows the role-based collaboration pattern popularized by [CrewAI](https://github.com/crewAIInc/crewAI). It retrieves a shared evidence set, runs analyst and critic branches in parallel, synthesizes a cited report and pauses for editorial review.
+**Give your agent a question that needs more than one search.**
+
+“What should we address before launching Review Desk?” A planner divides the question into focused tasks. Researchers explore your documents, a writer combines their findings, and you review the final brief.
+
+## Try it
+
+After installing EvoSprig and setting `DEEPSEEK_API_KEY`, load the included fictional launch notes:
 
 ```bash
-python examples/research-team/run_demo.py --workspace .evosprig/team
-# Set DEEPSEEK_API_KEY to use a live model.
-python examples/research-team/run_demo.py --workspace .evosprig/team-live --live
+evosprig data add-documents examples/research-team/documents \
+  --project research-team --workspace .evosprig/research
+evosprig serve --project examples/research-team/agent.yaml \
+  --workspace .evosprig/research --studio-dir apps/studio/dist
 ```
 
-The default demo uses deterministic role responses and the original documents in `documents/`. `--live` uses the configured model for all three roles. Both modes run the same graph, document tool and human checkpoint; the script accepts the draft automatically for the demo.
+Open Studio, run with `{"question":"What should we address before launching Review Desk?"}`, then open History to read and approve the draft. The final review accepts `{"text":"Your approved brief"}`.
 
-Replace the document collection, edit the role prompts, or add a search service through HTTP/MCP. Open `agent.yaml` in Studio to review the report interactively. The critic receives the same citations as the analyst and flags unsupported conclusions before the writer produces the final draft.
+You can also start from the CLI with `evosprig run` and complete the review with [`evosprig resume`](../../docs/durable-runtime.md).
+
+## Make it yours
+
+Load your own documents. Edit the planner, researcher and writer prompts. Add a web search HTTP/MCP tool to the researcher's tool list to investigate external sources. The included template researches the document collection you supply.
+
+The framework's `map` node handles the variable task list, bounded parallel work and checkpoints. No separate team scheduler is needed. [Open Deep Research](https://github.com/langchain-ai/open_deep_research) is a useful reference for the broader research-agent application pattern.

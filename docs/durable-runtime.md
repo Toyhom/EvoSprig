@@ -38,3 +38,32 @@ unreported calls are observable; currency cost remains unknown without billing d
 Graceful shutdown checkpoints work, while hard interruption waits for lease expiry.
 Synchronous Python tool threads may finish after timeout: use idempotency or an
 external-job adapter for effects that need recovery.
+
+## Work over a dynamic list
+
+AgentSpec 0.3 adds `map` for task lists produced at runtime. Give it an `items`
+binding and a body graph. Each body receives `input.item`, `input.index` and
+`input.context` (the map node's resolved `inputs`). Results retain input order in
+`nodes.<map>.output.items`.
+
+```python
+builder.map(
+    "research",
+    items={"ref": "nodes.plan.output.tasks"},
+    inputs={"question": {"ref": "input.question"}},
+    body=research_graph,
+    max_items=6,
+    output_schema={"type": "object"},
+)
+```
+
+`Builder.map` selects spec version 0.3. Studio offers the same node, including its
+body in the JSON inspector. `max_items` defaults to 32 (maximum 256); an empty list
+returns an empty result list. Non-list inputs and oversized lists fail before body
+execution. Per-item paths such as `graph/research/item-0/research` keep checkpoints,
+approvals and external jobs distinct. Completed items are reused when a run resumes.
+
+Each map bounds in-flight body graphs by `max_parallel_nodes`. All nested work also
+shares the run's model/tool semaphores, token allowance and step budget. Set
+`max_parallel_tools` when parallel tools are desired. Use the [research team](../examples/research-team/)
+and [video studio](../examples/video-studio/) as templates.

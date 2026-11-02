@@ -9,6 +9,8 @@ import tempfile
 from pathlib import Path
 from pprint import pformat
 
+import yaml
+
 from evosprig import __version__
 from evosprig.core.spec import canonical_json, save_spec
 from evosprig.core.version import AgentVersion, check_public_text
@@ -18,6 +20,7 @@ from evosprig.plugins.memory_tools import MEMORY_TOOL_NAMES
 MODULES = (
     "__init__.py",
     "config.py",
+    "data_cli.py",
     "core/__init__.py",
     "core/spec.py",
     "core/version.py",
@@ -35,6 +38,7 @@ MODULES = (
     "plugins/openai_compatible.py",
     "plugins/sqlite_journal.py",
     "plugins/sqlite_memory.py",
+    "plugins/sqlite_tools.py",
     "plugins/structured_memory.py",
     "plugins/semantic_memory.py",
     "plugins/embeddings.py",
@@ -66,6 +70,7 @@ parser.add_argument("--resume", help="Run ID to resume")
 parser.add_argument("--path", help="Waiting input path")
 parser.add_argument("--response", help="JSON human response")
 parser.add_argument("--allow-writes", action="store_true")
+parser.add_argument("--documents", type=Path, help="Load text documents into this application's workspace")
 args = parser.parse_args()
 root = Path(__file__).resolve().parent
 spec = load_spec(root / "agent.yaml")
@@ -74,6 +79,12 @@ expected = json.loads((root / "agent.lock.json").read_text())
 if version.lock != expected:
     raise SystemExit("Project changed: rebuild the export to update agent.lock.json")
 workspace = args.workspace or root / ".evosprig"
+if args.documents:
+    if args.input or args.resume or args.path or args.response:
+        parser.error("load documents separately from running or resuming the agent")
+    from evosprig.data_cli import add_documents
+    print(json.dumps(add_documents(args.documents, workspace, spec.id), indent=2))
+    raise SystemExit(0)
 journal = SQLiteJournal(workspace / "runs.sqlite")
 if args.resume:
     record = journal.get(args.resume)
@@ -143,7 +154,7 @@ def compatibility_report(
         if binding.plugin in tool_bindings:
             config = tool_bindings[binding.plugin]
             if (
-                config.get("kind") in {"http", "mcp", "external_http"}
+                config.get("kind") in {"http", "mcp", "external_http", "sqlite"}
                 and config.get("version", "1") == binding.version
             ):
                 continue
@@ -182,6 +193,10 @@ def export_python(
                 from evosprig.plugins.mcp_tools import MCPToolConfig
 
                 config = MCPToolConfig.model_validate(raw)
+            elif raw.get("kind") == "sqlite":
+                from evosprig.plugins.sqlite_tools import SQLiteToolConfig
+
+                config = SQLiteToolConfig.model_validate(raw)
             else:
                 raise ValueError("tool plugin has no bundled exporter")
             if config.name != tool.plugin:
@@ -217,13 +232,23 @@ def export_python(
             "export-report.json": json.dumps(report, indent=2) + "\n",
             "requirements.lock": (Path(__file__).parent / "runtime.lock").read_text(),
             ".env.example": "DEEPSEEK_API_KEY=\nEVOSPRIG_BASE_URL=https://api.deepseek.com\nEVOSPRIG_MODEL=deepseek-flash\n",
-            "deployment.example.yaml": "models:\n"
-            + "".join(
-                f"  {name}:\n    base_url: https://api.deepseek.com\n    model: deepseek-flash\n    api_key_env: DEEPSEEK_API_KEY\n    options:\n      thinking: {{type: disabled}}\n"
-                for name in report["external_services"]
+            "deployment.example.yaml": yaml.safe_dump(
+                {
+                    "models": {
+                        name: {
+                            "base_url": "https://api.deepseek.com",
+                            "model": "deepseek-flash",
+                            "api_key_env": "DEEPSEEK_API_KEY",
+                            "options": {"thinking": {"type": "disabled"}},
+                        }
+                        for name in report["external_services"]
+                    },
+                    "tools": bindings,
+                },
+                sort_keys=False,
             ),
             "pyproject.toml": '[build-system]\nrequires = ["hatchling==1.27.0"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "evosprig-export-runtime"\nversion = "0.1.0a1"\nrequires-python = ">=3.12"\nlicense = "Apache-2.0"\nlicense-files = ["LICENSE", "NOTICE"]\ndependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3", "httpx==0.28.1"]\n\n[tool.hatch.build.targets.wheel]\npackages = ["src/evosprig"]\n',
-            "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, set DEEPSEEK_API_KEY and omit --mock. Use --profile deployment.example.yaml for explicit bindings. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n",
+            "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, set DEEPSEEK_API_KEY and omit --mock. Use --profile deployment.example.yaml for explicit bindings. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n\nFor document applications, load your own text collection with `python app.py --documents ./notes --workspace ./workspace`. Use the same `--workspace` for subsequent runs or the HTTP service. Exports do not contain your database or memory records.\n",
             "DEPENDENCIES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
         if any(binding["kind"] == "mcp" for binding in bindings.values()):

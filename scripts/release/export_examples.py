@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from evosprig.core.spec import load_spec
-from evosprig.core.version import compile_agent, compile_snapshot
+from evosprig.core.version import compile_agent
 from evosprig.exporters.python import export_python
 
 
@@ -19,30 +19,21 @@ def main():
     product = Path(__file__).resolve().parents[2]
     records = {}
     items = [
-        ("hello", "http", None),
-        ("research-assistant", "python", None),
-        ("research-assistant", "python", "opro"),
-        ("research-assistant", "python", "gepa"),
-        ("motion-graphics", "http", None),
-        ("video-studio", "http", None),
-        ("research-team", "python", None),
-        ("customer-support", "http", None),
-        ("personal-memory", "python", None),
+        ("hello", "http"),
+        ("data-analyst", "python"),
+        ("document-chat", "python"),
+        ("motion-graphics", "http"),
+        ("video-studio", "http"),
+        ("research-team", "python"),
+        ("customer-support", "http"),
+        ("personal-memory", "python"),
     ]
-    for example, target, method in items:
+    for example, target in items:
         root = product / "examples" / example
         version = compile_agent(load_spec(root / "agent.yaml"), root)
-        if method:
-            version = compile_snapshot(
-                version.spec,
-                {
-                    **version.resources,
-                    "instructions": (root / "results" / (method + "-instructions.md")).read_text(),
-                },
-            )
         profile = root / "deployment.example.yaml"
         bindings = yaml.safe_load(profile.read_text()).get("tools", {}) if profile.exists() else {}
-        name = example + ("-" + method if method else "")
+        name = example
         destination = args.out / name
         report = export_python(version, destination, target=target, tool_bindings=bindings)
         archive_path = args.out / (name + ".zip")

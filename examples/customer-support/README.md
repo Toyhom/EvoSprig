@@ -1,13 +1,21 @@
-# Customer support with approval
+# Customer support
 
-An order-support workflow combines the tool and human-review patterns used in [LangGraph](https://github.com/langchain-ai/langgraph): look up an order, propose an action, route refund requests to a human, then perform an authorized write.
+**Help customers resolve order problems, with a person in control of refunds.**
+
+The assistant looks up an order and suggests a response. Refund requests pause for approval; an approved request goes to your order service.
+
+## Connect your store
+
+Set `DEEPSEEK_API_KEY` and configure the two HTTP bindings in `deployment.example.yaml`: `support.lookup` for order details and `support.refund` for a refund. Set the service token named in the profile. Your order service enforces refund eligibility and honors idempotency keys.
 
 ```bash
-python examples/customer-support/run_demo.py --workspace .evosprig/support-approved --scenario approved
-python examples/customer-support/run_demo.py --workspace .evosprig/support-denied --scenario denied
-python examples/customer-support/run_demo.py --workspace .evosprig/support-answer --scenario answer
+evosprig serve --project examples/customer-support/agent.yaml \
+  --profile examples/customer-support/deployment.example.yaml \
+  --workspace .evosprig/support --studio-dir apps/studio/dist
 ```
 
-The included transactional order service is a fixture. It validates refund amounts independently of the model, permits one refund per order and checks idempotency keys. The denied and answer-only paths create no refund. Add `--live` to use the configured model while keeping the fixture order service.
+In Studio, enable writes for the run and enter `{"order_id":"YOUR_ORDER_ID","question":"I would like to cancel this order."}`. Review the proposed action in History before continuing.
 
-To connect your business system, implement `support.lookup` and `support.refund` using the schemas in `deployment.example.yaml`. Enforce eligibility, authorization and idempotency in that service. Use Studio's History page for real human decisions; the demo's `--scenario` option supplies its review response automatically.
+## Make it yours
+
+Edit `prompts/policy.md` for your store's tone and rules. Add shipping or inventory tools, or change the workflow to route different requests to different teams. The graph uses EvoSprig's conditions, approval nodes and durable tool execution.

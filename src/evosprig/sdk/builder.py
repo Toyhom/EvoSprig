@@ -47,6 +47,19 @@ class Builder:
         self.data["graph"]["edges"].append(edge)
         return self
 
+    def map(self, node_id: str, *, items, body, output_schema, inputs=None, max_items=32):
+        """Run a declarative body for each item; each body sees item/index/context."""
+        self.data["spec_version"] = "0.3"
+        return self.node(
+            node_id,
+            "map",
+            items=items,
+            body=body,
+            inputs=inputs or {},
+            output_schema=output_schema,
+            max_items=max_items,
+        )
+
     def output(self, **bindings):
         self.data["graph"]["output"] = deepcopy(bindings)
         return self

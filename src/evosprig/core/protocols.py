@@ -26,6 +26,17 @@ class ProviderError(ExecutionError):
         self.code = code
 
 
+class ToolFeedbackError(ExecutionError):
+    """An explicit, model-readable rejection of a read-only tool request."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message[:1000])
+        self.code = code[:80]
+
+    def observation(self):
+        return {"error": {"code": self.code, "message": str(self)}}
+
+
 @dataclass(frozen=True)
 class ToolCall:
     id: str

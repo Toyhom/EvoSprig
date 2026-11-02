@@ -33,11 +33,11 @@ export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
 const labels: Record<NodeKind, [string, string]> = {
   model: ['模型', 'Model'], agent: ['智能体', 'Agent'], tool: ['工具', 'Tool'],
   condition: ['条件', 'Condition'], transform: ['转换', 'Transform'], join: ['汇合', 'Join'],
-  loop: ['循环', 'Loop'], parallel: ['并行', 'Parallel'], human: ['人工确认', 'Approval'],
+  loop: ['循环', 'Loop'], parallel: ['并行', 'Parallel'], map: ['批量任务', 'Map'], human: ['人工确认', 'Approval'],
 };
 const icons: Record<NodeKind, IconName> = {
   model: 'model', agent: 'model', tool: 'tool', condition: 'branch', transform: 'code',
-  join: 'layers', loop: 'refresh', parallel: 'layers', human: 'human',
+  join: 'layers', loop: 'refresh', parallel: 'layers', map: 'layers', human: 'human',
 };
 export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang };
 export type WorkflowFlowNode = Node<WorkflowData>;

@@ -64,8 +64,7 @@ cannot overwrite each other. Existing runs retain their original frozen versions
 Rollback only targets a compatible previously released version; current user memory
 is preserved. Application export can select any archived compatible version.
 
-The [research assistant](../examples/research-assistant/README.md) includes a task suite,
-CLI commands and editable instruction resources. Studio's Improve and Versions pages expose the same service operations.
+Use your own application and task suite. Studio's Improve and Versions pages expose the same service operations.
 
 ## Native search methods
 
@@ -81,12 +80,12 @@ EvoPrompt follows [Guo et al.](https://arxiv.org/abs/2309.08532); Self-Refine fo
 Use `--rounds` for the number of search updates and `--population-size` for EvoPrompt (4–32, default 4). Set `--max-candidates` and the evaluation budget to cover initialization and offspring as well as validation. Duplicate proposals are cached; an unfilled population terminates as `insufficient_diversity` after bounded initialization attempts. Method state includes population/lineage, critiques or accepted curator deltas.
 
 ```bash
-evosprig improve examples/research-assistant/agent.yaml \
-  --suite examples/research-assistant/suite.yaml \
+evosprig improve my-agent/agent.yaml \
+  --suite my-agent/tasks.yaml \
   --method evoprompt_ga --resource instructions \
   --population-size 4 --rounds 2 --max-candidates 24 \
   --max-evaluations 150 --max-model-calls 300 \
-  --profile examples/deployment.example.yaml
+  --profile my-agent/deployment.yaml
 ```
 
 All six methods are selectable in Studio. ACE appends a structured experience playbook to the base resource and evolves entries without rewriting the base instruction. Candidate archives preserve unsuccessful edits as well as the selected version.

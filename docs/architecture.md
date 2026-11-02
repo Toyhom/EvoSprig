@@ -30,7 +30,7 @@ The core has no dependency on a particular HTTP client, optimizer or UI. Optiona
 
 ## Execution
 
-AgentSpec 0.2 supports model, agent, tool, condition, transform, join, bounded loop, parallel and human nodes. Explicit edges define dependencies. Nested branches share the run budget; human checkpoints and asynchronous tool jobs retain their completed predecessors.
+AgentSpec 0.3 supports model, agent, tool, condition, transform, join, bounded loop, parallel, dynamic map and human nodes. Explicit edges define dependencies. Nested branches share the run budget; human checkpoints and asynchronous tool jobs retain their completed predecessors.
 
 The runtime journals external operations before execution. Leases and fencing prevent a stale worker from overwriting a recovered run. Unknown write outcomes require reconciliation. See [durable execution](durable-runtime.md).
 
