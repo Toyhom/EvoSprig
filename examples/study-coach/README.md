@@ -37,6 +37,6 @@ Choose **Live model** and paste the input from `sample.json`. Read the lesson an
 
 Replace the topic, level and teaching material in `sample.json`. Edit the `teaching` and `coaching_feedback` skills to match your course. Saved preferences are read from the current user and project memory.
 
-In **Improve**, add your task inputs, select prompt or skill resources, and choose an algorithm. EvoSprig runs the same workflow with each candidate. [Agent configuration](../../docs/agent-resources.md) describes resource selection and model parameters.
+For unattended improvement, import an [evaluation suite](../../docs/evaluation.md#bring-your-own-task-suite) with three learner answers in each task's `responses`: `{"graph/learner": {"answers": ["...", "...", "..."]}}`. Then select prompt or skill resources and an algorithm in **Improve**. EvoSprig runs the same workflow with each candidate. [Agent configuration](../../docs/agent-resources.md) describes resource selection and model parameters.
 
 Built with EvoSprig's [Python SDK](../build_work_apps.py). Application patterns draw on [Coze community learning workflows](https://github.com/AICoderTudou/coze-workflows/tree/main/coze).

@@ -30,6 +30,6 @@ Choose **Live model** and paste the input from `sample.json`. At the practice no
 
 Change the role and resume in `sample.json`. Edit `factual_writing` to set your resume conventions and `interview_coaching` to change the practice method. The factual-writing skill is shared by the reviewer, resume writer and final coach.
 
-In **Improve**, add your task inputs, select prompt or skill resources, and choose an algorithm. EvoSprig runs the same workflow with each candidate. [Agent configuration](../../docs/agent-resources.md) describes resource selection and model parameters.
+For unattended improvement, import an [evaluation suite](../../docs/evaluation.md#bring-your-own-task-suite) with an interview answer in each task's `responses`, such as `{"graph/practice": {"answer": "I automated the weekly report with SQL and Python."}}`. Then select prompt or skill resources and an algorithm in **Improve**. EvoSprig runs the same workflow with each candidate. [Agent configuration](../../docs/agent-resources.md) describes resource selection and model parameters.
 
 Built with EvoSprig's [Python SDK](../build_work_apps.py). Application patterns draw on [Coze community resume workflows](https://github.com/AICoderTudou/coze-workflows/tree/main/coze), with application review and interview practice added here.

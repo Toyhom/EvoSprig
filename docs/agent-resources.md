@@ -57,7 +57,7 @@ Model credentials and provider options stay in the deployment profile. Sampling 
 ## Improve selected resources
 
 1. Build and run the application.
-2. In **Improve**, add a JSON array of at least four distinct task inputs. The platform creates fixed search, selection and release splits. A judge can score inputs without reference answers; custom scorers and environments are also supported.
+2. In **Improve**, add a JSON array of at least four distinct task inputs. The platform creates fixed search, selection and release splits. A judge can score inputs without reference answers; custom scorers and environments are also supported. For workflows with human nodes, import an [EvalSuite with task responses](evaluation.md#bring-your-own-task-suite) so each evaluation can continue through those checkpoints.
 3. Select the prompt and/or skill resources to change, choose an algorithm and set the budget.
 4. Start improvement. EvoSprig generates resource edits and runs the same application on the task set.
 5. Open **Compare prompts, skills and outputs**. Review the original and selected resource contents together with the paired answers. Enable your chosen version in **Versions**.
