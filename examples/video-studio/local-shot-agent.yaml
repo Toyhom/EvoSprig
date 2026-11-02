@@ -1,0 +1,448 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 8
+  max_output_tokens: 2048
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 16
+  max_total_tokens: 24000
+  timeout_seconds: 3600.0
+graph:
+  edges:
+  - source: frame
+    target: preview
+    when: null
+  - source: frame_prompt
+    target: frame
+    when: null
+  - source: frame_review
+    target: clip
+    when: null
+  - source: preview
+    target: visual_check
+    when: null
+  - source: visual_check
+    target: frame_review
+    when: null
+  entry: frame_prompt
+  nodes:
+    clip:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        catalog:
+          default: null
+          optional: false
+          ref: input.catalog
+        first_frame:
+          default: null
+          optional: false
+          ref: nodes.frame_review.output
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: video
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    frame:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        catalog:
+          default: null
+          optional: false
+          ref: input.catalog
+        prompt:
+          default: null
+          optional: false
+          ref: nodes.frame_prompt.output.prompt
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+        style:
+          default: null
+          optional: false
+          ref: input.style
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: image
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    frame_prompt:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        feedback:
+          default: ''
+          optional: true
+          ref: input.feedback
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+        style:
+          default: null
+          optional: false
+          ref: input.style
+      instructions:
+        resource: storyboard
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_tokens: 2048
+      model: artist
+      output_schema:
+        additionalProperties: false
+        properties:
+          prompt:
+            minLength: 1
+            type: string
+        required:
+        - prompt
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    frame_review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        frame:
+          default: null
+          optional: false
+          ref: nodes.frame.output
+        review:
+          default: null
+          optional: false
+          ref: nodes.visual_check.output
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    preview:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        asset:
+          default: null
+          optional: false
+          ref: nodes.frame.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          images:
+            items:
+              minLength: 1
+              type: string
+            type: array
+        required:
+        - images
+        type: object
+      response_format: text
+      tool: vision
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    visual_check:
+      body: null
+      branches: {}
+      condition: null
+      image_inputs:
+      - images
+      inputs:
+        images:
+          default: null
+          optional: false
+          ref: nodes.preview.output.images
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+      instructions:
+        resource: frame_review
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_tokens: 2048
+      model: reviewer
+      output_schema:
+        additionalProperties: false
+        properties:
+          acceptable:
+            type: boolean
+          issues:
+            items:
+              minLength: 1
+              type: string
+            type: array
+          recommendation:
+            minLength: 1
+            type: string
+        required:
+        - acceptable
+        - issues
+        - recommendation
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    clip:
+      default: null
+      optional: false
+      ref: nodes.clip.output
+    first_frame:
+      default: null
+      optional: false
+      ref: nodes.frame_review.output
+id: local-video-shot
+input_schema:
+  additionalProperties: false
+  properties:
+    catalog:
+      additionalProperties: false
+      properties:
+        assets:
+          items:
+            additionalProperties: false
+            properties:
+              asset:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              character_id:
+                minLength: 1
+                type: string
+            required:
+            - character_id
+            - asset
+            type: object
+          minItems: 1
+          type: array
+      required:
+      - assets
+      type: object
+    shot:
+      additionalProperties: false
+      properties:
+        camera:
+          minLength: 1
+          type: string
+        characters:
+          items:
+            minLength: 1
+            type: string
+          type: array
+        description:
+          minLength: 1
+          type: string
+        dialogue:
+          type: string
+        duration_seconds:
+          maximum: 20
+          minimum: 1
+          type: integer
+        id:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - description
+      - camera
+      - dialogue
+      - characters
+      - duration_seconds
+      type: object
+    style:
+      minLength: 1
+      type: string
+  required:
+  - shot
+  - catalog
+  - style
+  type: object
+models:
+  artist:
+    binding: main
+    requires:
+    - text
+    - structured_output
+  reviewer:
+    binding: vision
+    requires:
+    - text
+    - structured_output
+    - vision
+output_schema:
+  additionalProperties: false
+  properties:
+    clip:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+    first_frame:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+  required:
+  - clip
+  - first_frame
+  type: object
+resources:
+  frame_review:
+    path: prompts/frame-review.md
+    role: prompt
+  storyboard:
+    path: prompts/storyboard.md
+    role: prompt
+spec_version: '0.3'
+tools:
+  image:
+    plugin: media.image
+    version: '1'
+  video:
+    plugin: media.video
+    version: '1'
+  vision:
+    plugin: media.vision
+    version: '1'

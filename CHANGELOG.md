@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+- Add native image inputs and Studio selectors for vision-capable model and agent nodes.
+- Preview image and video assets in Studio run results and human review steps.
+- Support Kimi completion limits and fixed sampling parameters, and preserve provider continuation fields across tool turns.
+- Add a local FLUX.2-klein / HunyuanVideo-1.5 media worker with durable jobs, idempotency, cancellation and FFmpeg composition.
+- Extend the video studio with storyboard prompt generation, visual checks, reviewed first frames and reusable retake workflows.
+- Add a shared-provider adapter for the official VideoClaw workflow.
+
 ## 0.1.2
 
 - Add MIPRO resource search: task-grounded instructions, component demonstrations and categorical TPE; 14 training-free strategies across 12 families.

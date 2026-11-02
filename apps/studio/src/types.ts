@@ -4,7 +4,7 @@ export type Predicate = { left: Binding; op: 'eq'|'ne'|'lt'|'le'|'gt'|'ge'|'cont
 export type NodeKind = 'model'|'agent'|'tool'|'transform'|'condition'|'join'|'loop'|'parallel'|'map'|'human';
 export type NodeSpec = {
   type: NodeKind; inputs: Record<string, Binding>; output_schema: Json; model?: string | null;
-  instructions?: string | { resource: string }; skills?:string[]; temperature?:number|null; top_p?:number|null; tools?: string[]; tool?: string | null;
+  instructions?: string | { resource: string }; skills?:string[]; image_inputs?:string[]; temperature?:number|null; top_p?:number|null; tools?: string[]; tool?: string | null;
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;
   items?: Binding|null; max_items?: number; tool_errors?: 'raise'|'feedback';
   parallel_tool_calls?: boolean; tool_selection?: 'all'|'relevant'; tool_limit?: number; max_tool_rounds?: number|null;

@@ -62,6 +62,13 @@
           "title": "Max Output Tokens",
           "type": "integer"
         },
+        "image_token_reserve": {
+          "default": 4096,
+          "maximum": 65536,
+          "minimum": 256,
+          "title": "Image Token Reserve",
+          "type": "integer"
+        },
         "timeout_seconds": {
           "default": 60.0,
           "exclusiveMinimum": 0,
@@ -152,7 +159,8 @@
             "enum": [
               "text",
               "tool_calling",
-              "structured_output"
+              "structured_output",
+              "vision"
             ],
             "type": "string"
           },
@@ -234,6 +242,14 @@
           },
           "maxItems": 32,
           "title": "Skills",
+          "type": "array"
+        },
+        "image_inputs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Image Inputs",
           "type": "array"
         },
         "temperature": {

@@ -30,3 +30,20 @@ test('node resources, skills, shared memory and sampling survive save and run',a
  await page.getByRole('button',{name:'Canvas',exact:true}).click();await page.getByRole('button',{name:'▷ Run',exact:true}).click();
  await expect(page.getByRole('status')).toContainText('succeeded');
 });
+
+test('vision inputs are selectable and persist in the saved workflow',async({page,request})=>{
+ const id='vision-review-'+Date.now().toString(36);
+ const spec={spec_version:'0.3',id,input_schema:{type:'object'},output_schema:{},models:{vision:{binding:'vision',requires:['text','vision']}},tools:{},resources:{},graph:{entry:'review',nodes:{review:{type:'model',model:'vision',instructions:'Review the frame.',inputs:{frame:{ref:'input.frame'},brief:{ref:'input.brief'}},output_schema:{}}},edges:[],output:{review:{ref:'nodes.review.output'}}}};
+ expect((await request.post('/api/projects',{data:{spec}})).status()).toBe(201);
+ await page.goto('/');await page.locator('.project[title="'+id+'"]').click();
+ await page.locator('.react-flow__node[data-id="review"]').click();
+ await page.getByLabel('Image input frame',{exact:true}).check();
+ await expect(page.getByLabel('Image input brief',{exact:true})).not.toBeChecked();
+ await page.getByRole('button',{name:'Save',exact:true}).click();
+ await expect(page.getByRole('status')).toContainText('Saved');
+ const saved=await(await request.get('/api/projects/'+id)).json();
+ expect(saved.spec.graph.nodes.review.image_inputs).toEqual(['frame']);
+ await page.reload();await page.locator('.project[title="'+id+'"]').click();
+ await page.locator('.react-flow__node[data-id="review"]').click();
+ await expect(page.getByLabel('Image input frame',{exact:true})).toBeChecked();
+});

@@ -98,6 +98,7 @@ tools:
           additionalProperties: false
         catalog: *id002
         style: *id001
+        prompt: *id001
       required:
       - shot
       - catalog

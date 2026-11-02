@@ -16,7 +16,7 @@ Start with a working application pattern, connect your model and tools, then mak
 | Helps make a difficult decision | [Decision room](debate/) | Perspectives, rebuttals and decision criteria |
 | Reads receipts and checks expenses | [Receipt assistant](receipt-assistant/) | OCR, arithmetic, expense rules and approval routing |
 | Turns a question into a sourced brief | [Research team](research-team/) | Planning, parallel researchers, document collections and editorial review |
-| Makes a video from a brief | [Video studio](video-studio/) | Characters, storyboards, image/video providers, shot approval and retakes |
+| Makes a video from a brief | [Video studio](video-studio/) | Kimi visual review, local FLUX.2 + Hunyuan generation, approvals and retakes |
 | Turns a meeting into clear next steps | [Meeting assistant](meeting-assistant/) | Decisions, owners, dates and review criteria |
 | Writes a consistent multi-chapter guide | [Book studio](book-studio/) | Shared outline, parallel writers, style and editing |
 | Builds a trip that fits the budget | [Travel planner](travel-planner/) | Traveler constraints, available activities and cost checks |
@@ -47,7 +47,7 @@ Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../d
 
 ## Start running
 
-Install `python -m pip install -e '.[server]'` and configure a compatible model API. The applications use `DEEPSEEK_API_KEY` by default; [deployment profiles](../docs/deployment.md) let you choose another provider. Software, Python and receipt applications can use the optional [Toolbox](../apps/toolbox/README.md). Video generation uses the media services you connect.
+Install `python -m pip install -e '.[server]'` and configure a compatible model API. The applications use `DEEPSEEK_API_KEY` by default; [deployment profiles](../docs/deployment.md) let you choose another provider. Software, Python and receipt applications can use the optional [Toolbox](../apps/toolbox/README.md). The [local media worker](../apps/media-service/) provides image/video tools for the video studio.
 
 Each application guide includes its run command. For example:
 

@@ -27,6 +27,7 @@ MODULES = (
     "core/protocols.py",
     "core/runtime.py",
     "core/model_sessions.py",
+    "core/multimodal.py",
     "core/engine.py",
     "core/journal.py",
     "core/expressions.py",

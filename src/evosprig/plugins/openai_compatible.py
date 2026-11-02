@@ -6,6 +6,8 @@ import json
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from copy import deepcopy
+from typing import Literal
 from urllib.parse import urlsplit
 
 import httpx
@@ -22,6 +24,8 @@ class Connection(Contract):
     timeout_seconds: float = Field(default=45.0, gt=0, le=600)
     max_connections: int = Field(default=32, ge=1, le=1024)
     max_keepalive_connections: int = Field(default=8, ge=0, le=1024)
+    token_limit_field: Literal["max_tokens", "max_completion_tokens"] = "max_tokens"
+    send_sampling_parameters: bool = True
     capabilities: list[str] = Field(
         default_factory=lambda: ["text", "tool_calling", "structured_output"]
     )
@@ -73,14 +77,15 @@ class OpenAICompatibleProvider:
         payload = {
             "model": self.model_id,
             "messages": request.messages,
-            "max_tokens": request.max_output_tokens,
-            "temperature": request.temperature,
+            self.connection.token_limit_field: request.max_output_tokens,
             "stream": stream,
             **self.connection.options,
         }
+        if self.connection.send_sampling_parameters:
+            payload["temperature"] = request.temperature
         if request.tools:
             payload["tools"] = request.tools
-        if request.top_p is not None:
+        if request.top_p is not None and self.connection.send_sampling_parameters:
             payload["top_p"] = request.top_p
         if request.json_output:
             payload["response_format"] = {"type": "json_object"}
@@ -153,6 +158,7 @@ class OpenAICompatibleProvider:
                 tool_calls=tuple(calls),
                 usage=Usage(int(usage["prompt_tokens"]), int(usage["completion_tokens"])),
                 model=body.get("model", "unknown"),
+                assistant_message={**deepcopy(message), "role": "assistant"},
             )
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError(

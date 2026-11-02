@@ -451,6 +451,8 @@ class ExecutionSession:
             raise
 
     async def model(self, node, arguments, path, slot):
+        from .multimodal import input_reservation, user_content
+
         provider = self.engine.models[self.spec.models[node.model].binding]
         if "messages" not in slot:
             instructions = (
@@ -467,7 +469,7 @@ class ExecutionSession:
                 )
             slot["messages"] = [
                 {"role": "system", "content": instructions},
-                {"role": "user", "content": canonical_json(arguments)},
+                {"role": "user", "content": user_content(arguments, node.image_inputs)},
             ]
 
         def feedback(reason, previous=None):
@@ -477,7 +479,7 @@ class ExecutionSession:
             ):
                 return False
             if previous:
-                slot["messages"].append({"role": "assistant", "content": previous})
+                slot["messages"].append(copy.deepcopy((slot.get("response") or {}).get("assistant_message")) or {"role": "assistant", "content": previous})
             slot["messages"].append(
                 {
                     "role": "user",
@@ -521,13 +523,8 @@ class ExecutionSession:
                             slot["tool_round_limit_noted"] = True
                     slot["exposed_tools"] = aliases
                     descriptors = [self.bound_tools[alias].descriptor(alias) for alias in aliases]
-                    estimate = (
-                        len(
-                            canonical_json(
-                                {"messages": slot["messages"], "tools": descriptors}
-                            ).encode()
-                        )
-                        + 128
+                    estimate = input_reservation(
+                        slot["messages"], descriptors, budget.image_token_reserve
                     )
                     remaining = (
                         budget.max_total_tokens
@@ -619,7 +616,7 @@ class ExecutionSession:
             if not slot.get("assistant_recorded"):
                 slot["tool_rounds"] = slot.get("tool_rounds", 0) + 1
                 slot["messages"].append(
-                    {
+                    copy.deepcopy(response.get("assistant_message")) or {
                         "role": "assistant",
                         "content": response["text"] or None,
                         "tool_calls": [

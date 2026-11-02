@@ -3,8 +3,9 @@ import { Handle, Position, useNodesInitialized, useReactFlow, useStore, type Nod
 import { childGraphs, nodeSize, type Group } from './canvas';
 import type { Lang, NodeKind, NodeSpec } from './types';
 
-export type IconName = 'grid' | 'folder' | 'search' | 'plus' | 'upload' | 'download' | 'code' | 'file' | 'history' | 'database' | 'chart' | 'layers' | 'settings' | 'arrow' | 'play' | 'branch' | 'tool' | 'model' | 'human' | 'menu' | 'close' | 'refresh' | 'robot' | 'scan' | 'globe' | 'terminal' | 'mail' | 'film' | 'check' | 'merge' | 'expand' | 'collapse' | 'network' | 'briefcase' | 'graduate' | 'pen' | 'calendar' | 'book' | 'headset' | 'compass' | 'receipt' | 'clock' | 'spark';
+export type IconName = 'image' | 'grid' | 'folder' | 'search' | 'plus' | 'upload' | 'download' | 'code' | 'file' | 'history' | 'database' | 'chart' | 'layers' | 'settings' | 'arrow' | 'play' | 'branch' | 'tool' | 'model' | 'human' | 'menu' | 'close' | 'refresh' | 'robot' | 'scan' | 'globe' | 'terminal' | 'mail' | 'film' | 'check' | 'merge' | 'expand' | 'collapse' | 'network' | 'briefcase' | 'graduate' | 'pen' | 'calendar' | 'book' | 'headset' | 'compass' | 'receipt' | 'clock' | 'spark';
 const paths: Record<IconName, string> = {
+  image: 'M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M15 7h.01',
   briefcase:'M3 7h18v14H3zM8 7V3h8v4M3 12c5 4 13 4 18 0M10 13h4v3h-4z',
   graduate:'m2 9 10-5 10 5-10 5L2 9m4 3v6c4 3 8 3 12 0v-6m4-3v10',
   pen:'m4 16 12-12 4 4-12 12H4v-4zm9-9 4 4M3 22h18',

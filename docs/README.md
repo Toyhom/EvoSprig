@@ -11,7 +11,7 @@ Build an application, connect your services, then improve it against your own ta
 
 ## Develop your application
 
-[Architecture and SDK](architecture.md) · [Tools](tools.md) · [Memory and retrieval](memory.md) · [Durable execution](durable-runtime.md) · [Industry environments](industry-environments.md)
+[Architecture and SDK](architecture.md) · [Tools](tools.md) · [Images and vision](vision.md) · [Memory and retrieval](memory.md) · [Durable execution](durable-runtime.md) · [Industry environments](industry-environments.md)
 
 ## Reference
 

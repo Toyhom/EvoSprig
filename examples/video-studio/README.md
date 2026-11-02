@@ -1,78 +1,82 @@
 # Video production studio
 
-![Workflow in EvoSprig Studio](canvas.png)
+![Production workflow and shot subflow in EvoSprig Studio](canvas.png)
 
-Build a [VideoClaw](https://github.com/HITsz-TMG/VideoClaw)-style production agent with EvoSprig. The application coordinates creative roles, assets, human reviews and asynchronous media tools.
+Turn an idea into a short film with a director, shared character references, visual review and local image/video tools. This application uses EvoSprig's SDK and runtime throughout.
 
-<img src="../../docs/assets/video-workflow.svg" alt="Script, assets, parallel shots, review and composition" width="100%" />
+## Watch the result
 
-## A generated production plan
+**Laid Off:** a brief about a programmer receiving an envelope, closing his laptop and leaving with a box. Two reviewed, three-shot productions use the [same brief](brief.json) and the same models.
 
-![Three-shot director output for a silent film](assets/result.png)
+![EvoSprig and VideoClaw: generated clips side by side](assets/preview.webp)
 
-The director produces this plan before media generation. Connect your own image and video tools to render the approved shots.
+[Watch EvoSprig's film](assets/evosprig.mp4) · [Watch VideoClaw's film](assets/videoclaw.mp4)
 
-## From idea to film
+| Shared component | Configuration |
+| --- | --- |
+| Planning and visual review | Kimi K3.1 Pro |
+| Character and first-frame images | FLUX.2-klein-4B, 4 steps |
+| Image-to-video | HunyuanVideo-1.5, 480p I2V step-distilled, 12 steps |
+| Generation | Seed 42; three 5-second shots; 24 fps; silent |
 
-1. A director turns your brief into a script, characters and 1–12 shots.
-2. You approve the script and the tools create a shared character catalog.
-3. EvoSprig creates each shot's first frame, pauses for your approval, then requests its video clip.
-4. You choose clip order, audio and subtitles, then submit the timeline for composition.
-5. Want another take? Run the shot workflow again and use its new clip in the composition.
+The story takes its opening premise from [VideoClaw's programmer series](https://github.com/HITsz-TMG/VideoClaw#-创作展示). The second film runs [VideoClaw's own workflow, agents and prompts](https://github.com/HITsz-TMG/VideoClaw/tree/16c1ce0b553e30eff90ff1274e8a8a63c1d548a3), connected through the [shared model adapter](../../apps/media-service/videoclaw.py). Its storyboard was reviewed to select three matching moments; EvoSprig's first frames include reviewed retakes. These are new short productions with common models, rather than a regeneration of the published episode or a quality ranking.
 
-The same `map` node used by the research team handles the variable shot list. Completed work and pending media jobs stay in the run history across restarts.
+![Selected first frames from both workflows](assets/result.png)
 
-## Open your studio
+## Make your own film
 
-Configure your model and media service in `deployment.example.yaml`, set the named environment variables, then run:
+The local workflow uses **Kimi K3.1 Pro** for planning and visual checks, **FLUX.2-klein-4B** for character and storyboard images, **HunyuanVideo-1.5** to animate approved frames, and **FFmpeg** to assemble the film.
+
+1. The director writes a script and shot list. You review it before rendering.
+2. The image tool creates reusable character references.
+3. Each shot gets a still-image prompt and first frame. Kimi reads the image and flags problems before your approval.
+4. The video tool animates each approved frame. You review the timeline and assemble the selected clips.
+5. Retake one frame or shot while keeping the rest of the production.
+
+The shot list runs through a native `map` node. Checkpoints retain completed work and external job receipts when the application restarts.
+
+## Open the studio
+
+Start the [local media worker](../../apps/media-service/) on your GPU machine. Set `MOONSHOT_API_KEY` in the environment, then run:
 
 ```bash
-evosprig serve --project examples/video-studio/agent.yaml \
-  --profile examples/video-studio/deployment.example.yaml \
+evosprig serve --project examples/video-studio/local-agent.yaml \
+  --profile examples/video-studio/deployment.local.yaml \
   --studio-dir apps/studio/dist --workspace .evosprig/video
 ```
 
-Start a run with `{"brief":"A librarian discovers a living book."}` and enable writes for media jobs. Approve the script, frames and timeline from History. Image/video generation requires connected media tools.
+Open **http://127.0.0.1:18766**. Paste a brief such as `{"brief":"A librarian discovers a living book. Three silent shots."}` into the run panel and enable writes for media jobs. Review the script, frames and timeline in History; **Show media** opens image previews and video players at each approval step. The [included brief](brief.json) provides a three-shot office scene.
 
-`agent.yaml`, `shot-agent.yaml` and `compose-agent.yaml` are portable projects; `build_agent.py` defines them with the EvoSprig SDK.
+| Project | Use it for |
+| --- | --- |
+| `local-agent.yaml` | The full workflow with visual frame checks |
+| `frame-agent.yaml` | Generate and inspect a replacement first frame |
+| `local-shot-agent.yaml` | Generate a replacement shot, with frame approval |
+| `compose-agent.yaml` | Assemble selected clips |
+| `script-agent.yaml` | Plan and improve stories before rendering |
 
-## Connect generation tools
+`build_agent.py` creates these projects with the EvoSprig SDK. To use other generation providers, start from `agent.yaml` and `deployment.example.yaml`.
 
-Implement the four bindings in `deployment.example.yaml` using your provider SDK or gateway. The orchestrator does not depend on a particular image/video vendor.
+## Review and retake
+
+![Original frame and selected retake after correcting the viewpoint and character count](assets/retake.png)
+
+The first take showed the programmer twice. Feedback changed the framing to one person in a side view, kept the box in front of his body, and restored the long sleeves. The frame agent rewrote the still-image prompt and generated a replacement; the other frames and production plan stayed available.
+
+Reuse the shot, character catalog and style from History in the frame or shot project. The frame project also accepts `feedback`, such as “Show one person carrying the box in front of his body.” It returns the generated frame, its prompt and the visual review. Select that asset at the production workflow's frame-approval step.
+
+For a new video take, run the shot project and approve its frame. Pass the chosen clips to `compose-agent.yaml` with `audio: []` and `subtitles: ""` for a silent film. The local worker also accepts SRT subtitles.
+
+The director, storyboard and frame-review prompts are ordinary versioned resources. Select them in **Improve** to search for better instructions using your own tasks and evaluation criteria. The script-only project lets you improve the story before spending GPU time on media generation.
+
+## Connect other media tools
 
 | Tool | Input | Output |
 | --- | --- | --- |
-| `media.assets` | Character descriptions and visual style | Catalog mapping each character ID to a reusable asset |
-| `media.image` | Shot, visual style and character catalog | First-frame image asset |
-| `media.video` | Shot, approved first frame and catalog | Video clip asset |
-| `media.compose` | Ordered clips, audio assets and subtitles | Composed film asset |
+| `media.assets` | Characters and style | Shared character catalog |
+| `media.image` | Shot, catalog, style and optional still-image prompt | First frame |
+| `media.vision` | Generated asset | Image content for a vision model |
+| `media.video` | Shot and approved first frame | Video clip |
+| `media.compose` | Selected clips and subtitles | Film |
 
-Each endpoint follows the shared asynchronous job contract:
-
-```text
-POST /<tool>       Idempotency-Key: <operation id>  → {"job_id":"..."}
-GET  /<tool>/<id>  → {"status":"pending"}
-GET  /<tool>/<id>  → {"status":"succeeded","output":<typed result>}
-DELETE /<tool>/<id> → cancel
-```
-
-An asset is `{ "id": "...", "uri": "...", "media_type": "image/png|video/mp4|audio/wav" }`. Provider-specific model names, credentials, task IDs and retries belong in the tool service. The service must preserve idempotency and reject a reused key with a different payload. Keep assets addressable across sessions. See [tool contracts](../../docs/tools.md).
-
-VideoClaw supports providers including Wan, Seedance and Kling. This example adapts its staged production pattern; media adapters and generated film quality can be evaluated independently of workflow execution.
-
-## Human review and retakes
-
-Open the main project in Studio with its deployment profile. The History page exposes script, frame and timeline checkpoints. Review outputs are typed JSON; edit them before continuing.
-
-For a retake, run `shot-agent.yaml` with the selected `shot`, existing `catalog` and `style`. Its output contains the new `clip` and `first_frame`. Pass that clip alongside the unchanged clips to `compose-agent.yaml` as `{"clips":[...],"audio":[],"subtitles":""}`. Each run retains its inputs and outputs, including the original production. A changed script or character catalog may require regenerating affected shots.
-
-## Improve the story before rendering
-
-`script-agent.yaml` exposes the same director resource as a standalone planning stage. Try it without a media-service connection:
-
-```bash
-evosprig run examples/video-studio/script-agent.yaml \
-  --input '{"brief":"A 12-second silent film about a paper boat. Three shots, one recurring character, no text overlays."}'
-```
-
-Use that stage to compare and evolve storyboards, then apply the chosen director resource to the production workflow. Connect your image and video tools to render the approved plan.
+Generation tools use the [asynchronous job contract](../../docs/tools.md): submit with an idempotency key, poll the job and receive an asset. The [media worker](../../apps/media-service/) includes these bindings and an optional adapter for running [VideoClaw](https://github.com/HITsz-TMG/VideoClaw) with the same models.

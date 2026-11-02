@@ -79,7 +79,7 @@ class Resource(Contract):
 
 class ModelRequirement(Contract):
     binding: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
-    requires: list[Literal["text", "tool_calling", "structured_output"]] = Field(
+    requires: list[Literal["text", "tool_calling", "structured_output", "vision"]] = Field(
         default_factory=lambda: ["text"]
     )
 
@@ -121,6 +121,7 @@ class Node(Contract):
     model: str | None = None
     instructions: str | ResourceRef = ""
     skills: list[str] = Field(default_factory=list, max_length=32)
+    image_inputs: list[str] = Field(default_factory=list, max_length=16)
     temperature: float | None = Field(default=None, ge=0, le=2, allow_inf_nan=False)
     top_p: float | None = Field(default=None, gt=0, le=1, allow_inf_nan=False)
     tools: list[str] = Field(default_factory=list)
@@ -146,6 +147,12 @@ class Node(Contract):
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if self.image_inputs and self.type not in {"model", "agent"}:
+            raise ValueError("image inputs require a model or agent node")
+        if len(set(self.image_inputs)) != len(self.image_inputs) or any(
+            name not in self.inputs for name in self.image_inputs
+        ):
+            raise ValueError("image inputs must name distinct node input bindings")
         if self.type not in {"model", "agent"} and (
             self.skills or self.temperature is not None or self.top_p is not None
         ):
@@ -228,6 +235,7 @@ class Execution(Contract):
     max_model_calls: int = Field(default=8, ge=0, le=1000)
     max_total_tokens: int = Field(default=8192, ge=1, le=1000000)
     max_output_tokens: int = Field(default=512, ge=1, le=32768)
+    image_token_reserve: int = Field(default=4096, ge=256, le=65536)
     timeout_seconds: float = Field(default=60.0, gt=0, le=3600)
     max_parallel_nodes: int = Field(default=1, ge=1, le=32)
     max_parallel_tools: int = Field(default=1, ge=1, le=16)
@@ -302,6 +310,8 @@ class AgentSpec(Contract):
                 raise ValueError("map nodes and tool feedback require spec_version 0.3")
             if node.model and node.model not in self.models:
                 raise ValueError(f"{node_id}: unknown model {node.model}")
+            if node.image_inputs and "vision" not in self.models[node.model].requires:
+                raise ValueError(f"{node_id}: image inputs require a vision-capable model")
             for tool in [node.tool] if node.tool else node.tools:
                 if tool not in self.tools:
                     raise ValueError(f"{node_id}: unknown tool {tool}")
@@ -394,6 +404,8 @@ class AgentSpec(Contract):
 
     def canonical(self) -> str:
         data = self.model_dump(mode="json")
+        if data["execution"]["image_token_reserve"] == 4096:
+            data["execution"].pop("image_token_reserve")
 
         def normalize(graph):
             graph["edges"].sort(key=lambda edge: (edge["source"], edge["target"]))
@@ -407,6 +419,7 @@ class AgentSpec(Contract):
                     ("max_output_retries", 1),
                     ("max_output_tokens", None),
                     ("skills", []),
+                    ("image_inputs", []),
                     ("temperature", None),
                     ("top_p", None),
                 ):

@@ -32,7 +32,7 @@
 | 从多个角度分析决策 | [决策讨论室](examples/debate/)：正反论证、回应与建议 |
 | 自动整理票据与报销 | [收据助手](examples/receipt-assistant/)：OCR、结构化提取、算账与规则核对 |
 | 组织团队完成资料研究 | [研究团队](examples/research-team/)：并行调查、引用与人工审稿 |
-| 把想法变成视频 | [视频工作室](examples/video-studio/)：分镜、素材工具、审核与局部重做 |
+| 把想法变成视频 | [视频工作室](examples/video-studio/)：Kimi 视觉审核、本地 FLUX.2／混元模型与单镜头重做 |
 | 安排日常工作与创作 | [会议助手](examples/meeting-assistant/) · [书籍创作](examples/book-studio/) · [旅行规划](examples/travel-planner/) |
 
 还有 [SQL 分析](examples/data-analyst/)、[文档对话](examples/document-chat/)、[客服](examples/customer-support/)和[个人记忆](examples/personal-memory/)。所有案例均使用 EvoSprig 自身框架编排，打开[应用库](examples/README.md)即可修改成自己的智能体。
@@ -44,7 +44,7 @@
 - **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核，以及多层分组、折叠展开和子流程编辑。
 - **行业环境接入**：金融、政务与制造业沙箱，用真实业务状态检查评估操作结果，再接入自进化；也可构建带人工审核的行业环境设计流程。[使用方法](docs/industry-environments.md)。
 - **可用的长期记忆**：作用域隔离、混合检索、上下文块、时序关系、关联经验和保留来源的摘要。
-- **面向实际工作的工具**：HTTP、MCP、SQL 与 Python 插件，可选代码执行、浏览器和 OCR 服务，以及只读并发与错误反馈。
+- **面向实际工作的工具**：视觉输入、HTTP、MCP、SQL 与 Python 插件，可选代码执行、浏览器和 OCR 服务，以及只读并发与错误反馈。
 - **恢复和独立部署**：持久检查点、外部任务回执、版本比较与回滚；导出 Python、HTTP 服务或容器构建工程。
 
 ## 框架结构

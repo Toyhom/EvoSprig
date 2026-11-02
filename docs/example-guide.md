@@ -11,7 +11,7 @@ examples/my-application/
   prompts/                   # Role instructions
   skills/                    # Reusable procedures, when needed
   sample.json                # A task to try
-  assets/                    # Only images used by the README
+  assets/                    # Only images and short media used by the README
   deployment.example.yaml    # Optional model and tool connections
 ```
 

@@ -32,7 +32,7 @@ Build agents with Python or a visual canvas, then improve their prompts and skil
 | Helps you make a difficult decision | **[Decision room](examples/debate/)** — opposing arguments, rebuttals and a moderated recommendation |
 | Reads receipts and checks expenses | **[Receipt assistant](examples/receipt-assistant/)** — OCR, structured extraction and policy review |
 | Researches a question with a team | **[Research team](examples/research-team/)** — parallel investigation, sources and editorial approval |
-| Produces a video from an idea | **[Video studio](examples/video-studio/)** — scripts, approved shots, media tools and local retakes |
+| Produces a video from an idea | **[Video studio](examples/video-studio/)** — Kimi vision, local FLUX.2 + Hunyuan models and shot retakes |
 | Organizes the rest of your work | **[Meetings](examples/meeting-assistant/)** · **[Books](examples/book-studio/)** · **[Travel](examples/travel-planner/)** |
 
 Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examples/document-chat/)**, **[customer support](examples/customer-support/)** and **[personal memory](examples/personal-memory/)**. Every application uses EvoSprig's own SDK, AgentSpec and runtime. Open the **[gallery](examples/README.md)** for setup, workflow canvases and application outputs.
@@ -44,7 +44,7 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 - **Code and canvas, one application.** Build typed workflows with parallel agents, dynamic map, loops and human approvals. Organize large teams with nested groups and edit executable subflows.
 - **Industry environments.** Connect business sandboxes for finance, government and manufacturing; evaluate real action outcomes and improve against the same environment. [Get started](docs/industry-environments.md).
 - **Memory agents can use.** Scoped facts, hybrid retrieval, context blocks, temporal relations, linked experiences and source-aware summaries.
-- **Tools for real work.** MCP, HTTP, SQL and Python plugins; optional code execution, browser checks and OCR; read-only concurrency and recoverable tool feedback.
+- **Tools for real work.** Vision inputs, MCP, HTTP, SQL and Python plugins; optional code execution, browser checks and OCR; read-only concurrency and recoverable tool feedback.
 - **Run, recover and ship.** Checkpoints and external job receipts preserve progress. Export standalone Python, HTTP applications or container build projects.
 
 ## How it fits together

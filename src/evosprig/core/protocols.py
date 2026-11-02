@@ -78,6 +78,7 @@ class ModelResponse:
     tool_calls: tuple[ToolCall, ...] = ()
     usage: Usage = field(default_factory=Usage)
     model: str = "unknown"
+    assistant_message: dict | None = field(default=None, repr=False)
 
 
 class ModelProvider(Protocol):

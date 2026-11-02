@@ -1,0 +1,192 @@
+models:
+  main:
+    base_url: https://api.moonshot.cn/v1
+    model: kimi-k3.1-pro
+    api_key_env: MOONSHOT_API_KEY
+    timeout_seconds: 300
+    token_limit_field: max_completion_tokens
+    send_sampling_parameters: false
+    capabilities: &id001
+    - text
+    - structured_output
+    - tool_calling
+    - vision
+    options: &id002
+      reasoning_effort: low
+  vision:
+    base_url: https://api.moonshot.cn/v1
+    model: kimi-k3.1-pro
+    api_key_env: MOONSHOT_API_KEY
+    timeout_seconds: 300
+    token_limit_field: max_completion_tokens
+    send_sampling_parameters: false
+    capabilities: *id001
+    options: *id002
+tools:
+  media.assets:
+    kind: external_http
+    name: media.assets
+    description: Video production assets service
+    endpoint: http://127.0.0.1:18880/assets
+    input_schema:
+      type: object
+      properties:
+        characters:
+          type: array
+          items:
+            type: object
+            properties:
+              id: &id003
+                type: string
+                minLength: 1
+              description: *id003
+            required:
+            - id
+            - description
+            additionalProperties: false
+        style: *id003
+      required:
+      - characters
+      - style
+      additionalProperties: false
+    output_schema: &id004
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            type: object
+            properties:
+              character_id: *id003
+              asset: &id005
+                type: object
+                properties:
+                  id: *id003
+                  uri: *id003
+                  media_type: *id003
+                required:
+                - id
+                - uri
+                - media_type
+                additionalProperties: false
+            required:
+            - character_id
+            - asset
+            additionalProperties: false
+          minItems: 1
+      required:
+      - assets
+      additionalProperties: false
+    side_effect: write
+    idempotent: true
+  media.image:
+    kind: external_http
+    name: media.image
+    description: Video production image service
+    endpoint: http://127.0.0.1:18880/image
+    input_schema:
+      type: object
+      properties:
+        shot: &id006
+          type: object
+          properties:
+            id: *id003
+            description: *id003
+            camera: *id003
+            dialogue:
+              type: string
+            characters:
+              type: array
+              items: *id003
+            duration_seconds:
+              type: integer
+              minimum: 1
+              maximum: 20
+          required:
+          - id
+          - description
+          - camera
+          - dialogue
+          - characters
+          - duration_seconds
+          additionalProperties: false
+        catalog: *id004
+        style: *id003
+        prompt: *id003
+      required:
+      - shot
+      - catalog
+      - style
+      additionalProperties: false
+    output_schema: *id005
+    side_effect: write
+    idempotent: true
+  media.video:
+    kind: external_http
+    name: media.video
+    description: Video production video service
+    endpoint: http://127.0.0.1:18880/video
+    input_schema:
+      type: object
+      properties:
+        shot: *id006
+        first_frame: *id005
+        catalog: *id004
+      required:
+      - shot
+      - first_frame
+      - catalog
+      additionalProperties: false
+    output_schema: *id005
+    side_effect: write
+    idempotent: true
+  media.compose:
+    kind: external_http
+    name: media.compose
+    description: Video production compose service
+    endpoint: http://127.0.0.1:18880/compose
+    input_schema:
+      type: object
+      properties:
+        clips:
+          type: array
+          items: *id005
+          minItems: 1
+          maxItems: 20
+        audio:
+          type: array
+          items: *id005
+        subtitles:
+          type: string
+      required:
+      - clips
+      - audio
+      - subtitles
+      additionalProperties: false
+    output_schema: *id005
+    side_effect: write
+    idempotent: true
+  media.vision:
+    kind: http
+    name: media.vision
+    description: Read a generated frame for visual review
+    endpoint: http://127.0.0.1:18880/vision
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        asset: *id005
+      required:
+      - asset
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        images:
+          type: array
+          items: *id003
+      required:
+      - images
+      additionalProperties: false
+    side_effect: read_only
+    max_response_bytes: 2000000
