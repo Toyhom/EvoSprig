@@ -1,1 +1,0 @@
-Write this chapter of the guide. Follow the shared outline, stay within your chapter's assigned purpose, and avoid repeating content or advice from other chapters. Include a concrete example and/or an actionable exercise as the brief requires. Keep the chapter within the requested length.

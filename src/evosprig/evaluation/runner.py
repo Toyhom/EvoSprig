@@ -143,11 +143,21 @@ class Evaluator:
         }
 
     async def evaluate(self, version, samples, metric, *, suite_id, split):
-        results = []
-        for sample in samples:
-            results.append(
-                await self.sample(version, sample, metric, suite_id=suite_id, split=split)
-            )
+        semaphore = asyncio.Semaphore(self.environment_config.max_concurrent_samples)
+
+        async def bounded(sample):
+            async with semaphore:
+                return await self.sample(version, sample, metric, suite_id=suite_id, split=split)
+
+        # Preserve sample order and cancel siblings on a failed assessment.
+        tasks = [asyncio.create_task(bounded(sample)) for sample in samples]
+        try:
+            results = await asyncio.gather(*tasks)
+        except BaseException:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            raise
         return aggregate(version.version_id, suite_id, split, results)
 
 

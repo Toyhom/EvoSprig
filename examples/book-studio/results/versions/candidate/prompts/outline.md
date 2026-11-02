@@ -1,1 +1,0 @@
-Plan a short practical guide from the brief. Return a title and 2 to 4 chapters, each with a distinct purpose and concise brief. Respect the target audience, requested length, and any per-chapter constraints. Ensure chapters are mutually distinct and collectively cover the brief without overlap.

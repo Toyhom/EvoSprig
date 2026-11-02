@@ -30,6 +30,7 @@ from evosprig.plugins.sqlite_studies import StudyStore
 
 from .auth import Principal, current_principal
 from .canvas import to_canvas
+from .canvas_state import CanvasState
 from .evolution_api import install_evolution_routes
 from .memory_api import install_memory_routes
 from .studies import StudyWorker
@@ -40,6 +41,7 @@ class ProjectBody(Contract):
     spec: AgentSpec
     resources: dict[str, str] | None = None
     layout: dict[str, dict[str, float]] = Field(default_factory=dict)
+    canvas: CanvasState | None = None
 
 
 class UpdateBody(ProjectBody):
@@ -105,7 +107,7 @@ def create_app(
             await study_worker.stop()
             await worker.stop()
 
-    app = FastAPI(title="EvoSprig", version="0.1.0a1", lifespan=lifespan)
+    app = FastAPI(title="EvoSprig", version="0.1.0", lifespan=lifespan)
     app.state.projects = store
     app.state.journal = journal
     app.state.worker = worker
@@ -195,6 +197,8 @@ def create_app(
     def validate_project(body):
         try:
             canonical_json(body.layout)
+            if body.canvas is not None:
+                body.canvas.validate_for(body.spec)
             if body.resources is None:
                 compile_agent(body.spec, project_root(body.spec.id))
             else:
@@ -251,7 +255,11 @@ def create_app(
     async def create_project(body: ProjectBody):
         validate_project(body)
         return store.create(
-            body.spec, body.layout, resources=body.resources, identity=current_principal.get().key
+            body.spec,
+            body.layout,
+            resources=body.resources,
+            identity=current_principal.get().key,
+            canvas=body.canvas.model_dump() if body.canvas is not None else None,
         )
 
     @app.get("/api/projects/{project_id}")
@@ -272,6 +280,7 @@ def create_app(
             body.layout,
             body.revision,
             resources=body.resources,
+            canvas=body.canvas.model_dump() if body.canvas is not None else None,
             identity=current_principal.get().key,
         )
 

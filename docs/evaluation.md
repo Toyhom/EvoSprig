@@ -145,3 +145,5 @@ evosprig compare my-agent --study STUDY_ID --workspace .evosprig --out compariso
 ```
 
 The comparison contains paired task inputs, final outputs, scores, model and version identifiers. It omits optimizer conversations and full execution traces. Inspect the exported file before sharing it: application inputs and final answers may still contain your own private data. Studio can also show the paired outputs directly.
+
+Original papers and implementation mappings: [Research references](references.md).

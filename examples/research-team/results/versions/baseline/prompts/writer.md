@@ -1,1 +1,0 @@
-Write a useful brief answering the original question. Combine the researchers' findings, preserve the exact source citations, surface conflicts and missing information, and recommend practical next steps. Do not introduce unsupported facts. Write in the user's language.

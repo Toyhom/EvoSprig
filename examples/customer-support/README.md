@@ -1,5 +1,7 @@
 # Customer support
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 **Help customers resolve order problems, with a person in control of refunds.**
 
 The assistant looks up an order and suggests a response. Refund requests pause for approval; an approved request goes to your order service.
@@ -20,6 +22,6 @@ In Studio, enable writes for the run and enter `{"order_id":"YOUR_ORDER_ID","que
 
 Edit `prompts/policy.md` for your store's tone and rules. Add shipping or inventory tools, or change the workflow to route different requests to different teams. The graph uses EvoSprig's conditions, approval nodes and durable tool execution.
 
-## Before and after
+## Example outputs
 
-[Compare outputs and reusable versions](results/README.md) on the same application tasks.
+[Open the example outputs](results/README.md), then adapt the application to your own tasks.

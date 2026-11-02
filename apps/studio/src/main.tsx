@@ -1,18 +1,19 @@
-import { StrictMode, useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ReactFlow, Background, Controls, MiniMap, Position, addEdge, applyEdgeChanges, applyNodeChanges,
-  type Node, type Edge, type Connection, type NodeChange, type EdgeChange } from '@xyflow/react';
+  type Edge, type Connection, type NodeChange, type EdgeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './style.css';
 import { orderedNodes, starter, nodeTemplate, initialInput, type Document, type NodeSpec, type NodeKind, type Spec, type Run } from './types';
+import { arrange, canvasView, childGraphs, cleanGroups, graphAt, graphEdges, layoutKey, leaves, pathKey, withGraph, type CanvasState, type FlowNode } from './canvas';
 import { useDraftGuard } from './draft-guard';
 import { Icon, FitWorkflowView, nodeTypes, tabIcons } from './studio-ui';
 import { ResourcesPanel, MemoryPanel, RunsPanel, RunDetails, ImprovePanel, VersionsPanel } from './panels';
 
 type Tab = 'canvas'|'spec'|'code'|'resources'|'runs'|'memory'|'improve'|'versions';
-const flowEdges = (spec:Spec): Edge[] => spec.graph.edges.map(edge=>({source:edge.source,target:edge.target,id:`${edge.source}--${edge.target}`,data:{when:edge.when},label:typeof edge.when==='boolean'?String(edge.when):undefined}));
 
-type FlowNode = Node<{ label: string; config: NodeSpec }>;
+
+
 const words = {
   zh: { projects: '工作空间', create: '新建项目', canvas: '画布', spec: '规格', code: 'Python',
     save: '保存', reload: '重新加载', run: '运行', cancel: '取消运行', export: '导出 Python',
@@ -57,7 +58,35 @@ function App() {
   const [mock, setMock] = useState(true); const [result, setResult] = useState<Run | null>(null);
   const [runId, setRunId] = useState<string | null>(null); const [status, setStatus] = useState(t.ready);
   const [busy, setBusy] = useState(false); const [dirty, setDirty] = useState(false);
-  const displayNodes = useMemo(()=>nodes.map(node=>({...node,type:'workflow',data:{...node.data,lang}})),[nodes,lang]);
+  const [canvasFit,setCanvasFit]=useState(0);
+  const [graphPath,setGraphPath]=useState<string[]>([]);
+  const [canvas,setCanvas]=useState<CanvasState>({groups:{}});
+  const [groupSelection,setGroupSelection]=useState<string[]>([]);
+  const groups=cleanGroups(canvas.groups[pathKey(graphPath)]??[],nodes.map(n=>n.id));
+  const setGroups=(next:typeof groups)=>{setCanvas(state=>({...state,groups:{...state.groups,[pathKey(graphPath)]:next}}));setDirty(true);};
+  const view=canvasView(nodes,edges,groups,lang,id=>setGroups(groups.map(g=>g.id===id?{...g,collapsed:!g.collapsed}:g)),(id,path)=>navigate([...graphPath,id,...path]));
+  const displayNodes=view.nodes.map(n=>({...n,data:{...n.data,busy},...(n.type==='groupCard'?{selected:groupSelection.includes(n.id)}:{})}));
+  const currentLayout=()=>({...doc?.layout,...Object.fromEntries(nodes.map(n=>[layoutKey(graphPath,n.id),n.position]))});
+  const loadGraph=(spec:Spec,path:string[],layout:Document['layout'])=>{
+    const graph=graphAt(spec,path);
+    setNodes(orderedNodes({...spec,graph}).map(([id,config],index)=>({id,sourcePosition:Position.Right,targetPosition:Position.Left,
+      position:layout[layoutKey(path,id)]??{x:index*330+40,y:150},data:{label:id,config}})));
+    setEdges(graphEdges(graph));setGraphPath(path);setSelected(null);setSelectedEdge(null);setGroupSelection([]);setNodeDraftDirty(false);
+  };
+  const navigate=(path:string[])=>{
+    if(!doc||busy||!commitNodeDraft())return;
+    try {const spec=currentSpec(),layout=currentLayout();setDoc({...doc,spec,layout});loadGraph(spec,path,layout);}catch(e){error(e);}
+  };
+  const groupSelected=()=>{
+    const members=[...nodes.filter(n=>n.selected).map(n=>n.id),...groupSelection];
+    if(!members.length)return;
+    const parents=members.map(id=>groups.find(g=>g.members.includes(id))?.id);
+    if(parents.some(p=>p!==parents[0])){setStatus(lang==='zh'?'请选择同一层级的节点或分组。':'Select nodes or groups at the same level.');return;}
+    const id='group:g'+Date.now().toString(36);
+    setGroups([...groups.map(g=>g.id===parents[0]?{...g,members:[...g.members.filter(m=>!members.includes(m)),id]}:g),{id,label:lang==='zh'?'新分组':'New group',members,collapsed:false}]);
+    setNodes(items=>items.map(n=>({...n,selected:false})));setGroupSelection([id]);setSelected(null);
+  };
+  const ungroup=(id:string)=>{const target=groups.find(g=>g.id===id)!;setGroups(groups.filter(g=>g.id!==id).map(g=>({...g,members:g.members.flatMap(m=>m===id?target.members:[m])})));setGroupSelection([]);};
   const visibleProjects=projects.filter(project=>project.id.toLowerCase().includes(projectQuery.toLowerCase()));
   const poll = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -103,12 +132,12 @@ function App() {
     return response;
   }, [lang, token]);
   const error = (e: unknown) => setStatus(e instanceof Error ? e.message : String(e));
-  const load = (next: Document) => {
-    setSidebarOpen(false); setDoc(next); setNodes(orderedNodes(next.spec).map(([id, config], index) => ({ id, sourcePosition: Position.Right, targetPosition: Position.Left,
-      position: next.layout[id] ?? { x: index * 300 + 40, y: 140 }, data: { label: `${id} · ${config.type}`, config } })));
-    setEdges(flowEdges(next.spec));
+  const load = (next: Document, path:string[] = []) => {
+    setSidebarOpen(false); setDoc(next);setCanvas({groups:next.canvas?.groups??{}});
+    try{graphAt(next.spec,path);}catch{path=[];}
+    loadGraph(next.spec,path,next.layout);
     if(next.id!==doc?.id) setInput(JSON.stringify(initialInput(next.spec.input_schema),null,2));
-    setSpecText(JSON.stringify(next.spec, null, 2)); setSelected(null);setSelectedEdge(null); setDirty(false); setNodeDraftDirty(false); setResult(null);
+    setSpecText(JSON.stringify(next.spec, null, 2));setDirty(false);setResult(null);
   };
   const refresh = useCallback(async () => {
     const items: Document[] = await (await api('/projects')).json(); setProjects(items); return items;
@@ -117,9 +146,9 @@ function App() {
   useEffect(() => () => { if (poll.current) clearTimeout(poll.current); }, []);
   const currentSpec = (): Spec => {
     if (!doc) throw new Error('Select a project');
-    return { ...doc.spec, graph: { ...doc.spec.graph,
+    return withGraph(doc.spec,graphPath,{ ...graphAt(doc.spec,graphPath),
       nodes: Object.fromEntries(nodes.map(node => [node.id, node.id === selected && nodeDraftDirty ? parseNodeDraft() : node.data.config])),
-      edges: edges.map(({source,target,data})=>({source,target,...(typeof data?.when==='boolean'?{when:data.when}:{} )})) } };
+      edges: edges.map(({source,target,data})=>({source,target,...(typeof data?.when==='boolean'?{when:data.when}:{} )})) });
   };
   const parseNodeDraft = (): NodeSpec => {
     const value = JSON.parse(nodeText);
@@ -133,24 +162,34 @@ function App() {
     try { applyNode(parseNodeDraft()); return true; } catch (e) { error(e); return false; }
   };
   const mutate = () => setDirty(true);
-  const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => {
-    setNodes(items => applyNodeChanges(changes, items));
-    if (changes.some(change => change.type !== 'select' && change.type !== 'dimensions')) setDirty(true);
-  }, []);
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => { setEdges(items => applyEdgeChanges(changes, items)); if (changes.some(change => change.type !== 'select')) setDirty(true); }, []);
-  const onConnect = useCallback((connection: Connection) => { const conditional=nodes.find(n=>n.id===connection.source)?.data.config.type==='condition'; setEdges(items => addEdge({...connection,data:conditional?{when:true}:{},label:conditional?'true':undefined}, items)); setDirty(true); }, [nodes]);
+  const onNodesChange = (changes: NodeChange[]) => {
+    const regular=changes.filter(c=>!('id' in c)||!c.id.startsWith('group:')) as NodeChange<FlowNode>[];
+    setNodes(items=>{
+      let next=applyNodeChanges(regular,items);
+      for(const change of changes){if(!('id' in change)||!change.id.startsWith('group:'))continue;
+        if(change.type==='position'&&change.position){const before=view.boxes.get(change.id);if(before){const ids=leaves(change.id,groups);next=next.map(n=>ids.includes(n.id)?{...n,position:{x:n.position.x+change.position!.x-before.x,y:n.position.y+change.position!.y-before.y}}:n);}}
+      }return next;
+    });
+    for(const c of changes){if(!('id' in c)||!c.id.startsWith('group:'))continue;
+      if(c.type==='select')setGroupSelection(ids=>c.selected?[...new Set([...ids,c.id])]:ids.filter(id=>id!==c.id));
+      if(c.type==='remove')ungroup(c.id);
+    }
+    if(changes.some(c=>c.type!=='select'&&c.type!=='dimensions'))setDirty(true);
+  };
+  const onEdgesChange = (changes: EdgeChange[]) => { setEdges(items => applyEdgeChanges(changes.filter(c=>c.type!=='remove'||view.edges.find(e=>e.id===c.id)?.deletable!==false), items)); if (changes.some(change => change.type !== 'select')) setDirty(true); };
+  const onConnect = (connection: Connection) => {
+    if(connection.source.startsWith('group:')||connection.target.startsWith('group:')){setStatus(lang==='zh'?'展开分组后连接具体节点。':'Expand the group to connect its nodes.');return;}
+    const conditional=nodes.find(n=>n.id===connection.source)?.data.config.type==='condition';
+    setEdges(items => addEdge({...connection,type:'smoothstep',data:conditional?{when:connection.sourceHandle!=='false'}:{},label:conditional?String(connection.sourceHandle!=='false'):undefined},items));setDirty(true);
+  };
   const chooseTab = async (next: typeof tab) => {
     if (!doc || !commitNodeDraft()) return;
     if (tab === 'spec' && next !== 'spec') {
       try {
         const draft: Spec = JSON.parse(specText);
         if (draft.id !== doc.id || !draft.graph?.nodes || !Array.isArray(draft.graph.edges)) throw new Error('Invalid project shape or changed project ID');
-        setDoc({ ...doc, spec: draft });
-        setNodes(orderedNodes(draft).map(([id, config], index) => ({ id, sourcePosition: Position.Right, targetPosition: Position.Left,
-          position: nodes.find(node => node.id === id)?.position ?? { x: index * 280 + 40, y: 140 },
-          data: { label: `${id} · ${config.type}`, config } })));
-        setEdges(flowEdges(draft));
-        setSelected(null);
+        const layout=currentLayout();setDoc({...doc,spec:draft,layout});
+        loadGraph(draft,[],layout);
       } catch (e) { error(e); return; }
     }
     if(tab!=='spec') setDoc({...doc,spec:currentSpec()});
@@ -160,14 +199,17 @@ function App() {
     }
     setTab(next);
   };
+  const tidyCanvas=(spec:Spec):CanvasState=>({groups:Object.fromEntries(Object.entries(canvas.groups).flatMap(([key,value])=>{
+    try{return [[key,cleanGroups(value,Object.keys(graphAt(spec,key.split('/').slice(1)).nodes))]];}catch{return [];}
+  }))});
   const save = async (): Promise<boolean> => {
     if (!doc) return false;
     setBusy(true);
     try {
       const spec = tab === 'spec' ? JSON.parse(specText) : currentSpec();
       const next = await (await api(`/projects/${doc.id}`, { method: 'PUT', body: JSON.stringify({ spec,
-        revision: doc.revision, resources:doc.resources, layout: Object.fromEntries(nodes.map(node => [node.id, node.position])) }) })).json();
-      load(next); await refresh(); setStatus(`${t.saved} · r${next.revision}`); return true;
+        revision: doc.revision, resources:doc.resources, layout: currentLayout(), canvas: tidyCanvas(spec) }) })).json();
+      load(next,graphPath); await refresh(); setStatus(`${t.saved} · r${next.revision}`); return true;
     } catch (e) { error(e); return false; } finally { setBusy(false); }
   };
   const { guard, prompt } = useDraftGuard(dirty || nodeDraftDirty, save, status, lang);
@@ -244,7 +286,7 @@ function App() {
       <div className="sidebar-bottom"><details className="connection-settings"><summary><Icon name="settings"/>{t.settings}</summary>
         <input aria-label={t.token} placeholder={t.token} type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} />
         <button disabled={busy || !!runId} onClick={() => replaceProject(() => refresh().then(items => { if (items.length) load(items[0]); }).catch(error))}>{t.reload}</button>
-      </details><div className="sidebar-meta"><span>Alpha 0.1</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
+      </details><div className="sidebar-meta"><span>v0.1.0</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
     </aside>
     <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty || nodeDraftDirty?' is-dirty':''}`}>{dirty || nodeDraftDirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
       <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => replaceProject(async () => { if (doc) await api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error); })} disabled={!doc || !!runId || busy}><Icon name="refresh"/></button>
@@ -253,23 +295,30 @@ function App() {
       {!doc ? <div className="empty"><div className="empty-symbol"><Icon name="grid" size={25}/></div><h2>{lang==='zh'?'开始构建你的智能体':'Build your first agent'}</h2><p>{t.empty}</p></div> : <>
         <nav className="tabs">{(['canvas','spec','code','resources','runs','memory','improve','versions'] as const).map(key => <button key={key} aria-current={tab===key?'page':undefined} className={tab === key ? 'selected' : ''} onClick={() => chooseTab(key)}><Icon name={tabIcons[key]} size={15}/>{t[key]}</button>)}
           <span className="revision">r{doc.revision}</span></nav>
-        {tab==='resources' ? <ResourcesPanel key={doc.id} doc={{...doc,spec:currentSpec()}} api={api} lang={lang} onError={error} onChange={next=>{setDoc(next);setNodes(items=>items.map(node=>({...node,data:{...node.data,config:next.spec.graph.nodes[node.id]}})));mutate();}}/>
+        {tab==='resources' ? <ResourcesPanel key={doc.id} doc={{...doc,spec:currentSpec()}} api={api} lang={lang} onError={error} onChange={next=>{setDoc(next);setNodes(items=>items.map(node=>({...node,data:{...node.data,config:graphAt(next.spec,graphPath).nodes[node.id]}})));mutate();}}/>
         :tab==='memory'?<MemoryPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>
         :tab==='runs'?<RunsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>
         :tab==='improve'?<ImprovePanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} dirty={dirty || nodeDraftDirty}/>
         :tab==='versions'?<VersionsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onExport={exportProject} onRun={run}/>
         :<div className="editor">
           <section className="workspace">
-            {tab === 'canvas' ? <><div className="canvas-tools"><span className="canvas-title">{lang==='zh'?'工作流':'Workflow'}</span><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','map','human'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button onClick={() => { const order = orderedNodes(currentSpec()).map(([id]) => id); setNodes(items => items.map(node => ({ ...node, position: { x: order.indexOf(node.id) * 280 + 40, y: 150 } }))); mutate(); }}><Icon name="grid"/>{t.layout}</button></div></div>
-              <ReactFlow key={`${doc.id}:${doc.revision}`} nodes={displayNodes} nodeTypes={nodeTypes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => select(node)} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.2} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
+            {tab === 'canvas' ? <><div className="canvas-tools"><div className="canvas-breadcrumb"><button disabled={busy} onClick={()=>navigate([])}>{lang==='zh'?'工作流':'Workflow'}</button>{graphPath.map((part,i)=>part==='body'||part==='branches'||graphPath[i+1]==='branches'?null:<button key={i} disabled={busy} onClick={()=>navigate(graphPath.slice(0,i+(graphPath[i+1]==='body'?2:1)))}><Icon name="arrow" size={12}/>{part}</button>)}</div><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','map','human'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button onClick={groupSelected} disabled={!nodes.some(n=>n.selected)&&!groupSelection.length}><Icon name="layers"/>{lang==='zh'?'分组':'Group'}</button><button disabled={busy} onClick={async()=>{setBusy(true);try{const layout=await arrange(nodes,edges,groups);setNodes(items=>items.map(item=>({...item,position:layout.find(n=>n.id===item.id)?.position??item.position})));setCanvasFit(n=>n+1);mutate();}catch(e){error(e);}finally{setBusy(false);}}}><Icon name="grid"/>{t.layout}</button></div></div>
+              <ReactFlow key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}`} nodes={displayNodes} nodeTypes={nodeTypes} elevateNodesOnSelect={false} multiSelectionKeyCode="Shift" edges={view.edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => {if(node.type==='groupCard'){if(commitNodeDraft())setSelected(null);}else {const actual=nodes.find(n=>n.id===node.id);if(actual)select(actual);}}} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.08} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView revision={String(canvasFit)+groups.map(g=>g.id+g.collapsed).join()}/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
               : tab === 'spec' ? <textarea className="source-editor" aria-label="AgentSpec JSON" value={specText} onChange={e => { setSpecText(e.target.value); mutate(); }} spellCheck={false}/>
                 : <pre className="source-editor code-view">{dirty ? `${t.runHint}\n\n` : ''}{code}</pre>}
           </section>
           <aside className="inspector"><div className="inspector-heading"><Icon name="settings"/><span>{t.node}</span></div>
+            {groupSelection.length===1&&groups.filter(g=>g.id===groupSelection[0]).map(group=><div className="group-settings" key={group.id}><label>{lang==='zh'?'分组名称':'Group name'}<input aria-label="Group name" value={group.label} maxLength={80} onChange={e=>setGroups(groups.map(g=>g.id===group.id?{...g,label:e.target.value}:g))}/></label><button onClick={()=>setGroups(groups.map(g=>g.id===group.id?{...g,collapsed:!g.collapsed}:g))}>{group.collapsed?(lang==='zh'?'展开分组':'Expand group'):(lang==='zh'?'折叠分组':'Collapse group')}</button><label>{lang==='zh'?'分组布局':'Group layout'}<select aria-label="Group layout" value={group.direction??'DOWN'} onChange={e=>setGroups(groups.map(g=>g.id===group.id?{...g,direction:e.target.value as 'RIGHT'|'DOWN'}:g))}><option value="DOWN">{lang==='zh'?'纵向':'Vertical'}</option><option value="RIGHT">{lang==='zh'?'横向':'Horizontal'}</option></select></label><button onClick={()=>ungroup(group.id)}>{lang==='zh'?'取消分组':'Ungroup'}</button></div>)}
             {selectedEdge&&<label>{lang==='zh'?'分支条件':'Branch condition'}<select aria-label="Edge condition" value={typeof edges.find(edge=>edge.id===selectedEdge)?.data?.when==='boolean'?String(edges.find(edge=>edge.id===selectedEdge)?.data?.when):'always'} onChange={e=>{const value=e.target.value;setEdges(items=>items.map(edge=>edge.id===selectedEdge?{...edge,data:{when:value==='always'?undefined:value==='true'},label:value==='always'?undefined:value}:edge));mutate();}}><option value="always">{lang==='zh'?'始终执行':'Always'}</option><option value="true">true</option><option value="false">false</option></select></label>}
             {active ? <><h3>{active.id}<span className="pill">{active.data.config.type}</span></h3>
+              {childGraphs(active.data.config).map(child=><button key={child.label} disabled={busy} onClick={()=>navigate([...graphPath,active.id,...child.path])}>{lang==='zh'?'打开子流程':'Open subflow'} · {child.label}</button>)}
               {typeof active.data.config.instructions === 'string' && ['model','agent'].includes(active.data.config.type) && <label>{t.instructions}<textarea aria-label={t.instructions} value={active.data.config.instructions} onChange={e => applyNode({ ...active.data.config, instructions: e.target.value })}/></label>}
               {active.data.config.model && <label>{t.binding}<select value={active.data.config.model} onChange={e => applyNode({ ...active.data.config, model: e.target.value })}>{Object.keys(doc.spec.models).map(name => <option key={name}>{name}</option>)}</select></label>}
+              {['model','agent'].includes(active.data.config.type)&&<details className="execution-settings"><summary>{lang==='zh'?'执行设置':'Execution settings'}</summary>
+                <label>{lang==='zh'?'单次输出 token 上限':'Output token limit'}<input aria-label="Node output token limit" type="number" min={1} max={32768} placeholder={String(doc.spec.execution?.max_output_tokens??512)} value={active.data.config.max_output_tokens??''} onChange={e=>applyNode({...active.data.config,max_output_tokens:e.target.value?Number(e.target.value):null})}/></label>
+                <label>{lang==='zh'?'输出格式错误处理':'Invalid output handling'}<select aria-label="Output error policy" value={active.data.config.output_errors??'raise'} onChange={e=>applyNode({...active.data.config,output_errors:e.target.value as 'raise'|'feedback'})}><option value="raise">{lang==='zh'?'停止并报告':'Stop and report'}</option><option value="feedback">{lang==='zh'?'反馈给模型重试':'Ask model to repair'}</option></select></label>
+                {active.data.config.output_errors==='feedback'&&<label>{lang==='zh'?'最多修复次数':'Maximum repair attempts'}<input aria-label="Output repair attempts" type="number" min={0} max={3} value={active.data.config.max_output_retries??1} onChange={e=>applyNode({...active.data.config,max_output_retries:Number(e.target.value)})}/></label>}
+              </details>}
               <label>{t.nodeJson}<textarea className="node-json" aria-label={t.nodeJson} value={nodeText} onChange={e => { setNodeText(e.target.value); setNodeDraftDirty(true); }}/></label>
               <button onClick={() => { try { applyNode(parseNodeDraft()); } catch (e) { error(e); } }}>{t.apply}</button></> : <div className="inspector-empty"><span className="empty-symbol"><Icon name="settings" size={21}/></span><strong>{lang==='zh'?'选择一个节点':'Select a node'}</strong><p>{lang==='zh'?'点击画布中的节点，查看和编辑参数。':'Click a node on the canvas to edit its properties.'}</p></div>}
             <div className="divider"/><div className="section-label input-heading"><Icon name="play" size={14}/>{t.input}</div><label><textarea aria-label={t.input} value={input} onChange={e => setInput(e.target.value)}/></label>

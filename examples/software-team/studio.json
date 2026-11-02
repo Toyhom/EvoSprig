@@ -1,0 +1,74 @@
+{
+  "canvas": {
+    "groups": {
+      "graph": [
+        {
+          "id": "group:plan",
+          "label": "Plan the product",
+          "members": [
+            "design",
+            "requirements"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        },
+        {
+          "id": "group:build",
+          "label": "Build and verify",
+          "members": [
+            "build",
+            "checks",
+            "preview",
+            "refine",
+            "verify"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        },
+        {
+          "id": "group:delivery",
+          "label": "Delivery",
+          "members": [
+            "handoff"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        }
+      ]
+    }
+  },
+  "layout": {
+    "build": {
+      "x": 446.0,
+      "y": 116.0
+    },
+    "checks": {
+      "x": 446.0,
+      "y": 290.0
+    },
+    "design": {
+      "x": 64.0,
+      "y": 536.0
+    },
+    "handoff": {
+      "x": 828.0,
+      "y": 449.0
+    },
+    "preview": {
+      "x": 451.0,
+      "y": 464.0
+    },
+    "refine": {
+      "x": 436.0,
+      "y": 610.0
+    },
+    "requirements": {
+      "x": 64.0,
+      "y": 362.0
+    },
+    "verify": {
+      "x": 451.0,
+      "y": 810.0
+    }
+  }
+}

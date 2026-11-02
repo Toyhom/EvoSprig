@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.1.0
+
+- Add nested visual groups, collapse/expand, executable subgraph editing and layered Studio layout with role-specific nodes.
+- Connect IndustryBench sessions, discovered tools, business-state replay scoring and native environment-drafting workflows.
+- Add per-node output limits and bounded concurrent evaluation with isolated sample environments.
+- Publish canvas-first application guides, focused result pages and paper references for named methods.
+- Retain English/Chinese Studio and READMEs, standalone exports and 13 training-free evolution strategies.
 
 - Add seven native application templates: software team, Data Interpreter, decision room, receipts, meetings, book writing and travel planning, with reusable version comparisons.
 - Expand training-free evolution to 13 strategies across 11 families, including instruction induction, textual gradients, few-shot search, mutation-prompt coevolution, reflections and experience rules.

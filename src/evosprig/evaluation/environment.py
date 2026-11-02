@@ -17,6 +17,7 @@ class DocumentSeed(Contract):
 
 
 class EnvironmentConfig(Contract):
+    max_concurrent_samples: int = Field(default=1, ge=1, le=32)
     memory_writes: bool = False
     documents: list[DocumentSeed] = Field(default_factory=list, max_length=128)
     facts: list[str] = Field(default_factory=list, max_length=128)

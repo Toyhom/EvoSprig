@@ -135,13 +135,16 @@ class Node(Contract):
     parallel_tool_calls: bool = False
     tool_selection: Literal["all", "relevant"] = "all"
     tool_limit: int = Field(default=8, ge=1, le=64)
-    max_tool_rounds: int | None = Field(default=None, ge=1, le=64)
+    max_tool_rounds: int | None = Field(default=None, ge=1, le=256)
     output_errors: Literal["raise", "feedback"] = "raise"
     max_output_retries: int = Field(default=1, ge=0, le=3)
+    max_output_tokens: int | None = Field(default=None, ge=1, le=32768)
 
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if self.max_output_tokens is not None and self.type not in {"model", "agent"}:
+            raise ValueError("per-node output tokens require a model or agent node")
         if len(self.tools) != len(set(self.tools)):
             raise ValueError("agent tool aliases must be unique")
         if self.type == "tool":
@@ -213,7 +216,7 @@ class Graph(Contract):
 
 class Execution(Contract):
     max_steps: int = Field(default=32, ge=1, le=1000)
-    max_model_calls: int = Field(default=8, ge=0, le=100)
+    max_model_calls: int = Field(default=8, ge=0, le=1000)
     max_total_tokens: int = Field(default=8192, ge=1, le=1000000)
     max_output_tokens: int = Field(default=512, ge=1, le=32768)
     timeout_seconds: float = Field(default=60.0, gt=0, le=3600)
@@ -373,6 +376,7 @@ class AgentSpec(Contract):
                     ("max_tool_rounds", None),
                     ("output_errors", "raise"),
                     ("max_output_retries", 1),
+                    ("max_output_tokens", None),
                 ):
                     if node[key] == default:
                         node.pop(key)

@@ -1,5 +1,7 @@
 # Video production studio
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 Build a [VideoClaw](https://github.com/HITsz-TMG/VideoClaw)-style production agent with EvoSprig. The application coordinates creative roles, assets, human reviews and asynchronous media tools.
 
 <img src="../../docs/assets/video-workflow.svg" alt="Script, assets, parallel shots, review and composition" width="100%" />

@@ -175,3 +175,5 @@ The optional [Toolbox](../apps/toolbox/README.md) provides Python execution, HTM
 Model and agent nodes in AgentSpec 0.3 can set `output_errors: feedback` and `max_output_retries: 2`. Invalid JSON, schema mismatches and explicit output-limit errors receive a bounded correction turn. Network errors are not automatically retried. All correction calls consume the original run/study budget; unknown usage from a truncated provider call remains reserved.
 
 An agent can also set `max_tool_rounds: 4`. Once the limit is reached, the runtime removes tool descriptors and asks for a final answer from the collected observations. This bounds repeated retrieval without changing the application's tools or prompts. Omit it to retain the run-wide call limit.
+
+Original papers and implementation mappings: [Research references](references.md).

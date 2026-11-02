@@ -156,3 +156,5 @@ This adds relevance/importance/recency recall and linked experience notes alongs
 `documents.retrieve` accepts `queries` (up to eight), `limit` and `diversity`. An agent can formulate complementary queries, combine their results with reciprocal-rank fusion and reduce near-duplicate excerpts with a lexical diversity penalty. Every result keeps its original citation and source offsets. It uses the same document store and scope checks as single-query search.
 
 Use single-query BM25 for exact terms, multi-query retrieval for questions with several facets, hybrid retrieval when paraphrases matter, and context blocks for short facts that must always be available. Embeddings remain optional; none of these strategies requires training model weights.
+
+Original papers and implementation mappings: [Research references](references.md).

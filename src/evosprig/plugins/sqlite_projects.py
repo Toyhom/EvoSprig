@@ -31,6 +31,11 @@ class ProjectStore:
             }:
                 db.execute("ALTER TABLE scoped_projects ADD COLUMN resources TEXT")
 
+            if "canvas" not in {row[1] for row in db.execute("PRAGMA table_info(scoped_projects)")}:
+                db.execute(
+                    "ALTER TABLE scoped_projects ADD COLUMN canvas TEXT NOT NULL DEFAULT '{}'"
+                )
+
     @contextmanager
     def connect(self):
         db = sqlite3.connect(self.path, timeout=10)
@@ -51,6 +56,7 @@ class ProjectStore:
             "revision": row["revision"],
             "spec": spec.model_dump(mode="json"),
             "layout": json.loads(row["layout"]),
+            "canvas": json.loads(row["canvas"]),
             "spec_hash": spec.spec_hash,
             "resources": json.loads(row["resources"]) if row["resources"] is not None else None,
         }
@@ -62,17 +68,19 @@ class ProjectStore:
         *,
         identity=("local", "local"),
         resources=None,
+        canvas=None,
     ):
         with self.connect() as db:
             try:
                 db.execute(
-                    "INSERT INTO scoped_projects (user,tenant,id,revision,spec,layout,resources) VALUES (?, ?, ?, 1, ?, ?, ?)",
+                    "INSERT INTO scoped_projects (user,tenant,id,revision,spec,layout,resources,canvas) VALUES (?, ?, ?, 1, ?, ?, ?, ?)",
                     (
                         *identity,
                         spec.id,
                         spec.canonical(),
                         canonical_json(layout or {}),
                         canonical_json(resources) if resources is not None else None,
+                        canonical_json(canvas or {}),
                     ),
                 )
             except sqlite3.IntegrityError as exc:
@@ -106,16 +114,18 @@ class ProjectStore:
         *,
         identity=("local", "local"),
         resources=None,
+        canvas=None,
     ):
         if spec.id != project_id:
             raise ValueError("project id cannot change")
         with self.connect() as db:
             changed = db.execute(
-                "UPDATE scoped_projects SET spec=?, layout=?, resources=COALESCE(?,resources), revision=revision+1 WHERE user=? AND tenant=? AND id=? AND revision=?",
+                "UPDATE scoped_projects SET spec=?, layout=?, resources=COALESCE(?,resources), canvas=COALESCE(?,canvas), revision=revision+1 WHERE user=? AND tenant=? AND id=? AND revision=?",
                 (
                     spec.canonical(),
                     canonical_json(layout),
                     canonical_json(resources) if resources is not None else None,
+                    canonical_json(canvas) if canvas is not None else None,
                     *identity,
                     project_id,
                     revision,

@@ -114,6 +114,14 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             proposer_metadata = Runtime({"proposer": proposer})._engine.model_metadata()["proposer"]
             tools = tools_for(selected_scope)
             for binding in base.spec.tools.values():
+                if evaluation.industry and binding.plugin in {
+                    "industry.materials",
+                    "industry.search",
+                    "industry.invoke",
+                }:
+                    if binding.version != "1":
+                        raise ValueError("unsupported industry tool version")
+                    continue
                 tool = tools.resolve(binding.plugin, binding.version)
                 if tool.side_effect != "read_only" and not (
                     evaluation.environment.memory_writes

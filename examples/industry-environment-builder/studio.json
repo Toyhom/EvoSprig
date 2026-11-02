@@ -1,0 +1,74 @@
+{
+  "canvas": {
+    "groups": {
+      "graph": [
+        {
+          "id": "group:design",
+          "label": "Design the environment",
+          "members": [
+            "context",
+            "schema",
+            "sop",
+            "api_graph"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        },
+        {
+          "id": "group:simulation",
+          "label": "Build the simulation",
+          "members": [
+            "dataset",
+            "api",
+            "implementation"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        },
+        {
+          "id": "group:review",
+          "label": "Review",
+          "members": [
+            "review_environment"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        }
+      ]
+    }
+  },
+  "layout": {
+    "api": {
+      "x": 436.0,
+      "y": 377.0
+    },
+    "api_graph": {
+      "x": 64.0,
+      "y": 638.0
+    },
+    "context": {
+      "x": 64.0,
+      "y": 116.0
+    },
+    "dataset": {
+      "x": 436.0,
+      "y": 203.0
+    },
+    "implementation": {
+      "x": 436.0,
+      "y": 551.0
+    },
+    "review_environment": {
+      "x": 808.0,
+      "y": 377.0
+    },
+    "schema": {
+      "x": 64.0,
+      "y": 290.0
+    },
+    "sop": {
+      "x": 64.0,
+      "y": 464.0
+    }
+  }
+}

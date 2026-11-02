@@ -1,0 +1,3 @@
+{
+  "request": "Build a reading list with title and author fields, Add book, a Finished toggle per row, delete buttons and a filter for unread books. Show read/total counts. Reject empty titles. Make a light, professional interface in one offline HTML file."
+}

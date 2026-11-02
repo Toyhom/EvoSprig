@@ -1,5 +1,7 @@
 # Research team
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 **Give your agent a question that needs more than one search.**
 
 “What should we address before launching Review Desk?” A planner divides the question into focused tasks. Researchers explore your documents, a writer combines their findings, and you review the final brief.
@@ -25,6 +27,6 @@ Load your own documents. Edit the planner, researcher and writer prompts. Add a 
 
 The framework's `map` node handles the variable task list, bounded parallel work and checkpoints. No separate team scheduler is needed. [Open Deep Research](https://github.com/langchain-ai/open_deep_research) is a useful reference for the broader research-agent application pattern.
 
-## Before and after
+## Example outputs
 
-[Compare outputs and reusable versions](results/README.md) on the same application tasks.
+[Open the example outputs](results/README.md), then adapt the application to your own tasks.

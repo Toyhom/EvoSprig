@@ -46,3 +46,5 @@ Methods whose essential step updates model weights—such as Toolformer-style to
 - **Persistent assistants:** seed memory, session identities and expected state changes; use an SDK environment for multi-turn sessions.
 
 Use `Sample.context` for information available only to the evaluator, `Sample.expected` for references, `responses` for explicit human-node inputs, and deployment bindings for services. The optimizer cannot replace these with its own grading rules.
+
+Original papers and implementation mappings: [Research references](references.md).

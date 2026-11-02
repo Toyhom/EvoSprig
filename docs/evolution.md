@@ -9,20 +9,22 @@ EvoSprig offers **13 training-free strategies across 11 method families**. They 
 | Strategy | What changes | Feedback and data needed | Implementation |
 | --- | --- | --- | --- |
 | [OPRO](https://arxiv.org/abs/2309.03409) `opro` | Instructions | Task inputs and scalar scores | Score-history proposals |
-| [GEPA](https://github.com/gepa-ai/gepa) `gepa` | Selected prompt components | Scores, execution trajectories and textual feedback | Official `gepa==0.1.4` adapter; Pareto selection, round-robin components, no merge |
+| [GEPA](https://arxiv.org/abs/2507.19457) `gepa` | Selected prompt components | Scores, execution trajectories and textual feedback | Official `gepa==0.1.4` adapter; Pareto selection, round-robin components, no merge |
 | [EvoPrompt GA](https://arxiv.org/abs/2309.08532) `evoprompt_ga` | Prompt population | Inputs and scalar fitness | Tournament parents, crossover, mutation and elitist survival |
 | EvoPrompt DE `evoprompt_de` | Prompt population | Inputs and scalar fitness | Distinct donor triples, textual differences and target replacement |
 | [Self-Refine](https://arxiv.org/abs/2303.17651) `self_refine` | Instruction resources | Execution feedback and a critic | Critique → revise → evaluate; adapts the paper's output-refinement idea to resources |
 | [ACE](https://arxiv.org/abs/2510.04618) `ace` | Experience playbook | Trajectories, scores and failure feedback | Reflector/curator with stable entry IDs and validated add/update/remove deltas |
-| [APE](https://github.com/keirp/automatic_prompt_engineer) `ape` | Instruction pool | Task examples and scores; references optional | Instruction induction, scored pool and neighborhood sampling |
-| [ProTeGi](https://github.com/microsoft/LMOps/tree/main/prompt_optimization) `protesgi` | Instruction beam | Failure minibatches, feedback and scores | Textual gradients and full-score beam search; does not implement the paper's UCB allocation |
-| [Bootstrap few-shot](https://github.com/stanfordnlp/dspy) `bootstrap_fewshot` | Demonstrations appended to resources | Successful search executions accepted by the evaluator | Harvests actual passing input/output pairs; no teacher-model or module-level DSPy optimization |
+| [APE](https://arxiv.org/abs/2211.01910) `ape` | Instruction pool | Task examples and scores; references optional | Instruction induction, scored pool and neighborhood sampling |
+| [ProTeGi](https://arxiv.org/abs/2305.03495) `protesgi` | Instruction beam | Failure minibatches, feedback and scores | Textual gradients and full-score beam search; does not implement the paper's UCB allocation |
+| [Bootstrap few-shot](https://arxiv.org/abs/2310.03714) `bootstrap_fewshot` | Demonstrations appended to resources | Successful search executions accepted by the evaluator | Harvests actual passing input/output pairs; no teacher-model or module-level DSPy optimization |
 | Few-shot random search `fewshot_search` | Demonstration subsets and order | The same successful execution pool | Seeded subset/order search with held-out selection |
 | [PromptBreeder](https://arxiv.org/abs/2309.16797) `promptbreeder` | Task and mutation instructions | Population fitness and feedback | Coevolves bounded task/mutator populations; a reduced operator set |
-| [Reflexion](https://github.com/noahshinn/reflexion) `reflexion` | Episodic reflections | Failure trajectories and environment/judge feedback | Appends bounded reflections while keeping the base instruction fixed |
-| [ExpeL](https://github.com/LeapLabTHU/ExpeL) `expel` | Reusable insight rules | Successful and failed experiences with feedback | Contrasts observations and updates rules citing actual search samples |
+| [Reflexion](https://arxiv.org/abs/2303.11366) `reflexion` | Episodic reflections | Failure trajectories and environment/judge feedback | Appends bounded reflections while keeping the base instruction fixed |
+| [ExpeL](https://arxiv.org/abs/2308.10144) `expel` | Reusable insight rules | Successful and failed experiences with feedback | Contrasts observations and updates rules citing actual search samples |
 
 GA/DE are one paper family; the two demonstration strategies are another. Native adaptations run on EvoSprig resources rather than reproducing upstream benchmark harnesses. TextGrad/MIPRO-style program optimization and workflow/skill synthesis are separate future integrations, described in the [roadmap](roadmap.md).
+
+For the original papers, see [research references](references.md#training-free-evolution).
 
 For upstream feedback assumptions and upcoming integration contracts, see the [method requirements guide](method-requirements.md).
 

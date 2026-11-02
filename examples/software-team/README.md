@@ -1,5 +1,7 @@
 # Software team
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 Turn a product brief into a working web app. A product manager, designer, developer and reviewer share one workflow; the browser opens the actual HTML and checks its interactions.
 
 **Brief → design → implementation → browser checks → repair → verification → handoff**
@@ -30,6 +32,6 @@ evosprig serve --project examples/software-team/agent.yaml \
 
 Edit `sample.json` for your own task and the files under `prompts/` for the roles and instructions. All coordination, tool calls and parallel work use EvoSprig's AgentSpec and runtime. The [catalog builder](../build_catalog.py) shows how to create the same workflow with the Python SDK.
 
-Use the [evolution guide](../../docs/evolution.md) to improve selected prompts on your own tasks. [Before and after](results/README.md) shows outputs from a fixed set of application tasks.
+Use the [evolution guide](../../docs/evolution.md) to improve selected prompts on your own tasks. [Example outputs](results/README.md) show what the application produces.
 
 Application pattern inspired by [MetaGPT’s software company](https://github.com/FoundationAgents/MetaGPT); implemented with EvoSprig's own framework.

@@ -110,3 +110,41 @@ async def test_experiment_budget_is_not_scored_as_an_application_failure(tmp_pat
             suite_id="s",
             split="search",
         )
+
+
+async def test_parallel_samples_are_bounded_isolated_and_ordered(tmp_path):
+    import asyncio
+
+    class Slow(MockProvider):
+        active = peak = 0
+
+        async def complete(self, request):
+            self.active += 1
+            self.peak = max(self.active, self.peak)
+            try:
+                await asyncio.sleep(0.05)
+                return ModelResponse(text="done")
+            finally:
+                self.active -= 1
+
+    b = Builder("parallel-eval", {}, {}, spec_version="0.3").model("main", "main")
+    b.node("answer", "model", model="main", output_schema={}).output(
+        text={"ref": "nodes.answer.output.text"}
+    )
+    model = Slow()
+    evaluator = Evaluator(
+        tmp_path,
+        {"main": model},
+        BudgetMeter(ExperimentBudget()),
+        environment_config=EnvironmentConfig(max_concurrent_samples=2),
+    )
+    report = await evaluator.evaluate(
+        compile_agent(b.build_spec()),
+        [Sample(id=str(i), input={"n": i}, expected="done") for i in range(5)],
+        Metric(output_path="text"),
+        suite_id="s",
+        split="release",
+    )
+    assert model.peak == 2
+    assert [s["sample_id"] for s in report["samples"]] == [str(i) for i in range(5)]
+    assert len({s["scope"]["user"] for s in report["samples"]}) == 5

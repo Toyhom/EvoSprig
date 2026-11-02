@@ -1,0 +1,4 @@
+{
+  "meeting_date": "2026-11-03",
+  "transcript": "Anna: The prototype passed desktop tests, but the mobile checkout still loses the cart. Luis: I will reproduce it by tomorrow noon. Anna: Kim, please review the fix once ready. Kim: Yes, but I cannot deploy it before security review. Zoe: Security review is booked for Friday. Anna: Good. The launch date is not changing today; we decide after the review."
+}

@@ -1,1 +1,0 @@
-Deliver the final itinerary. Use Python to check the total budget, including meals, transport and listed activities. Resolve schedule conflicts against the travel notes. State the total, remaining budget and anything the traveler still needs to book.

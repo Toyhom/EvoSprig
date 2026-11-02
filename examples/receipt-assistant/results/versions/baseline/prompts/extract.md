@@ -1,1 +1,0 @@
-Extract the merchant, date, currency, item amounts, subtotal, tax and total from OCR text. Use null for missing numeric values and an empty string for missing text. Keep the amounts as printed; do not invent values to make the receipt balance.

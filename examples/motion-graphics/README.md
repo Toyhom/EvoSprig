@@ -1,5 +1,7 @@
 # Motion graphics
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 Render an original 18-second animation with a storyboard, a human checkpoint and a separate CPU render service. This example demonstrates external-job execution with an actual MP4 artifact.
 
 ![Three rendered shots](results/contact-sheet.png)

@@ -7,7 +7,7 @@
 - Grow verified procedural skill libraries, following the reusable-skill direction of Voyager and SkillWeaver, without model-weight training.
 - Add memory-provider bindings, automatic note linking, consolidation scheduling and conflict-resolution policies.
 - Extend video production with provider integrations, asset continuity and interactive shot editing.
-- Improve nested workflow editing, artifact previews and evaluation configuration forms in Studio.
+- Add richer artifact previews, evaluation forms, collaborative canvas editing and reusable subflow templates.
 
 ## Server deployment and portability
 

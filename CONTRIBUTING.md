@@ -20,7 +20,7 @@ The test suite uses deterministic fixtures and does not require paid model APIs.
 
 ## Changes
 
-Describe the problem, resulting behavior and validation in your pull request. For public API changes, update the relevant schema, guide and contract tests. Runtime changes should preserve scope, budgets, idempotency and checkpoint recovery. Examples should include a runnable command, service dependencies and expected outputs.
+Describe the problem, resulting behavior and validation in your pull request. For public API changes, update the relevant schema, guide and contract tests. Runtime changes should preserve scope, budgets, idempotency and checkpoint recovery. Examples follow the [application conventions](docs/example-guide.md): start the README with the actual Studio canvas, include a runnable command and service dependencies, and show useful outputs.
 
 English is the primary language for code and documentation. Keep `README.zh-CN.md` and Studio's Chinese interface aligned with user-facing changes.
 

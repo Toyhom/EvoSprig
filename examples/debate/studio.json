@@ -1,0 +1,19 @@
+{
+  "canvas": {
+    "groups": {}
+  },
+  "layout": {
+    "moderator": {
+      "x": 760.0,
+      "y": 83.0
+    },
+    "openings": {
+      "x": 52.0,
+      "y": 72.0
+    },
+    "rebuttals": {
+      "x": 406.0,
+      "y": 72.0
+    }
+  }
+}

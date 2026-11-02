@@ -1,5 +1,7 @@
 # Book studio
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 Turn an idea into a short guide. Plan a shared outline, write chapters in parallel and review consistency across the finished manuscript.
 
 **Brief → outline → parallel chapter writers → editorial handoff**

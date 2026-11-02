@@ -1,5 +1,7 @@
 # Personal assistant
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 **An assistant that remembers what you ask it to remember.**
 
 Save a preference today and use it in a later session. The agent chooses when to look up a saved fact and can consult the context blocks and relationships you maintain in Studio.
@@ -25,6 +27,6 @@ Change `prompts/persona.md`, add useful tools, and configure a profile block for
 
 The assistant also exposes experience recall and source-aware summaries. `recall` combines relevance, importance and recency; `summarize` retains source IDs so stale or deleted facts do not remain visible through a summary. Memory changes still require explicit user intent and write permission.
 
-## Before and after
+## Example outputs
 
-[Compare outputs and reusable versions](results/README.md) on the same application tasks.
+[Open the example outputs](results/README.md), then adapt the application to your own tasks.

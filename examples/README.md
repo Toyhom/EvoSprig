@@ -18,6 +18,8 @@ Start with a working application pattern, connect your model and tools, then mak
 | Writes a consistent multi-chapter guide | [Book studio](book-studio/) | Shared outline, parallel writers, style and editing |
 | Builds a trip that fits the budget | [Travel planner](travel-planner/) | Traveler constraints, available activities and cost checks |
 | Answers questions about business data | [SQL analyst](data-analyst/) | SQLite databases, CSV imports and business questions |
+| Handles an industry business process | [Industry assistant](industry-assistant/) | SOPs, sandbox tools and business-state evaluation |
+| Drafts a new evaluation environment | [Environment builder](industry-environment-builder/) | Scenario, schemas, procedures, datasets and reviewed implementation drafts |
 | Knows the team handbook | [Chat with your documents](document-chat/) | Handbooks, policies, product notes and citations |
 | Helps customers with orders | [Customer support](customer-support/) | Order services, refund policies and human approval |
 | Remembers preferences across sessions | [Personal assistant](personal-memory/) | Scoped facts, linked recall and source-aware summaries |
@@ -32,9 +34,7 @@ The catalog includes the five application categories highlighted by [MetaGPT](ht
 
 **Document chat:** textual-gradient search scored **0.965 → 0.975** on two held-out handbook questions. [Compare the answers and citations](document-chat/results/README.md).
 
-Evolution can also keep a good original version. Each comparison page shows candidate outputs when a distinct candidate completed selection, then reports the chosen version on new tasks. Selection scores and held-out scores are labeled separately. These small runs use DeepSeek Flash as both task model and judge, with fixed task criteria; they illustrate behavior rather than establish a general performance ranking.
-
-[Software team](software-team/results/README.md) · [Data Interpreter](data-interpreter/results/README.md) · [Decision room](debate/results/README.md) · [Receipts](receipt-assistant/results/README.md) · [Research](research-team/results/README.md) · [Video storyboards](video-studio/results/README.md) · [Meetings](meeting-assistant/results/README.md) · [Books](book-studio/results/README.md) · [Travel](travel-planner/results/README.md) · [SQL](data-analyst/results/README.md) · [Documents](document-chat/results/README.md) · [Support](customer-support/results/README.md) · [Memory](personal-memory/results/README.md)
+These comparisons use DeepSeek Flash as task model and judge on two held-out tasks with fixed criteria. Open each application's output page to read the deliverable or try its prompts.
 
 Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../docs/evaluation.md), then choose one of the [13 training-free strategies](../docs/evolution.md). The same evaluator checks the original and candidate; you decide whether to adopt the result.
 
@@ -49,6 +49,8 @@ evosprig run examples/book-studio/agent.yaml \
   --input-file examples/book-studio/sample.json
 ```
 
-Open the same AgentSpec in Studio to edit it, inspect runs and compare versions. The [catalog builder](build_catalog.py) creates the seven new workflows with the Python SDK.
+Open the same AgentSpec in Studio to edit it, inspect runs and compare versions. The [catalog builder](build_catalog.py) creates seven of the workflows with the Python SDK.
 
 For a first run without a model connection, try [Hello](hello/). For a local animation renderer, [Motion graphics](motion-graphics/) uses Pillow and FFmpeg.
+
+Adding an application? Follow the [example conventions](../docs/example-guide.md).

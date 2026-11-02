@@ -10,7 +10,7 @@
 
 [English](README.md) · **简体中文**
 
-[快速开始](docs/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/evolution.md) · [文档](docs/README.md)
+[快速开始](docs/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/evolution.md) · [文档](docs/README.md) · [论文引用](docs/references.md)
 
 </div>
 
@@ -38,7 +38,8 @@ EvoSprig 将可视化工作流、持久记忆、工具调用和可控自进化�
 
 - **可控自进化**：13 种无需模型训练的策略，覆盖 11 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
 - **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
-- **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核。
+- **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核，以及多层分组、折叠展开和子流程编辑。
+- **行业环境接入**：金融、政务与制造业沙箱，用真实业务状态检查评估操作结果，再接入自进化；也可构建带人工审核的行业环境设计流程。[使用方法](docs/industry-environments.md)。
 - **可用的长期记忆**：作用域隔离、混合检索、上下文块、时序关系、关联经验和保留来源的摘要。
 - **面向实际工作的工具**：HTTP、MCP、SQL 与 Python 插件，可选代码执行、浏览器和 OCR 服务，以及只读并发与错误反馈。
 - **恢复和独立部署**：持久检查点、外部任务回执、版本比较与回滚；导出 Python、HTTP 服务或容器构建工程。
@@ -66,7 +67,7 @@ evosprig serve --project examples/hello/agent.yaml \
 
 ## 看看进化前后有什么变化
 
-[应用对比](examples/README.md#before-and-after)展示固定任务上的原始输出和搜索后保留的版本，可查看实际产物、候选资源以及最终选择。候选未改善选择集表现时，平台保留基线；搜索不会自动改变线上版本。
+[书籍创作对比](examples/book-studio/results/)和[文档问答对比](examples/document-chat/results/)展示相同任务上的实际输出变化，提供原版与进化版提示、任务输入以及评测结果。
 
 使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[方法指南](docs/evolution.md)说明各方法需要的反馈形式，随后可以在 Studio 中检查差异并手动发布。
 

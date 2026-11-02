@@ -82,3 +82,18 @@ async def test_tool_round_limit_requests_final_answer_without_exposing_tools():
         model.requests[1].tools == []
         and "limit is reached" in model.requests[1].messages[-1]["content"]
     )
+
+
+async def test_node_output_limit_overrides_default_but_respects_total_budget():
+    b = Builder("node-limits", {}, {}, spec_version="0.3").model("main", "main")
+    b.node("short", "model", model="main", output_schema={})
+    b.node("long", "model", model="main", max_output_tokens=2048, output_schema={})
+    b.edge("short", "long").output(text={"ref": "nodes.long.output.text"})
+    b.execution(max_output_tokens=256, max_total_tokens=8192)
+    model = MockProvider([ModelResponse(text="a"), ModelResponse(text="b")])
+    result = await Runtime({"main": model}).run(compile_agent(b.build_spec()), {})
+    assert result.status == "succeeded"
+    assert [r.max_output_tokens for r in model.requests] == [256, 2048]
+    old_hash = b.build_spec().spec_hash
+    b.data["graph"]["nodes"]["short"]["max_output_tokens"] = None
+    assert b.build_spec().spec_hash == old_hash

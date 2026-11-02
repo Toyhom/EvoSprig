@@ -43,7 +43,7 @@
         },
         "max_model_calls": {
           "default": 8,
-          "maximum": 100,
+          "maximum": 1000,
           "minimum": 0,
           "title": "Max Model Calls",
           "type": "integer"
@@ -368,7 +368,7 @@
         "max_tool_rounds": {
           "anyOf": [
             {
-              "maximum": 64,
+              "maximum": 256,
               "minimum": 1,
               "type": "integer"
             },
@@ -394,6 +394,20 @@
           "minimum": 0,
           "title": "Max Output Retries",
           "type": "integer"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "maximum": 32768,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
         }
       },
       "required": [

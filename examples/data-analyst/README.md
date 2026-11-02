@@ -1,5 +1,7 @@
 # Data analyst
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 **Ask a question. Get an answer from your data.**
 
 “Which region grew fastest between January and March?” The assistant inspects your database, writes SQL, checks the result and explains what it found. You can inspect its queries in the run history.
@@ -30,6 +32,6 @@ evosprig serve --project examples/data-analyst/agent.yaml \
 
 Change the assistant's prompt to focus on sales, inventory or another domain. Tool errors return to the agent so it can correct a query within its run budget. The SQL-agent pattern is also explored in [LangChain's SQL tutorial](https://docs.langchain.com/oss/python/langgraph/sql-agent); this template uses EvoSprig's own agent loop and database adapter.
 
-## Before and after
+## Example outputs
 
-[Compare outputs and reusable versions](results/README.md) on the same application tasks.
+[Open the example outputs](results/README.md), then adapt the application to your own tasks.

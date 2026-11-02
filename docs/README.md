@@ -1,15 +1,18 @@
 # EvoSprig documentation
 
-Start with the [quickstart](quickstart.md), then open a runnable application from the [example gallery](../examples/README.md).
+Build an application, connect your services, then improve it against your own tasks.
 
-| Guide | What you will learn |
-| --- | --- |
-| [Architecture](architecture.md) | AgentSpec, graphs, resources and plugins |
-| [Evolution](evolution.md) | Search methods, task splits, budgets and releases |
-| [Evaluation](evaluation.md) | Input-only tasks, LLM judges, custom scorers and environments |
-| [Memory](memory.md) | Retrieval, context blocks, relations and deletion |
-| [Tools](tools.md) | Python, HTTP, external jobs and MCP |
-| [Durable runtime](durable-runtime.md) | Checkpoints, approvals and recovery |
-| [Deployment](deployment.md) | Model bindings, authentication and standalone exports |
-| [Support matrix](support-matrix.md) | Available interfaces and deployment targets |
-| [Roadmap](roadmap.md) | Upcoming capabilities |
+1. **[Quickstart](quickstart.md)** — install, run and connect a model.
+2. **[Application gallery](../examples/README.md)** — choose a useful starting point.
+3. **[Studio](studio.md)** — edit workflows, group agents and open subflows.
+4. **[Evaluation](evaluation.md)** — use an LLM judge, business checks or an environment.
+5. **[Controlled evolution](evolution.md)** — search resources, compare outputs and release a version.
+6. **[Deployment](deployment.md)** — serve, authenticate and export your application.
+
+## Develop your application
+
+[Architecture and SDK](architecture.md) · [Tools](tools.md) · [Memory and retrieval](memory.md) · [Durable execution](durable-runtime.md) · [Industry environments](industry-environments.md)
+
+## Reference
+
+[Method requirements](method-requirements.md) · [Research papers](references.md) · [Supported interfaces](support-matrix.md) · [Example conventions](example-guide.md) · [Roadmap](roadmap.md)

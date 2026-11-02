@@ -10,7 +10,7 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-[Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md)
+[Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md) · [Research references](docs/references.md)
 
 </div>
 
@@ -32,13 +32,14 @@ EvoSprig brings visual workflows, persistent memory and evaluation-driven improv
 | Produces a video from an idea | **[Video studio](examples/video-studio/)** — scripts, approved shots, media tools and local retakes |
 | Organizes the rest of your work | **[Meetings](examples/meeting-assistant/)** · **[Books](examples/book-studio/)** · **[Travel](examples/travel-planner/)** |
 
-Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examples/document-chat/)**, **[customer support](examples/customer-support/)** and **[personal memory](examples/personal-memory/)**. Every application uses EvoSprig's own SDK, AgentSpec and runtime. Open the **[gallery](examples/README.md)** for setup and before/after outputs.
+Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examples/document-chat/)**, **[customer support](examples/customer-support/)** and **[personal memory](examples/personal-memory/)**. Every application uses EvoSprig's own SDK, AgentSpec and runtime. Open the **[gallery](examples/README.md)** for setup, workflow canvases and application outputs.
 
 ## Why EvoSprig?
 
 - **Controlled evolution.** 13 training-free strategies across 11 method families: prompt search, population search, demonstrations, reflections and experience playbooks. Choose the resources, budget and release criteria.
 - **Evaluation that fits your application.** Start with task inputs and an LLM judge, or bring reference answers, business checks and a sandbox. Score outputs, steps, tools and environment outcomes.
-- **Code and canvas, one application.** Build typed workflows with parallel agents, dynamic map, loops and human approvals. Edit the same version in Python or Studio.
+- **Code and canvas, one application.** Build typed workflows with parallel agents, dynamic map, loops and human approvals. Organize large teams with nested groups and edit executable subflows.
+- **Industry environments.** Connect business sandboxes for finance, government and manufacturing; evaluate real action outcomes and improve against the same environment. [Get started](docs/industry-environments.md).
 - **Memory agents can use.** Scoped facts, hybrid retrieval, context blocks, temporal relations, linked experiences and source-aware summaries.
 - **Tools for real work.** MCP, HTTP, SQL and Python plugins; optional code execution, browser checks and OCR; read-only concurrency and recoverable tool feedback.
 - **Run, recover and ship.** Checkpoints and external job receipts preserve progress. Export standalone Python, HTTP applications or container build projects.
@@ -72,7 +73,7 @@ For live models, configure environment-based credentials in a [deployment profil
 
 ## See what changes after evolution
 
-The [application gallery](examples/README.md#before-and-after) pairs original outputs with the version retained after search on the same tasks. Open a comparison to read the outputs, try the candidate resources and see whether the search kept the original or selected a new version. The platform keeps the baseline when a proposal does not improve selection performance.
+Explore the **[book-writing comparison](examples/book-studio/results/)** and **[document-answering comparison](examples/document-chat/results/)** to see actual outputs before and after resource search. Each includes reusable prompts, the same task inputs and the measured change.
 
 Bring your own inputs to **[LLM-as-judge](docs/evaluation.md)**, or connect your evaluator. The **[method guide](docs/evolution.md)** explains which feedback each strategy uses. Review the diff and outputs before enabling a version; a search never publishes itself.
 

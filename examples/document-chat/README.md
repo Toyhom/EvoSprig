@@ -1,5 +1,7 @@
 # Chat with your documents
 
+![Workflow in EvoSprig Studio](canvas.png)
+
 **Turn your team's knowledge into an assistant people can ask.**
 
 “How much can I spend on a course?” Add a handbook, meeting notes or product documentation. The assistant searches the collection and answers with source references.

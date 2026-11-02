@@ -68,3 +68,11 @@ evosprig import hello.zip --out ./imported-project
 ```
 
 Studio's Import Project action inspects the ZIP before creating a project. Imports validate paths, sizes, manifests, hashes and plugin references, then load declarative specs and resources. They do not execute archived Python. Rebuild version locks after editing exported source or resources.
+
+## Adjustable execution defaults
+
+A model node inherits `execution.max_output_tokens` (512 by default); set `max_output_tokens` on a model/agent node for a longer deliverable. Shared token and elapsed-time budgets still apply. `output_errors: feedback` asks the model to repair invalid JSON/schema output or truncation, with `max_output_retries: 1` by default and a maximum of three. The default policy is `raise`, so existing applications retain their behavior. Transport errors are not format errors.
+
+This follows the bounded validation-feedback pattern used by [LangChain structured output](https://docs.langchain.com/oss/python/langchain/structured-output). Set output length to the task and provider limits; a repeated truncation can require a larger node limit, a smaller task or a more capable model.
+
+Independent evaluation cases can run concurrently using `evaluation.environment.max_concurrent_samples` in the deployment profile (default 1, maximum 32). Each receives a fresh identity and environment. Results retain input order, all calls share the experiment budget, and assessment failures cancel remaining cases. Increase concurrency according to provider quotas and environment capacity. Ordinary serving separately exposes `--max-concurrent-runs` (default 4).

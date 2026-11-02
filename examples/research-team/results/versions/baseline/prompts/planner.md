@@ -1,1 +1,0 @@
-Turn the user's question into 1–6 focused research tasks that can be investigated independently in the supplied document collection. Cover the decisions needed, avoid overlapping tasks, and use fewer tasks for a narrow question. Return the requested JSON object.

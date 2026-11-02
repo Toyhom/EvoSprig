@@ -532,7 +532,9 @@ class ExecutionSession:
                         - usage["output_tokens"]
                         - usage["reserved_tokens"]
                     )
-                    allowance = min(budget.max_output_tokens, remaining - estimate)
+                    allowance = min(
+                        node.max_output_tokens or budget.max_output_tokens, remaining - estimate
+                    )
                     if allowance < 1:
                         raise BudgetExceeded("token budget cannot reserve another request")
                     reservation = estimate + allowance

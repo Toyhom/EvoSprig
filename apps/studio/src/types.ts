@@ -8,7 +8,7 @@ export type NodeSpec = {
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;
   items?: Binding|null; max_items?: number; tool_errors?: 'raise'|'feedback';
   parallel_tool_calls?: boolean; tool_selection?: 'all'|'relevant'; tool_limit?: number; max_tool_rounds?: number|null;
-  output_errors?: 'raise'|'feedback'; max_output_retries?: number;
+  output_errors?: 'raise'|'feedback'; max_output_retries?: number; max_output_tokens?:number|null;
   branches?: Record<string, Graph>; max_iterations?: number; until?: Predicate|null; join?: 'all'|'selected';
 };
 export type GraphEdge = { source: string; target: string; when?: boolean|null };
@@ -20,7 +20,7 @@ export type Spec = {
   resources: Record<string, { path: string; role: 'prompt'|'skill' }>;
   graph: Graph; execution?: Record<string, number|boolean>;
 };
-export type Document = { id: string; revision: number; spec: Spec; spec_hash: string; resources: Record<string,string>|null; layout: Record<string, { x: number; y: number }> };
+export type Document = { canvas?: import("./canvas").CanvasState; id: string; revision: number; spec: Spec; spec_hash: string; resources: Record<string,string>|null; layout: Record<string, { x: number; y: number }> };
 export type Api = (path: string, init?: RequestInit) => Promise<Response>;
 export type Lang = 'zh'|'en';
 export type Run = {run_id:string; agent_version:string; status:string; output:unknown; error:unknown; usage:Json; events:Json[]; waiting:{path:string; kind:string; input?:unknown; schema?:Json}[]};
