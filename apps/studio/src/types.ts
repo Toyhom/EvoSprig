@@ -4,7 +4,7 @@ export type Predicate = { left: Binding; op: 'eq'|'ne'|'lt'|'le'|'gt'|'ge'|'cont
 export type NodeKind = 'model'|'agent'|'tool'|'transform'|'condition'|'join'|'loop'|'parallel'|'map'|'human';
 export type NodeSpec = {
   type: NodeKind; inputs: Record<string, Binding>; output_schema: Json; model?: string | null;
-  instructions?: string | { resource: string }; tools?: string[]; tool?: string | null;
+  instructions?: string | { resource: string }; skills?:string[]; temperature?:number|null; top_p?:number|null; tools?: string[]; tool?: string | null;
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;
   items?: Binding|null; max_items?: number; tool_errors?: 'raise'|'feedback';
   parallel_tool_calls?: boolean; tool_selection?: 'all'|'relevant'; tool_limit?: number; max_tool_rounds?: number|null;
@@ -64,4 +64,15 @@ export function initialInput(schema:Json):unknown {
   if(schema.type==='boolean') return false;
   if(schema.type==='number'||schema.type==='integer') return typeof schema.minimum==='number'?schema.minimum:0;
   return '';
+}
+
+export function usedResources(spec:Spec):Set<string> {
+  const names=new Set<string>();
+  function visit(graph:Graph){for(const node of Object.values(graph.nodes)){
+    if(typeof node.instructions==='object')names.add(node.instructions.resource);
+    node.skills?.forEach(name=>names.add(name));
+    if(node.body)visit(node.body);
+    Object.values(node.branches??{}).forEach(visit);
+  }}
+  visit(spec.graph);return names;
 }

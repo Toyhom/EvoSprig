@@ -287,3 +287,52 @@ def test_example_exports_and_inert_import_preserve_all_capabilities(tmp_path, ex
     imported, report = inspect_archive(buffer.getvalue())
     assert imported.version_id == v.version_id
     assert report["compatible"]
+
+
+@pytest.mark.parametrize("name", ["career-coach", "study-coach"])
+async def test_interactive_apps_resume_without_repeating_completed_model_nodes(tmp_path, name):
+    class AppModel(MockProvider):
+        async def complete(self, request):
+            self.requests.append(request)
+            if request.json_output:
+                return ModelResponse(
+                    text=json.dumps({"questions": ["First?", "Second?", "Third?"]})
+                )
+            return ModelResponse(text="Completed step")
+
+    model = AppModel()
+    scope = Scope(name)
+    journal = SQLiteJournal(tmp_path / "runs.sqlite")
+    tools = make_tools(tmp_path, scope)
+    runtime = Runtime({"main": model}, tools, journal=journal)
+    inputs = json.loads((ROOT / "examples" / name / "sample.json").read_text())
+    result = await runtime.run(version(name), inputs, scope=scope)
+    assert result.status == "waiting_input"
+    count = len(model.requests)
+    response = (
+        {"answer": "My experience"} if name == "career-coach" else {"answers": ["A", "B", "C"]}
+    )
+    journal.respond(result.run_id, result.waiting[0]["path"], response, scope)
+    resumed = Runtime({"main": model}, tools, journal=SQLiteJournal(journal.path))
+    result = await resumed.resume(result.run_id, scope=scope)
+    assert result.status == "succeeded"
+    assert len(model.requests) == count + 1
+    assert all("## Skill:" in request.messages[0]["content"] for request in model.requests)
+    received = json.loads(model.requests[-1].messages[-1]["content"])
+    assert all(received[key] == value for key, value in response.items())
+
+
+async def test_content_channels_share_skills_and_preserve_requested_order(tmp_path):
+    model = MockProvider()
+    inputs = json.loads((ROOT / "examples/content-studio/sample.json").read_text())
+    result = await Runtime({"main": model}).run(version("content-studio"), inputs)
+    assert result.status == "succeeded"
+    drafts = [
+        request
+        for request in model.requests
+        if "requested channel" in request.messages[0]["content"]
+    ]
+    assert len(drafts) == len(inputs["channels"])
+    assert all("## Skill: brand_voice" in request.messages[0]["content"] for request in drafts)
+    editor_input = json.loads(model.requests[-1].messages[-1]["content"])
+    assert [draft["channel"] for draft in editor_input["drafts"]] == inputs["channels"]

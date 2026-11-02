@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+- Attach reusable skills to model and agent nodes; optimize selected skills independently of the main prompt.
+- Configure prompts, skills, tool policies, shared project memory, temperature, top-p and output limits from the node inspector.
+- Compare resource contents alongside application outputs in Studio.
+- Add career coaching, multi-channel content and interactive learning workflows.
+- Simplify application pages, show selected results inline and publish an editable architecture diagram.
+- Preserve canonical behavior hashes for workflows that omit the new node settings.
+
 ## 0.1.0
 
 - Add nested visual groups, collapse/expand, executable subgraph editing and layered Studio layout with role-specific nodes.

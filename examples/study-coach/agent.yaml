@@ -1,0 +1,246 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 24
+  max_output_tokens: 2500
+  max_parallel_nodes: 3
+  max_parallel_tools: 1
+  max_steps: 80
+  max_total_tokens: 70000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: learner
+    target: feedback
+    when: null
+  - source: lesson
+    target: quiz
+    when: null
+  - source: quiz
+    target: learner
+    when: null
+  entry: lesson
+  nodes:
+    feedback:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        answers:
+          default: null
+          optional: false
+          ref: nodes.learner.output.answers
+        material:
+          default: null
+          optional: false
+          ref: input.material
+        questions:
+          default: null
+          optional: false
+          ref: nodes.quiz.output.questions
+      instructions:
+        resource: feedback
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - coaching_feedback
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    learner:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        lesson:
+          default: null
+          optional: false
+          ref: nodes.lesson.output.text
+        questions:
+          default: null
+          optional: false
+          ref: nodes.quiz.output.questions
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          answers:
+            items:
+              type: string
+            maxItems: 3
+            minItems: 3
+            type: array
+        required:
+        - answers
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    lesson:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        level:
+          default: null
+          optional: false
+          ref: input.level
+        material:
+          default: null
+          optional: false
+          ref: input.material
+        topic:
+          default: null
+          optional: false
+          ref: input.topic
+      instructions:
+        resource: lesson
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      max_tool_rounds: 3
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - teaching
+      temperature: 0.3
+      tool: null
+      tool_errors: feedback
+      tools:
+      - recall
+      type: agent
+      until: null
+    quiz:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        lesson:
+          default: null
+          optional: false
+          ref: nodes.lesson.output.text
+        material:
+          default: null
+          optional: false
+          ref: input.material
+      instructions:
+        resource: quiz
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          questions:
+            items:
+              type: string
+            maxItems: 3
+            minItems: 3
+            type: array
+        required:
+        - questions
+        type: object
+      response_format: json
+      skills:
+      - teaching
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.feedback.output.text
+id: study-coach
+input_schema:
+  additionalProperties: false
+  properties:
+    level:
+      type: string
+    material:
+      type: string
+    topic:
+      type: string
+  required:
+  - topic
+  - level
+  - material
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
+resources:
+  coaching_feedback:
+    path: skills/coaching_feedback.md
+    role: skill
+  feedback:
+    path: prompts/feedback.md
+    role: prompt
+  lesson:
+    path: prompts/lesson.md
+    role: prompt
+  quiz:
+    path: prompts/quiz.md
+    role: prompt
+  teaching:
+    path: skills/teaching.md
+    role: skill
+spec_version: '0.3'
+tools:
+  recall:
+    plugin: memory.search
+    version: '1'

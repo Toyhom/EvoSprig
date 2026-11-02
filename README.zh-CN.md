@@ -24,6 +24,9 @@ EvoSprig 将可视化工作流、持久记忆、工具调用和可控自进化�
 
 | 想做什么 | 从这里开始 |
 | --- | --- |
+| 准备求职材料并练习面试 | [求职教练](examples/career-coach/)：岗位匹配、简历要点和练习反馈 |
+| 把一份公告改写成多个渠道的内容 | [内容工作室](examples/content-studio/)：并行写作、共享文风和事实核对技能 |
+| 讲解知识并根据回答安排练习 | [学习教练](examples/study-coach/)：课程、互动练习与针对性反馈 |
 | 把需求变成能操作的网页 | [软件开发团队](examples/software-team/)：设计、编码、浏览器检查与修复 |
 | 让智能体运行代码分析数据 | [Data Interpreter](examples/data-interpreter/)：文件、计算与图表 |
 | 从多个角度分析决策 | [决策讨论室](examples/debate/)：正反论证、回应与建议 |
@@ -48,6 +51,8 @@ EvoSprig 将可视化工作流、持久记忆、工具调用和可控自进化�
 
 <img src="docs/assets/architecture.svg" alt="EvoSprig 框架架构" width="100%" />
 
+[下载可编辑架构图 PPT](docs/assets/architecture.pptx)。
+
 ## 快速开始
 
 需要 Python 3.12+，Studio 还需要 Node.js 20+。
@@ -65,11 +70,11 @@ evosprig serve --project examples/hello/agent.yaml \
 
 打开 http://127.0.0.1:18766，在侧栏切换 **中文**，语言选择会保留。实际模型连接通过[部署配置](examples/deployment.example.yaml)设置，凭据使用环境变量。
 
-## 看看进化前后有什么变化
+## 配置任务，自动改进提示词与技能
 
-[书籍创作对比](examples/book-studio/results/)和[文档问答对比](examples/document-chat/results/)展示相同任务上的实际输出变化，提供原版与进化版提示、任务输入以及评测结果。
+搭好智能体后，添加任务输入，选中可修改的 prompt／skill，选择算法并设置预算。平台自动生成候选、运行应用和评分；你可以同时查看资源改动与输出，再启用选定版本。节点面板支持技能组合、工具选择、项目共享记忆、Temperature、Top P 和输出上限。
 
-使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[方法指南](docs/evolution.md)说明各方法需要的反馈形式，随后可以在 Studio 中检查差异并手动发布。
+[书籍创作](examples/book-studio/)与[文档问答](examples/document-chat/)直接展示实际提示词修改和精选输出对照。使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[配置指南](docs/agent-resources.md)说明如何完成首次改进。
 
 ## 文档与贡献
 

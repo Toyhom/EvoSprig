@@ -1,1 +1,1 @@
-Write this chapter of the guide. Follow the shared outline, avoid repeating other chapters, and include a concrete example or exercise. Keep the chapter within the requested length.
+Write the assigned chapter of the guide. Follow the shared outline, keep its content distinct from the other chapters, and include a concrete example or exercise as requested. Adhere to the stated length limit and audience.

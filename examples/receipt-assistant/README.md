@@ -6,6 +6,20 @@ Turn a receipt photo into structured expenses. Read the image, extract the print
 
 **Image → OCR → structured receipt → calculation and policy review**
 
+## From receipt to expense review
+
+For the CITY BOOKS receipt, OCR and extraction produce:
+
+| Field | Value |
+| --- | --- |
+| Date | 2026-11-02 |
+| Items | Notebook $12.00; pen $3.50 |
+| Subtotal / tax / total | **$15.50 / $1.55 / $17.05** |
+| Arithmetic | Matches the printed total |
+| Next step | Manager approval for office supplies |
+
+The policy review identifies the missing approval and business purpose before reimbursement.
+
 ## Try it
 
 Start the [optional Toolbox](../../apps/toolbox/README.md) for OCR and Python checks. Its connection is already described in `deployment.example.yaml`. You can replace it with your own service using the same tool contracts.
@@ -30,7 +44,7 @@ evosprig serve --project examples/receipt-assistant/agent.yaml \
 
 Edit `sample.json` for your own task and the files under `prompts/` for the roles and instructions. All coordination, tool calls and parallel work use EvoSprig's AgentSpec and runtime. The [catalog builder](../build_catalog.py) shows how to create the same workflow with the Python SDK.
 
-Use the [evolution guide](../../docs/evolution.md) to improve selected prompts on your own tasks. [Example outputs](results/README.md) show what the application produces.
+Use the [evolution guide](../../docs/evolution.md) to improve selected prompts and skills on your own tasks.
 
 Application pattern inspired by [MetaGPT’s receipt assistant](https://github.com/FoundationAgents/MetaGPT); implemented with EvoSprig's own framework.
 

@@ -1,3 +1,4 @@
+import { AgentSettings } from './agent-settings';
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ReactFlow, Background, Controls, MiniMap, Position, addEdge, applyEdgeChanges, applyNodeChanges,
@@ -65,7 +66,11 @@ function App() {
   const groups=cleanGroups(canvas.groups[pathKey(graphPath)]??[],nodes.map(n=>n.id));
   const setGroups=(next:typeof groups)=>{setCanvas(state=>({...state,groups:{...state.groups,[pathKey(graphPath)]:next}}));setDirty(true);};
   const view=canvasView(nodes,edges,groups,lang,id=>setGroups(groups.map(g=>g.id===id?{...g,collapsed:!g.collapsed}:g)),(id,path)=>navigate([...graphPath,id,...path]));
-  const displayNodes=view.nodes.map(n=>({...n,data:{...n.data,busy},...(n.type==='groupCard'?{selected:groupSelection.includes(n.id)}:{})}));
+  const displayNodes=view.nodes.map(n=>{
+    const config=n.type==='workflow'?n.data.config as NodeSpec:undefined;
+    const promptPreview=typeof config?.instructions==='object'?doc?.resources?.[config.instructions.resource]:undefined;
+    return {...n,data:{...n.data,busy,promptPreview},...(n.type==='groupCard'?{selected:groupSelection.includes(n.id)}:{})};
+  });
   const currentLayout=()=>({...doc?.layout,...Object.fromEntries(nodes.map(n=>[layoutKey(graphPath,n.id),n.position]))});
   const loadGraph=(spec:Spec,path:string[],layout:Document['layout'])=>{
     const graph=graphAt(spec,path);
@@ -286,7 +291,7 @@ function App() {
       <div className="sidebar-bottom"><details className="connection-settings"><summary><Icon name="settings"/>{t.settings}</summary>
         <input aria-label={t.token} placeholder={t.token} type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} />
         <button disabled={busy || !!runId} onClick={() => replaceProject(() => refresh().then(items => { if (items.length) load(items[0]); }).catch(error))}>{t.reload}</button>
-      </details><div className="sidebar-meta"><span>v0.1.0</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
+      </details><div className="sidebar-meta"><span>v0.1.1</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
     </aside>
     <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty || nodeDraftDirty?' is-dirty':''}`}>{dirty || nodeDraftDirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
       <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => replaceProject(async () => { if (doc) await api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error); })} disabled={!doc || !!runId || busy}><Icon name="refresh"/></button>
@@ -312,17 +317,11 @@ function App() {
             {selectedEdge&&<label>{lang==='zh'?'分支条件':'Branch condition'}<select aria-label="Edge condition" value={typeof edges.find(edge=>edge.id===selectedEdge)?.data?.when==='boolean'?String(edges.find(edge=>edge.id===selectedEdge)?.data?.when):'always'} onChange={e=>{const value=e.target.value;setEdges(items=>items.map(edge=>edge.id===selectedEdge?{...edge,data:{when:value==='always'?undefined:value==='true'},label:value==='always'?undefined:value}:edge));mutate();}}><option value="always">{lang==='zh'?'始终执行':'Always'}</option><option value="true">true</option><option value="false">false</option></select></label>}
             {active ? <><h3>{active.id}<span className="pill">{active.data.config.type}</span></h3>
               {childGraphs(active.data.config).map(child=><button key={child.label} disabled={busy} onClick={()=>navigate([...graphPath,active.id,...child.path])}>{lang==='zh'?'打开子流程':'Open subflow'} · {child.label}</button>)}
-              {typeof active.data.config.instructions === 'string' && ['model','agent'].includes(active.data.config.type) && <label>{t.instructions}<textarea aria-label={t.instructions} value={active.data.config.instructions} onChange={e => applyNode({ ...active.data.config, instructions: e.target.value })}/></label>}
-              {active.data.config.model && <label>{t.binding}<select value={active.data.config.model} onChange={e => applyNode({ ...active.data.config, model: e.target.value })}>{Object.keys(doc.spec.models).map(name => <option key={name}>{name}</option>)}</select></label>}
-              {['model','agent'].includes(active.data.config.type)&&<details className="execution-settings"><summary>{lang==='zh'?'执行设置':'Execution settings'}</summary>
-                <label>{lang==='zh'?'单次输出 token 上限':'Output token limit'}<input aria-label="Node output token limit" type="number" min={1} max={32768} placeholder={String(doc.spec.execution?.max_output_tokens??512)} value={active.data.config.max_output_tokens??''} onChange={e=>applyNode({...active.data.config,max_output_tokens:e.target.value?Number(e.target.value):null})}/></label>
-                <label>{lang==='zh'?'输出格式错误处理':'Invalid output handling'}<select aria-label="Output error policy" value={active.data.config.output_errors??'raise'} onChange={e=>applyNode({...active.data.config,output_errors:e.target.value as 'raise'|'feedback'})}><option value="raise">{lang==='zh'?'停止并报告':'Stop and report'}</option><option value="feedback">{lang==='zh'?'反馈给模型重试':'Ask model to repair'}</option></select></label>
-                {active.data.config.output_errors==='feedback'&&<label>{lang==='zh'?'最多修复次数':'Maximum repair attempts'}<input aria-label="Output repair attempts" type="number" min={0} max={3} value={active.data.config.max_output_retries??1} onChange={e=>applyNode({...active.data.config,max_output_retries:Number(e.target.value)})}/></label>}
-              </details>}
+              {['model','agent'].includes(active.data.config.type)&&<AgentSettings key={active.id} id={active.id} node={active.data.config} doc={doc} lang={lang} onChange={(node,changes)=>{const spec=currentSpec();if(changes?.definitions)spec.resources=changes.definitions;if(changes?.tools)spec.tools=changes.tools;if(node.type==='agent')spec.spec_version='0.3';setDoc({...doc,spec,resources:changes?.resources??doc.resources});applyNode(node);}}/>}
               <label>{t.nodeJson}<textarea className="node-json" aria-label={t.nodeJson} value={nodeText} onChange={e => { setNodeText(e.target.value); setNodeDraftDirty(true); }}/></label>
               <button onClick={() => { try { applyNode(parseNodeDraft()); } catch (e) { error(e); } }}>{t.apply}</button></> : <div className="inspector-empty"><span className="empty-symbol"><Icon name="settings" size={21}/></span><strong>{lang==='zh'?'选择一个节点':'Select a node'}</strong><p>{lang==='zh'?'点击画布中的节点，查看和编辑参数。':'Click a node on the canvas to edit its properties.'}</p></div>}
             <div className="divider"/><div className="section-label input-heading"><Icon name="play" size={14}/>{t.input}</div><label><textarea aria-label={t.input} value={input} onChange={e => setInput(e.target.value)}/></label>
-            <select aria-label="Run mode" value={mock ? 'mock' : 'live'} onChange={e => setMock(e.target.value === 'mock')}><option value="mock">{t.offline}</option><option value="live">{t.live} · deepseek-flash</option></select>
+            <select aria-label="Run mode" value={mock ? 'mock' : 'live'} onChange={e => setMock(e.target.value === 'mock')}><option value="mock">{t.offline}</option><option value="live">{t.live}</option></select>
             <label className="check"><input type="checkbox" checked={allowWrites} onChange={e=>setAllowWrites(e.target.checked)}/>{lang==='zh'?'允许已配置的写入工具':'Allow configured write tools'}</label>
             <label className="check"><input type="checkbox" checked={useRelease} onChange={e=>setUseRelease(e.target.checked)}/>{lang==='zh'?'运行发布版本':'Run active release'}</label>
             <button className="primary run" aria-label={'▷ '+t.run} onClick={()=>run()} disabled={dirty || nodeDraftDirty || !!runId}><Icon name="play" size={14}/>{t.run}</button>

@@ -1,4 +1,4 @@
-"""Run each sample with a fresh identity and keep sample-level execution evidence."""
+"""Run each sample with a fresh identity and keep sample-level execution records."""
 
 from __future__ import annotations
 

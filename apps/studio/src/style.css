@@ -354,3 +354,38 @@ th { background: #fafafa; color: #767983; font-size: 11px; font-weight: 500; }
 .canvas-group.is-expanded .group-heading { pointer-events: auto; }
 .vertical-node .branch-true { top: auto; bottom: 10px; left: 25%; right: auto; }
 .vertical-node .branch-false { top: auto; bottom: 10px; left: 68%; right: auto; }
+
+/* Node configuration mirrors the agent's editable resources. */
+.inspector { width: 334px; }
+.setting-section { border-bottom: 1px solid #eceef1; padding: 15px 0; margin: 0; }
+.setting-section h4, .setting-section summary { display:flex; align-items:center; gap:8px; font-size:12px; color:#343a46; margin:0 0 12px; font-weight:600; }
+.setting-section h4 span { margin-left:auto; border:1px solid #e9ecf0; padding:1px 7px; border-radius:5px; color:#7c8594; font-size:10px; }
+.setting-section .prompt-input { min-height:150px; font-size:12px; line-height:1.7; }
+.setting-section label { font-size:11px; margin:10px 0; }
+.setting-section select { width:100%; margin:6px 0; }
+.setting-section .hint { font-size:11px; margin:5px 0 12px; }
+.setting-section textarea { min-height:90px; }
+.setting-note { color:#738078; display:block; margin-top:9px; font-size:10px; }
+.setting-section .inline-form { gap:5px; }
+.setting-section .inline-form input { min-width:0; }
+.setting-option { padding:6px 0; }
+.setting-option small { display:block; color:#8a929d; font-size:10px; margin-top:3px; }
+.memory-shortcuts { display:flex; flex-wrap:wrap; gap:5px; }
+.memory-shortcuts button, .text-action { font-size:10px; padding:5px 8px; }
+.sampling-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.resource-comparison { border-top:1px solid #e8ecef; margin-top:20px; }
+.workflow-node { box-shadow:0 2px 6px #172d4509; border-color:#dfe4ea; }
+.kind-agent { border-top:1px solid #dfe4ea; border-radius:12px; }
+.kind-agent .workflow-node-heading { border-bottom:1px solid #eef1f5; padding:12px; }
+.kind-agent .node-symbol { border-radius:8px; background:#eff4fc; color:#5476b4; }
+.kind-agent .node-summary { margin-top:10px; }
+.agent-resources { display:flex; align-items:center; gap:6px; margin:6px 12px 0; color:#69768a; font-size:9px; }
+.agent-resources span { display:flex; align-items:center; gap:4px; border:1px solid #e8edf2; background:#fafbfd; border-radius:4px; padding:3px 6px; }
+.kind-model { border-radius:8px; }
+.kind-transform { border-style:solid; border-radius:5px; background:#fafbfc; }
+.kind-tool { border-left-width:1px; }
+.kind-loop,.kind-parallel,.kind-map { background:#fff; border-color:#cedbd6; }
+.react-flow__edge-path { stroke:#a9b5c1; stroke-width:1.4; }
+@media (max-width:1200px) { .inspector { width:300px; } }
+@media (max-width:900px) { .inspector { width:260px; } }
+.setting-section textarea { width: 100%; box-sizing: border-box; }

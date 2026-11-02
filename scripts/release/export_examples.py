@@ -34,7 +34,9 @@ def main():
         ("meeting-assistant", "python"),
         ("book-studio", "python"),
         ("travel-planner", "python"),
-
+        ("career-coach", "http"),
+        ("content-studio", "python"),
+        ("study-coach", "http"),
     ]
     for example, target in items:
         root = product / "examples" / example

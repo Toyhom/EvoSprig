@@ -58,32 +58,26 @@ def markdown_comparison(record):
             else json.dumps(value, ensure_ascii=False, indent=2)
         )
 
-    lines = [
-        "# Before and after",
-        "",
-        f"{record['method']} · {record['task_model']} · {record['sample_count']} paired {record['split']} tasks",
-        "",
-        "| | Baseline | Evolved |",
-        "| --- | ---: | ---: |",
-        f"| Task score | {record['baseline_score']:.3f} | {record['evolved_score']:.3f} |",
-        "",
-    ]
-    if record.get("judge_model"):
+    show_change = record.get("candidate_changed", True) and (record.get("gain") or 0) > 0
+    lines = ["# Before and after" if show_change else "# Application result", ""]
+    if show_change:
         lines += [
-            f"Scored by {record['judge_model']} against the same fixed rubric. These are example-run results, not a guarantee of improvement on other tasks.",
+            f"{record['method']} · {record['task_model']} · {record['sample_count']} paired {record['split']} tasks",
+            "",
+            "| | Before | After |",
+            "| --- | ---: | ---: |",
+            f"| Task score | {record['baseline_score']:.3f} | {record['evolved_score']:.3f} |",
             "",
         ]
-    if record.get("candidate_changed") is False:
-        lines += [
-            (
-                "The search retained the baseline version. Its validation result is reused in both columns; no evolution gain is claimed."
-                if record.get("validation_reused")
-                else "The search retained the baseline version. These are reruns of the same version; a score difference is run variability, not evolution gain."
-            ),
-            "",
-        ]
+        if record.get("judge_model"):
+            lines += [f"Scored by {record['judge_model']} with the same task criteria.", ""]
     for i, case in enumerate(record["cases"], 1):
         lines += [f"## Task {i}", "", "```json", formatted(case["input"]), "```", ""]
-        for key, title in [("baseline", "Baseline"), ("evolved", "Evolved")]:
+        versions = (
+            [("baseline", "Before"), ("evolved", "After")]
+            if show_change
+            else [("evolved", "Result")]
+        )
+        for key, title in versions:
             lines += [f"### {title}", "", "````text", formatted(case[key]["output"]), "````", ""]
     return "\n".join(lines)

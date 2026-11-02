@@ -29,3 +29,7 @@ Loop, map and parallel cards open real executable subgraphs. Use the breadcrumbs
 The inspector's **Execution settings** controls a node's output-token limit and structured-output repair policy. An empty token limit inherits the application default. Choose feedback repair for a model that occasionally produces invalid JSON, and set a maximum retry count. Every retry still consumes the shared execution budget.
 
 Studio grouping uses the [React Flow](https://reactflow.dev/learn/layouting/sub-flows) view model and [ELK](https://github.com/kieler/elkjs) layout engine. Execution follows explicit workflow/agent and subgraph distinctions also used in [LangGraph](https://docs.langchain.com/oss/python/langgraph/workflows-agents); deterministic operations use typed tools, comparable to [Dify code nodes](https://docs.dify.ai/en/use-dify/nodes/code).
+
+## Agent configuration
+
+Select an agent to edit its main prompt, attach reusable skills, choose tools and memory access, and set model parameters. **Make prompt evolvable** turns an inline instruction into a resource. The Improve page can optimize either prompts or attached skills and show their changes beside the application outputs. See [agent configuration](agent-resources.md).

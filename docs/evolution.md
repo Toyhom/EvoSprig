@@ -43,6 +43,12 @@ The optimizer does not need a special benchmark format for each method. EvoSprig
 
 Demonstration methods need at least one successful search execution. A judge can validate that success when no reference answer exists. Reflection and insight methods become more informative when the environment supplies failure reasons. Population methods need a larger evaluation budget than a short refinement loop.
 
+## From agent to improved version
+
+In Studio, configure a task set, select prompt or skill resources, and choose an algorithm. EvoSprig proposes edits and evaluates the running application automatically. The result view shows resource changes and paired outputs together. Review and enable the version in **Versions**.
+
+Attach reusable skills with `Builder.skill(...)` and `node(..., skills=[...])`. See [agent configuration](agent-resources.md) for the full setup.
+
 ## Run an improvement
 
 ```bash

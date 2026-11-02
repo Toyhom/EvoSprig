@@ -1,6 +1,0 @@
-{
-  "files": {
-    "orders.csv": "campaign,visits,conversions\nAlpha,1000,40\nBeta,200,18\nGamma,0,0\nDelta,500,35\n"
-  },
-  "question": "Compare conversion rates by campaign, identify the best rate and highest conversion count, and chart rates. Do not divide by zero."
-}

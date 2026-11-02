@@ -1,0 +1,245 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 24
+  max_output_tokens: 2500
+  max_parallel_nodes: 3
+  max_parallel_tools: 1
+  max_steps: 80
+  max_total_tokens: 70000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: brief
+    target: channels
+    when: null
+  - source: channels
+    target: editor
+    when: null
+  entry: brief
+  nodes:
+    brief:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        audience:
+          default: null
+          optional: false
+          ref: input.audience
+        source:
+          default: null
+          optional: false
+          ref: input.source
+      instructions:
+        resource: brief
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - source_fidelity
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    channels:
+      body:
+        edges: []
+        entry: write
+        nodes:
+          write:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              brief:
+                default: null
+                optional: false
+                ref: input.context.brief
+              channel:
+                default: null
+                optional: false
+                ref: input.item
+              source:
+                default: null
+                optional: false
+                ref: input.context.source
+            instructions:
+              resource: adapt
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              additionalProperties: false
+              properties:
+                text:
+                  type: string
+              required:
+              - text
+              type: object
+            response_format: text
+            skills:
+            - brand_voice
+            - source_fidelity
+            temperature: 0.5
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: model
+            until: null
+        output:
+          channel:
+            default: null
+            optional: false
+            ref: input.item
+          text:
+            default: null
+            optional: false
+            ref: nodes.write.output.text
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: nodes.brief.output.text
+        source:
+          default: null
+          optional: false
+          ref: input.source
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: input.channels
+      join: all
+      max_items: 6
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          items:
+            type: array
+        required:
+        - items
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+    editor:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        drafts:
+          default: null
+          optional: false
+          ref: nodes.channels.output.items
+        source:
+          default: null
+          optional: false
+          ref: input.source
+      instructions:
+        resource: editor
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - brand_voice
+      - source_fidelity
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.editor.output.text
+id: content-studio
+input_schema:
+  additionalProperties: false
+  properties:
+    audience:
+      type: string
+    channels:
+      items:
+        type: string
+      maxItems: 6
+      minItems: 1
+      type: array
+    source:
+      type: string
+  required:
+  - source
+  - audience
+  - channels
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
+resources:
+  adapt:
+    path: prompts/adapt.md
+    role: prompt
+  brand_voice:
+    path: skills/brand_voice.md
+    role: skill
+  brief:
+    path: prompts/brief.md
+    role: prompt
+  editor:
+    path: prompts/editor.md
+    role: prompt
+  source_fidelity:
+    path: skills/source_fidelity.md
+    role: skill
+spec_version: '0.3'
+tools: {}

@@ -93,6 +93,8 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
         base = compile_document(project)
         if set(body.config.allowed_resources) - set(base.resources):
             raise HTTPException(422, "editable resources are absent from this version")
+        if set(body.config.allowed_resources) - base.spec.used_resources():
+            raise HTTPException(422, "attach editable resources to a node before improvement")
         if body.config.budget.max_evaluations <= 2 * (len(suite.release) + len(suite.test)):
             raise HTTPException(422, "budget must cover search plus paired validation")
         evaluation_config = (
@@ -163,13 +165,25 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
         models = study["bindings"]["models"]
         judges = study["bindings"].get("evaluation", {}).get("judges", {})
         task_model = next(iter(models.values()), {}).get("model", "configured model")
-        return comparison_record(
+        result = comparison_record(
             store.get_report(selected_scope, group["baseline"]["report_id"]),
             store.get_report(selected_scope, group["selected"]["report_id"]),
             method=study["config"]["method"],
             task_model=task_model,
             judge_model=next(iter(judges.values()), {}).get("model"),
         )
+        before = store.get(selected_scope, result["baseline_version"])
+        after = store.get(selected_scope, result["evolved_version"])
+        result["resource_changes"] = {
+            name: {
+                "role": after.spec.resources[name].role,
+                "before": before.resources[name],
+                "after": content,
+            }
+            for name, content in after.resources.items()
+            if before.resources[name] != content
+        }
+        return result
 
     @app.post("/api/projects/{project_id}/studies/{study_id}/cancel", status_code=202)
     async def cancel_study(project_id: str, study_id: str):

@@ -73,6 +73,8 @@ class OpenAICompatibleProvider:
         }
         if request.tools:
             payload["tools"] = request.tools
+        if request.top_p is not None:
+            payload["top_p"] = request.top_p
         if request.json_output:
             payload["response_format"] = {"type": "json_object"}
         if stream:

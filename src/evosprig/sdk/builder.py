@@ -29,8 +29,14 @@ class Builder:
         return self
 
     def resource(self, name: str, path: str, role: str = "prompt"):
+        if name in self.data["resources"]:
+            raise ValueError(f"duplicate resource: {name}")
         self.data["resources"][name] = {"path": path, "role": role}
         return self
+
+    def skill(self, name: str, path: str):
+        """Declare reusable instructions; attach them with node(..., skills=[name])."""
+        return self.resource(name, path, role="skill")
 
     def node(self, node_id: str, node_type: str, *, entry: bool = False, **config):
         if node_id in self.data["graph"]["nodes"]:

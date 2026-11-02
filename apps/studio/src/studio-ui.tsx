@@ -51,16 +51,16 @@ const icons: Record<NodeKind, IconName> = {
   model: 'model', agent: 'robot', tool: 'tool', condition: 'branch', transform: 'code',
   join: 'merge', loop: 'refresh', parallel: 'network', map: 'layers', human: 'human',
 };
-export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang; direction?:'RIGHT'|'DOWN'; busy?:boolean; onOpen?:(path:string[])=>void };
+export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang; direction?:'RIGHT'|'DOWN'; busy?:boolean; promptPreview?:string; onOpen?:(path:string[])=>void };
 export type WorkflowFlowNode = Node<WorkflowData>;
 export function WorkflowNode({ id, data, selected }: NodeProps<WorkflowFlowNode>) {
   const { config, lang = 'en' } = data;
   // Drafts can contain an unsupported kind until server validation on save.
   const type = labels[config.type]?.[lang === 'zh' ? 0 : 1] ?? String(config.type ?? 'Node');
   const binding = typeof config.model === 'string' ? config.model : typeof config.tool === 'string' ? config.tool : undefined;
-  const summary = typeof config.instructions === 'string' && config.instructions.trim() ? config.instructions
+  const summary = data.promptPreview || (typeof config.instructions === 'string' && config.instructions.trim() ? config.instructions
     : typeof config.instructions === 'object' && config.instructions?.resource ? `${lang === 'zh' ? '提示资源' : 'Prompt'} · ${config.instructions.resource}`
-    : binding ?? (config.type === 'human' ? (lang === 'zh' ? '暂停并等待审核' : 'Pause for review') : type);
+    : binding ?? (config.type === 'human' ? (lang === 'zh' ? '暂停并等待审核' : 'Pause for review') : type));
   const capability=(config.tool??'').toLowerCase();
   const toolIcon:IconName=/ocr|scan|receipt/.test(capability)?'scan':/python|code|execute/.test(capability)?'terminal':/search|browse|fetch|web/.test(capability)?'globe':/video|image|render/.test(capability)?'film':/mail|message/.test(capability)?'mail':/memory|sql|database/.test(capability)?'database':'tool';
   const vertical=data.direction==='DOWN';
@@ -72,6 +72,7 @@ export function WorkflowNode({ id, data, selected }: NodeProps<WorkflowFlowNode>
     {config.type!=='join'&&<p className="node-summary" title={summary}>{compact?(binding??summary):summary}</p>}
     {config.type==='tool'&&<span className="tool-mode">{lang==='zh'?'确定性任务':'Deterministic task'}</span>}
     {config.type==='agent'&&<div className="agent-tools"><Icon name="tool" size={12}/><span>{(config.tools??[]).slice(0,2).join(' · ') || (lang==='zh'?'自主选择工具':'Agent-selected tools')}{(config.tools??[]).length>2?` +${config.tools!.length-2}`:''}</span></div>}
+    {(config.type==='agent'||(config.type==='model'&&!!config.skills?.length))&&<div className="agent-resources"><span><Icon name="file" size={10}/>{lang==='zh'?'提示词':'Prompt'}</span><span><Icon name="layers" size={10}/>{config.skills?.length??0} {lang==='zh'?'技能':'skills'}</span><span><Icon name="settings" size={10}/>{config.temperature??0} T</span></div>}
     {children.length>0&&<div className="subflow-links">{children.map(child=><button className="nodrag nopan" disabled={data.busy} key={child.label} onClick={()=>data.onOpen?.(child.path)}><Icon name="layers" size={12}/>{child.label} · {Object.keys((child.path[0]==='body'?config.body:config.branches?.[child.label])?.nodes??{}).length}<Icon name="arrow" size={11}/></button>)}</div>}
     {!compact&&config.type!=='condition'&&children.length===0&&<div className="node-meta"><span>{binding ?? `${Object.keys(config.inputs ?? {}).length} ${lang === 'zh' ? '项输入' : 'inputs'}`}</span><span>{config.response_format==='json'?'JSON':config.type==='human'?(lang==='zh'?'需审核':'Review'):'Output'}</span></div>}
     {config.type==='condition'?<><Handle id="true" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'35%'}}/><Handle id="false" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'75%'}}/><span className="branch-label branch-true">true</span><span className="branch-label branch-false">false</span></>:<Handle type="source" position={vertical?Position.Bottom:Position.Right} />}

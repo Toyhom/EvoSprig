@@ -1,6 +1,0 @@
-{
-  "files": {
-    "orders.csv": "priority,state,hours\nhigh,resolved,2\nhigh,resolved,6\nlow,resolved,12\nlow,open,\nhigh,resolved,\nlow,resolved,4\n"
-  },
-  "question": "Find average resolution time by priority for resolved tickets, explain missing values, and chart the result. Do not count unresolved tickets as zero hours."
-}

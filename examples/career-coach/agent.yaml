@@ -1,0 +1,287 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 24
+  max_output_tokens: 2500
+  max_parallel_nodes: 3
+  max_parallel_tools: 1
+  max_steps: 80
+  max_total_tokens: 70000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: fit_review
+    target: interview
+    when: null
+  - source: fit_review
+    target: resume_draft
+    when: null
+  - source: interview
+    target: practice
+    when: null
+  - source: practice
+    target: coach
+    when: null
+  - source: resume_draft
+    target: practice
+    when: null
+  entry: fit_review
+  nodes:
+    coach:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        answer:
+          default: null
+          optional: false
+          ref: nodes.practice.output.answer
+        draft:
+          default: null
+          optional: false
+          ref: nodes.resume_draft.output.text
+        questions:
+          default: null
+          optional: false
+          ref: nodes.interview.output.text
+        resume:
+          default: null
+          optional: false
+          ref: input.resume
+      instructions:
+        resource: coach
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - factual_writing
+      - interview_coaching
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    fit_review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        job:
+          default: null
+          optional: false
+          ref: input.job
+        resume:
+          default: null
+          optional: false
+          ref: input.resume
+      instructions:
+        resource: fit_review
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - factual_writing
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    interview:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        job:
+          default: null
+          optional: false
+          ref: input.job
+        resume:
+          default: null
+          optional: false
+          ref: input.resume
+        review:
+          default: null
+          optional: false
+          ref: nodes.fit_review.output.text
+      instructions:
+        resource: interview
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - interview_coaching
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    practice:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        questions:
+          default: null
+          optional: false
+          ref: nodes.interview.output.text
+        resume_draft:
+          default: null
+          optional: false
+          ref: nodes.resume_draft.output.text
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          answer:
+            type: string
+        required:
+        - answer
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    resume_draft:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        job:
+          default: null
+          optional: false
+          ref: input.job
+        resume:
+          default: null
+          optional: false
+          ref: input.resume
+        review:
+          default: null
+          optional: false
+          ref: nodes.fit_review.output.text
+      instructions:
+        resource: resume_draft
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      skills:
+      - factual_writing
+      temperature: 0.3
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.coach.output.text
+id: career-coach
+input_schema:
+  additionalProperties: false
+  properties:
+    job:
+      type: string
+    resume:
+      type: string
+  required:
+  - resume
+  - job
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
+resources:
+  coach:
+    path: prompts/coach.md
+    role: prompt
+  factual_writing:
+    path: skills/factual_writing.md
+    role: skill
+  fit_review:
+    path: prompts/fit_review.md
+    role: prompt
+  interview:
+    path: prompts/interview.md
+    role: prompt
+  interview_coaching:
+    path: skills/interview_coaching.md
+    role: skill
+  resume_draft:
+    path: prompts/resume_draft.md
+    role: prompt
+spec_version: '0.3'
+tools: {}

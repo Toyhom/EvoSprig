@@ -4,7 +4,7 @@
 
 Render an original 18-second animation with a storyboard, a human checkpoint and a separate CPU render service. This example demonstrates external-job execution with an actual MP4 artifact.
 
-![Three rendered shots](results/contact-sheet.png)
+![Three rendered shots](assets/contact-sheet.png)
 
 Install `python -m pip install -e '.[models,server,media]'`. Set `DEEPSEEK_API_KEY` and a local `EVOSPRIG_RENDER_TOKEN` for the renderer connection.
 

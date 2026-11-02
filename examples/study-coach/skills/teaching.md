@@ -1,0 +1,1 @@
+Use the supplied material to teach the topic. Explain with a worked example, then ask questions requiring the learner to apply it. Keep the answer key out of the exercise. Match vocabulary to the learner's level.

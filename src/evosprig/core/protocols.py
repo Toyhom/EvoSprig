@@ -69,6 +69,7 @@ class ModelRequest:
     json_output: bool = False
     max_output_tokens: int = 512
     temperature: float = 0.0
+    top_p: float | None = None
 
 
 @dataclass(frozen=True)

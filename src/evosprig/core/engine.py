@@ -457,6 +457,8 @@ class ExecutionSession:
                 if isinstance(node.instructions, ResourceRef)
                 else node.instructions
             )
+            for skill in node.skills:
+                instructions += f"\n\n## Skill: {skill}\n{self.version.resources[skill]}"
             if node.response_format == "json":
                 instructions += (
                     "\nReturn a JSON object matching this JSON Schema: "
@@ -512,7 +514,7 @@ class ExecutionSession:
                             slot["messages"].append(
                                 {
                                     "role": "user",
-                                    "content": "The tool-round limit is reached. Give the final answer using the collected evidence and state any unresolved gaps.",
+                                    "content": "The tool-round limit is reached. Give the final answer using the collected information and state any unresolved gaps.",
                                 }
                             )
                             slot["tool_round_limit_noted"] = True
@@ -547,7 +549,8 @@ class ExecutionSession:
                         path,
                         call_id=call_id,
                         model=provider.model_id,
-                        temperature=0.0,
+                        temperature=node.temperature if node.temperature is not None else 0.0,
+                        top_p=node.top_p,
                         max_output_tokens=allowance,
                         reserved_tokens=reservation,
                     )
@@ -558,6 +561,10 @@ class ExecutionSession:
                                 descriptors,
                                 node.response_format == "json",
                                 allowance,
+                                temperature=node.temperature
+                                if node.temperature is not None
+                                else 0.0,
+                                top_p=node.top_p,
                             )
                         )
                     except ProviderError as exc:

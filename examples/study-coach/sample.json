@@ -1,0 +1,5 @@
+{
+  "topic": "Python list aliasing and shallow copies",
+  "level": "Beginner who knows lists and assignment",
+  "material": "Assignment b = a binds another name to the same list. b = a.copy() creates a shallow copy: the outer list is new but nested objects remain shared. copy.deepcopy(a) recursively copies nested objects. Mutating a shared nested list is visible through both outer lists."
+}

@@ -284,7 +284,7 @@ def debate():
     for side, other in (("support", "challenge"), ("challenge", "support")):
         name = side + "_reply"
         prompts[name] = (
-            "Respond to the strongest opposing argument. Correct weaknesses in your own position and identify what new evidence would change your conclusion."
+            "Respond to the strongest opposing argument. Correct weaknesses in your own position and identify what new information would change your conclusion."
         )
         b.resource(name, f"prompts/{name}.md")
         replies[side] = {
@@ -314,7 +314,7 @@ def debate():
     prompts["moderator"] = model(
         b,
         "moderator",
-        "Write a decision brief: strongest arguments, unresolved disagreements, evidence gaps and a practical recommendation. Weigh the arguments against the supplied context; do not decide by rhetoric alone.",
+        "Write a decision brief: strongest arguments, unresolved disagreements, missing information and a practical recommendation. Weigh the arguments against the supplied context; do not decide by rhetoric alone.",
         {
             "topic": ref("input.topic"),
             "context": ref("input.context"),
@@ -435,7 +435,7 @@ def book_studio():
         "outline": model(
             b,
             "outline",
-            "Plan a short practical guide from the brief. Return a title and 2 to 4 chapters, each with a distinct purpose and concise brief. Respect the target audience and requested length.",
+            "Plan a short practical guide from the brief. Return a title and a chapter list (2 to 4 chapters) where each chapter has a distinct purpose and a concise brief. Respect the specified audience, constraints, and length limits, and ensure chapters do not overlap in the advice they will cover.",
             {"brief": ref("input.brief")},
             obj(
                 title=TEXT,
@@ -445,7 +445,7 @@ def book_studio():
     }
     b.resource("chapter", "prompts/chapter.md")
     p["chapter"] = (
-        "Write this chapter of the guide. Follow the shared outline, avoid repeating other chapters, and include a concrete example or exercise. Keep the chapter within the requested length."
+        "Write the assigned chapter of the guide. Follow the shared outline, keep its content distinct from the other chapters, and include a concrete example or exercise as requested. Adhere to the stated length limit and audience."
     )
     body = {
         "entry": "write",

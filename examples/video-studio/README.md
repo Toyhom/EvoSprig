@@ -69,4 +69,4 @@ evosprig run examples/video-studio/script-agent.yaml \
   --input '{"brief":"A 12-second silent film about a paper boat. Three shots, one recurring character, no text overlays."}'
 ```
 
-Use that stage to compare and evolve storyboards, then apply the chosen director resource to the production workflow. [Storyboard comparisons](results/README.md) show planning outputs; image/video rendering remains in the tool providers you connect.
+Use that stage to compare and evolve storyboards, then apply the chosen director resource to the production workflow. Connect your image and video tools to render the approved plan.

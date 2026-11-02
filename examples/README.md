@@ -8,6 +8,9 @@ Start with a working application pattern, connect your model and tools, then mak
 
 | I want an agent that… | Application | What you can customize |
 | --- | --- | --- |
+| Tailors an application and helps me practice | [Career coach](career-coach/) | Resume facts, job requirements and interview skills |
+| Adapts an announcement for several channels | [Content studio](content-studio/) | Source facts, channels, brand voice and editing skills |
+| Teaches a topic and reviews my answers | [Study coach](study-coach/) | Course material, learning preferences and feedback |
 | Turns an idea into a web app | [Software team](software-team/) | Product roles, acceptance checks, browser tools and design conventions |
 | Analyzes files and draws charts | [Data Interpreter](data-interpreter/) | Data files, Python environment, analysis and review |
 | Helps make a difficult decision | [Decision room](debate/) | Perspectives, rebuttals and decision criteria |
@@ -28,13 +31,13 @@ The catalog includes the five application categories highlighted by [MetaGPT](ht
 
 ## Before and after
 
-<img src="book-studio/results/comparison.png" alt="Book studio: original and evolved chapters on the same task" width="100%" />
+<img src="book-studio/assets/comparison.png" alt="Book studio: original and evolved chapters on the same task" width="100%" />
 
-**Book studio:** APE search improved the average score from **0.740 to 0.895** on two held-out writing tasks. Read the [actual chapters and reusable versions](book-studio/results/README.md): the original community-event guide changes budget amounts across chapters; the candidate carries the shared plan into the chapter-writing instructions.
+**Book studio:** APE search improved the average score from **0.740 to 0.895** on two held-out writing tasks. Read the [prompt changes and output excerpts](book-studio/README.md): the original community-event guide changes budget amounts across chapters; the selected outline emphasizes the constraints and distinct chapter responsibilities.
 
-**Document chat:** textual-gradient search scored **0.965 → 0.975** on two held-out handbook questions. [Compare the answers and citations](document-chat/results/README.md).
+**Document chat:** textual-gradient search scored **0.965 → 0.975** on two held-out handbook questions. [Compare the answers and citations](document-chat/README.md).
 
-These comparisons use DeepSeek Flash as task model and judge on two held-out tasks with fixed criteria. Open each application's output page to read the deliverable or try its prompts.
+These comparisons use DeepSeek Flash as task model and judge on two held-out tasks with fixed criteria. Each application README shows its result and how to run it.
 
 Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../docs/evaluation.md), then choose one of the [13 training-free strategies](../docs/evolution.md). The same evaluator checks the original and candidate; you decide whether to adopt the result.
 

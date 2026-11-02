@@ -177,7 +177,7 @@ async def promptbreeder(context, *, rounds=3, population_size=4, seed=0):
             "Make the task procedure explicit and remove ambiguous instructions.",
             "Add checks for unsupported assumptions and missing information.",
             "Simplify redundant advice while preserving all task constraints.",
-            "Improve the tool-use strategy and verification of returned evidence.",
+            "Improve the tool-use strategy and verification of tool results.",
         ]
     ]
     population, mutator_history = [], []
@@ -306,7 +306,7 @@ async def reflexion(context, *, rounds=3, seed=0):
 
 
 async def expel(context, *, rounds=3, seed=0):
-    """Contrast observed successful/failed experiences and maintain evidence-linked rules."""
+    """Contrast observed successful/failed experiences and maintain rules linked to observations."""
     run, rules, experiences = Search(context, "expel"), {}, []
     try:
         current = await run.evaluate(context.seed)
@@ -319,7 +319,7 @@ async def expel(context, *, rounds=3, seed=0):
                 [
                     {
                         "role": "system",
-                        "content": 'Extract reusable insights by contrasting successful and failed agent experiences. Return JSON {"rules":[{"id":"stable-id","text":"general rule","sources":["sample-id"]}]}. Revise or remove existing rules when the evidence contradicts them. At most 16 rules, each grounded in supplied sample IDs. Do not copy answers.',
+                        "content": 'Extract reusable insights by contrasting successful and failed agent experiences. Return JSON {"rules":[{"id":"stable-id","text":"general rule","sources":["sample-id"]}]}. Revise or remove existing rules when the observations contradict them. At most 16 rules, each grounded in supplied sample IDs. Do not copy answers.',
                     },
                     {
                         "role": "user",

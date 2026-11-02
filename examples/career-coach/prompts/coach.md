@@ -1,0 +1,1 @@
+Give feedback on the candidate's practice answer, then provide the tailored summary and bullets and a short practice plan. Identify missing detail without manufacturing it. Keep the full handoff under 650 words.

@@ -6,7 +6,11 @@ Turn a product brief into a working web app. A product manager, designer, develo
 
 **Brief → design → implementation → browser checks → repair → verification → handoff**
 
-<img src="results/app.png" alt="A generated expense tracker with working add, delete and totals" width="100%" />
+<img src="assets/app.png" alt="A generated expense tracker with working add, delete and totals" width="100%" />
+
+## A working expense tracker
+
+The application above supports adding expenses, deleting entries and updating totals. The team turns the brief into HTML, opens it in a browser, checks the requested interactions and feeds failures back into the repair stage.
 
 ## Try it
 
@@ -32,6 +36,6 @@ evosprig serve --project examples/software-team/agent.yaml \
 
 Edit `sample.json` for your own task and the files under `prompts/` for the roles and instructions. All coordination, tool calls and parallel work use EvoSprig's AgentSpec and runtime. The [catalog builder](../build_catalog.py) shows how to create the same workflow with the Python SDK.
 
-Use the [evolution guide](../../docs/evolution.md) to improve selected prompts on your own tasks. [Example outputs](results/README.md) show what the application produces.
+Use the [evolution guide](../../docs/evolution.md) to improve selected prompts and skills on your own tasks.
 
 Application pattern inspired by [MetaGPT’s software company](https://github.com/FoundationAgents/MetaGPT); implemented with EvoSprig's own framework.

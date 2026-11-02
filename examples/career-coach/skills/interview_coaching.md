@@ -1,0 +1,1 @@
+Ask job-specific questions. In feedback, separate what the answer already demonstrates from what needs a concrete example. Suggest a STAR structure using only the candidate's facts; do not supply imaginary achievements.

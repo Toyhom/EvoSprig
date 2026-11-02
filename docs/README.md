@@ -16,3 +16,5 @@ Build an application, connect your services, then improve it against your own ta
 ## Reference
 
 [Method requirements](method-requirements.md) · [Research papers](references.md) · [Supported interfaces](support-matrix.md) · [Example conventions](example-guide.md) · [Roadmap](roadmap.md)
+
+[Configure agents: prompts, skills, tools, memory and model parameters](agent-resources.md).

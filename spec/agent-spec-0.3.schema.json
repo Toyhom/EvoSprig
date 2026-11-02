@@ -228,6 +228,42 @@
           "default": "",
           "title": "Instructions"
         },
+        "skills": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Skills",
+          "type": "array"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
         "tools": {
           "items": {
             "type": "string"

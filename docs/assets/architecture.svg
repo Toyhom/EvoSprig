@@ -1,1 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800"><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#9aa6b6"/></marker></defs><rect width="1400" height="800" rx="20" fill="#fafbfc"/><text x="42" y="48" font-family="Inter,Arial,sans-serif" font-size="29" font-weight="700" fill="#152236">EvoSprig</text><text x="205" y="48" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="400" fill="#526176">One application. Build, run, improve and ship.</text><rect x="42" y="90" width="290" height="130" rx="12" fill="white" stroke="#dce2e9"/><rect x="60" y="110" width="4" height="22" rx="2" fill="#4974b7"/><text x="76" y="128" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Build</text><text x="66" y="160" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Python SDK · YAML / JSON</text><text x="66" y="185" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Grouped canvas · nested subflows</text><rect x="400" y="90" width="520" height="130" rx="12" fill="white" stroke="#dce2e9"/><rect x="418" y="110" width="4" height="22" rx="2" fill="#4974b7"/><text x="434" y="128" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">AgentSpec + versioned resources</text><text x="424" y="160" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Typed graphs · model and tool bindings</text><text x="424" y="185" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">One source of truth across code, canvas and export</text><rect x="988" y="90" width="370" height="130" rx="12" fill="white" stroke="#dce2e9"/><rect x="1006" y="110" width="4" height="22" rx="2" fill="#4974b7"/><text x="1022" y="128" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Ship</text><text x="1012" y="160" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Standalone Python · HTTP app</text><text x="1012" y="185" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Container build project</text><path d="M 332 155 L 400 155" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><path d="M 920 155 L 988 155" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><rect x="42" y="270" width="290" height="225" rx="12" fill="white" stroke="#dce2e9"/><rect x="60" y="290" width="4" height="22" rx="2" fill="#4974b7"/><text x="76" y="308" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Bring your application</text><text x="66" y="340" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Software and data teams</text><text x="66" y="365" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Research and decision rooms</text><text x="66" y="390" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Video production · receipts</text><text x="66" y="415" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Meetings · books · travel</text><rect x="400" y="270" width="520" height="225" rx="12" fill="white" stroke="#dce2e9"/><rect x="418" y="290" width="4" height="22" rx="2" fill="#4974b7"/><text x="434" y="308" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Durable runtime</text><text x="424" y="340" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Agents · conditions · loops · parallel · map</text><text x="424" y="365" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Human approvals · recoverable external jobs</text><text x="424" y="390" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Fenced checkpoints · scoped identities</text><text x="424" y="415" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Shared model / tool / time budgets</text><path d="M 332 375 L 400 375" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><path d="M 660 220 L 660 270" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><rect x="988" y="270" width="370" height="225" rx="12" fill="white" stroke="#dce2e9"/><rect x="1006" y="290" width="4" height="22" rx="2" fill="#4974b7"/><text x="1022" y="308" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Connected capabilities</text><text x="1012" y="340" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Model APIs · HTTP · MCP · SQL</text><text x="1012" y="365" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Tool discovery · feedback · concurrency</text><text x="1012" y="390" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Code execution · browser · OCR</text><text x="1012" y="415" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Scoped memory · retrieval · experiences</text><path d="M 920 375 L 988 375" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><rect x="42" y="560" width="375" height="180" rx="12" fill="white" stroke="#dce2e9"/><rect x="60" y="580" width="4" height="22" rx="2" fill="#36785a"/><text x="76" y="598" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Evaluate your tasks</text><text x="66" y="630" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Input-only LLM judge or your own scorer</text><text x="66" y="655" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Outputs · steps · tools · environment</text><text x="66" y="680" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Industry sandboxes · business-state replay</text><rect x="457" y="560" width="463" height="180" rx="12" fill="white" stroke="#dce2e9"/><rect x="475" y="580" width="4" height="22" rx="2" fill="#946431"/><text x="491" y="598" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Controlled evolution</text><text x="481" y="630" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">13 training-free strategies / 11 families</text><text x="481" y="655" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Prompt search · demonstrations · reflections</text><text x="481" y="680" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Versioned candidates · lineage · budgets</text><rect x="988" y="560" width="370" height="180" rx="12" fill="white" stroke="#dce2e9"/><rect x="1006" y="580" width="4" height="22" rx="2" fill="#36785a"/><text x="1022" y="598" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="600" fill="#1e293b">Compare and release</text><text x="1012" y="630" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Paired application outputs · resource diffs</text><text x="1012" y="655" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Quality and regression gates</text><text x="1012" y="680" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="400" fill="#526176">Manual release · rollback · export</text><path d="M 660 495 L 660 530" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><path d="M 660 530 L 230 530 L 230 560" stroke="#9aa6b6" stroke-width="2" fill="none" marker-end="url(#arrow)"/><path d="M 417 650 L 457 650" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><path d="M 920 650 L 988 650" stroke="#9aa6b6" stroke-width="2" marker-end="url(#arrow)" fill="none"/><text x="42" y="778" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="400" fill="#64748b">Your models. Your tools. Your tasks. No model-weight training required.</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="2880" height="1800" viewBox="0 0 1440 900"><rect width="1440" height="900" fill="white"/>
+<text x="40" y="62.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="34" font-weight="700" fill="#202B3A">EvoSprig</text>
+<text x="40" y="99.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="19" font-weight="400" fill="#687587">Build agents. Improve their prompts and skills. Ship your application.</text>
+<rect x="1200" y="37" width="200" height="28" rx="6" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="1210" y="53.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#397A70">OPEN SOURCE</text>
+<path d="M40,124 L1400,124" fill="none" stroke="#DAE1E8" stroke-width="1"/>
+<text x="40" y="165.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#446C9E">01  BUILD</text>
+<text x="40" y="198.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">One application, two editors</text>
+<rect x="40" y="226" width="270" height="72" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="58" y="259.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">Python SDK + CLI</text>
+<text x="58" y="282.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Typed graphs and resource files</text>
+<rect x="40" y="314" width="270" height="72" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="58" y="347.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">Visual Studio</text>
+<text x="58" y="370.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Nested teams, nodes and subflows</text>
+<path d="M175,386 L175,414" fill="none" stroke="#446C9E" stroke-width="1.7"/>
+<polygon points="175,414 178.0,407.0 172.0,407.0" fill="#446C9E"/>
+<path d="M40,262 L25,262" fill="none" stroke="#446C9E" stroke-width="1.7"/>
+<path d="M25,262 L25,462" fill="none" stroke="#446C9E" stroke-width="1.7"/>
+<path d="M25,462 L40,462" fill="none" stroke="#446C9E" stroke-width="1.7"/>
+<polygon points="40,462 33.0,459.0 33.0,465.0" fill="#446C9E"/>
+<rect x="40" y="414" width="270" height="94" rx="10" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="58" y="452.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="21" font-weight="700" fill="#202B3A">AgentSpec</text>
+<text x="58" y="477.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Workflow + resource references</text>
+<text x="58" y="493.8" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Portable, versioned behavior</text>
+<path d="M310,462 L340,462" fill="none" stroke="#446C9E" stroke-width="1.7"/>
+<polygon points="340,462 333.0,459.0 333.0,465.0" fill="#446C9E"/>
+<rect x="40" y="540" width="270" height="140" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="58" y="573.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="16" font-weight="700" fill="#202B3A">Your models and data</text>
+<text x="58" y="604.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="13" font-weight="400" fill="#687587">Cloud or local model endpoints</text>
+<text x="58" y="622.2" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="13" font-weight="400" fill="#687587">Files, documents and databases</text>
+<text x="58" y="640.4" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="13" font-weight="400" fill="#687587">Business tools and APIs</text>
+<text x="344" y="165.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#397A70">02  RUN</text>
+<text x="344" y="201.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="20" font-weight="700" fill="#202B3A">Agents work together on a real task</text>
+<rect x="340" y="224" width="620" height="198" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="357" y="250.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#687587">Career coach</text>
+<rect x="357" y="301" width="139" height="62" rx="8" fill="#FFFFFF" stroke="#DAE1E8"/>
+<rect x="367" y="311" width="6" height="6" rx="2" fill="#446C9E" stroke="#446C9E"/>
+<text x="381" y="319.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#202B3A">Job fit</text>
+<text x="369" y="345.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="10" font-weight="400" fill="#687587">Analyze requirements</text>
+<rect x="526" y="269" width="135" height="62" rx="8" fill="#FFFFFF" stroke="#DAE1E8"/>
+<rect x="536" y="279" width="6" height="6" rx="2" fill="#446C9E" stroke="#446C9E"/>
+<text x="550" y="287.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#202B3A">Resume</text>
+<text x="538" y="313.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="10" font-weight="400" fill="#687587">Tailored summary</text>
+<rect x="526" y="347" width="135" height="62" rx="8" fill="#FFFFFF" stroke="#DAE1E8"/>
+<rect x="536" y="357" width="6" height="6" rx="2" fill="#446C9E" stroke="#446C9E"/>
+<text x="550" y="365.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#202B3A">Interview</text>
+<text x="538" y="391.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="10" font-weight="400" fill="#687587">Practice questions</text>
+<rect x="691" y="301" width="123" height="62" rx="8" fill="#FFFFFF" stroke="#DAE1E8"/>
+<rect x="701" y="311" width="6" height="6" rx="2" fill="#A17A45" stroke="#A17A45"/>
+<text x="715" y="319.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#202B3A">Candidate</text>
+<text x="703" y="345.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="10" font-weight="400" fill="#687587">Human input</text>
+<rect x="842" y="301" width="102" height="62" rx="8" fill="#FFFFFF" stroke="#DAE1E8"/>
+<rect x="852" y="311" width="6" height="6" rx="2" fill="#397A70" stroke="#397A70"/>
+<text x="866" y="319.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#202B3A">Coach</text>
+<text x="854" y="345.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="10" font-weight="400" fill="#687587">Review + handoff</text>
+<path d="M496,332 L511,332" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M511,332 L511,300" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M511,300 L526,300" fill="none" stroke="#687587" stroke-width="1.7"/>
+<polygon points="526,300 519.0,297.0 519.0,303.0" fill="#687587"/>
+<path d="M511,332 L511,378" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M511,378 L526,378" fill="none" stroke="#687587" stroke-width="1.7"/>
+<polygon points="526,378 519.0,375.0 519.0,381.0" fill="#687587"/>
+<path d="M661,300 L676,300" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M676,300 L676,332" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M676,332 L691,332" fill="none" stroke="#687587" stroke-width="1.7"/>
+<polygon points="691,332 684.0,329.0 684.0,335.0" fill="#687587"/>
+<path d="M661,378 L676,378" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M676,378 L676,332" fill="none" stroke="#687587" stroke-width="1.7"/>
+<path d="M814,332 L842,332" fill="none" stroke="#687587" stroke-width="1.7"/>
+<polygon points="842,332 835.0,329.0 835.0,335.0" fill="#687587"/>
+<text x="357" y="409.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Parallel roles · map / loop · approval · resume</text>
+<rect x="340" y="440" width="620" height="240" rx="10" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="359" y="473.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">Every agent has editable building blocks</text>
+<rect x="359" y="498" width="285" height="64" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="371" y="520.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#446C9E">PROMPT</text>
+<text x="371" y="545.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Role, task and output contract</text>
+<rect x="656" y="498" width="285" height="64" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="668" y="520.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#80679F">SKILLS</text>
+<text x="668" y="545.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Reusable procedures and playbooks</text>
+<rect x="359" y="574" width="285" height="64" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="371" y="596.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#397A70">TOOLS + KNOWLEDGE</text>
+<text x="371" y="621.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">MCP / HTTP / Python / retrieval</text>
+<rect x="656" y="574" width="285" height="64" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="668" y="596.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#A17A45">MEMORY + MODEL</text>
+<text x="668" y="621.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Shared project context, sampling</text>
+<text x="359" y="663.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#80679F">Select exactly which prompts and skills may change.</text>
+<path d="M650,440 L650,422" fill="none" stroke="#397A70" stroke-width="1.7"/>
+<polygon points="650,422 647.0,429.0 653.0,429.0" fill="#397A70"/>
+<text x="995" y="165.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#80679F">03  IMPROVE</text>
+<text x="995" y="199.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="18" font-weight="700" fill="#202B3A">A task set becomes better instructions</text>
+<rect x="995" y="226" width="405" height="68" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="1012" y="253.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="16" font-weight="700" fill="#202B3A">Your task inputs</text>
+<text x="1012" y="279.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Optional answers, rubrics and business checks</text>
+<path d="M1197,294 L1197,310" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<polygon points="1197,310 1200.0,303.0 1194.0,303.0" fill="#80679F"/>
+<rect x="995" y="310" width="405" height="83" rx="10" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="1012" y="338.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#202B3A">Evaluate the running application</text>
+<text x="1012" y="363.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">LLM judge / custom scorer / industry sandbox</text>
+<text x="1012" y="379.8" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Search → selection → release tasks</text>
+<path d="M960,332 L995,332" fill="none" stroke="#687587" stroke-width="1.7"/>
+<polygon points="995,332 988.0,329.0 988.0,335.0" fill="#687587"/>
+<path d="M1197,393 L1197,409" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<polygon points="1197,409 1200.0,402.0 1194.0,402.0" fill="#80679F"/>
+<rect x="995" y="409" width="405" height="100" rx="10" fill="#F8F6FB" stroke="#DAE1E8"/>
+<text x="1012" y="438.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="16" font-weight="700" fill="#80679F">13 training-free search strategies</text>
+<text x="1012" y="463.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">OPRO · GEPA · APE · ProTeGi · EvoPrompt</text>
+<text x="1012" y="478.4" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Self-Refine · ACE · Reflexion · ExpeL</text>
+<text x="1012" y="493.8" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">PromptBreeder · few-shot search</text>
+<path d="M1197,509 L1197,525" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<polygon points="1197,525 1200.0,518.0 1194.0,518.0" fill="#80679F"/>
+<rect x="995" y="525" width="405" height="86" rx="10" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="1012" y="551.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#202B3A">Compare prompt and skill candidates</text>
+<text x="1012" y="577.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Resource edits + application outputs</text>
+<text x="1012" y="593.8" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Quality checks and explicit call / token budgets</text>
+<path d="M995,568 L978,568" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<path d="M978,568 L978,530" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<path d="M978,530 L941,530" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<polygon points="941,530 948.0,533.0 948.0,527.0" fill="#80679F"/>
+<text x="961" y="515.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="9" font-weight="400" fill="#80679F">edits</text>
+<path d="M1197,611 L1197,627" fill="none" stroke="#80679F" stroke-width="1.7"/>
+<polygon points="1197,627 1200.0,620.0 1194.0,620.0" fill="#80679F"/>
+<rect x="995" y="627" width="405" height="53" rx="10" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="1012" y="657.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="14" font-weight="700" fill="#202B3A">Review → enable a version → roll back</text>
+<path d="M40,707 L1400,707" fill="none" stroke="#DAE1E8" stroke-width="1"/>
+<text x="40" y="750.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#397A70">04  SHIP</text>
+<text x="40" y="788.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="20" font-weight="700" fill="#202B3A">A version you can take with you</text>
+<text x="40" y="819.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="14" font-weight="400" fill="#687587">Run independently of Studio.</text>
+<rect x="495" y="739" width="290" height="97" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="511" y="771.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">Python application</text>
+<text x="511" y="800.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Readable source + resource files</text>
+<rect x="803" y="739" width="290" height="97" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="819" y="771.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">HTTP service</text>
+<text x="819" y="800.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Versioned requests and responses</text>
+<rect x="1110" y="739" width="290" height="97" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="1126" y="771.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">Container project</text>
+<text x="1126" y="800.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="400" fill="#687587">Model and tool deployment bindings</text>
+<text x="40" y="872.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="11" font-weight="700" fill="#687587">RUNTIME FOUNDATION</text>
+<text x="325" y="873.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#687587">Checkpoints  /  tool permissions  /  human approvals  /  isolated user data  /  usage budgets  /  version history</text>
+</svg>

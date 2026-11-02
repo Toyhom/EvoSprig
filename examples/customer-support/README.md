@@ -24,4 +24,10 @@ Edit `prompts/policy.md` for your store's tone and rules. Add shipping or invent
 
 ## Example outputs
 
-[Open the example outputs](results/README.md), then adapt the application to your own tasks.
+## An order request, handled with the policy
+
+For an already delivered order, the assistant checks the order state, explains the refund rule and routes the exception for human review:
+
+> I checked order demo-2: it is paid and within the policy window, but it has already been fulfilled (delivered).
+
+The workflow produces a customer reply and a review request. Eligible refunds pass through the approval node before the write tool runs.

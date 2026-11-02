@@ -6,6 +6,14 @@ Explore a decision from both sides. Two agents present arguments, respond to eac
 
 **Parallel opening arguments → parallel rebuttals → moderated recommendation**
 
+## A decision with a practical next step
+
+**Proposal:** replace library desks with a makerspace.
+
+The two reviewers examine a $24,000 conversion, a $3,000 temporary-room pilot, 92% peak desk occupancy and a small volunteer survey. The moderator recommends funding the temporary pilot, keeping the desks, and setting usage and accessibility criteria before considering conversion.
+
+The output brings the competing arguments and decision criteria into one brief.
+
 ## Try it
 
 Configure a model as described in the [quickstart](../../docs/quickstart.md), then run:
@@ -26,6 +34,6 @@ evosprig serve --project examples/debate/agent.yaml \
 
 Edit `sample.json` for your own task and the files under `prompts/` for the roles and instructions. All coordination, tool calls and parallel work use EvoSprig's AgentSpec and runtime. The [catalog builder](../build_catalog.py) shows how to create the same workflow with the Python SDK.
 
-Use the [evolution guide](../../docs/evolution.md) to improve selected prompts on your own tasks. [Example outputs](results/README.md) show what the application produces.
+Use the [evolution guide](../../docs/evolution.md) to improve selected prompts and skills on your own tasks.
 
 Application pattern inspired by [MetaGPT’s debate example](https://github.com/FoundationAgents/MetaGPT); implemented with EvoSprig's own framework.

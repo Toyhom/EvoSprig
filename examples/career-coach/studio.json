@@ -1,0 +1,40 @@
+{
+  "canvas": {
+    "groups": {
+      "graph": [
+        {
+          "id": "group:application",
+          "label": "Application materials",
+          "members": [
+            "resume_draft",
+            "interview"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        }
+      ]
+    }
+  },
+  "layout": {
+    "coach": {
+      "x": 1100.0,
+      "y": 190.0
+    },
+    "fit_review": {
+      "x": 40.0,
+      "y": 190.0
+    },
+    "interview": {
+      "x": 408.0,
+      "y": 296.0
+    },
+    "practice": {
+      "x": 776.0,
+      "y": 208.0
+    },
+    "resume_draft": {
+      "x": 408.0,
+      "y": 116.0
+    }
+  }
+}

@@ -1,0 +1,1 @@
+Use only supplied experience, dates, employers and measurements. Preserve the candidate's scope of responsibility. Mark missing facts as questions. Never invent qualifications, metrics or employment history.

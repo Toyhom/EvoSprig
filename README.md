@@ -2,7 +2,7 @@
 
 <img src="docs/assets/hero.svg" alt="EvoSprig — Build agents that grow" width="880" />
 
-**Build agents. Improve them with evidence. Ship them anywhere.**
+**Build agents. Improve their prompts and skills. Ship your application.**
 
 [![CI](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml/badge.svg)](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB)](https://www.python.org/)
@@ -24,6 +24,9 @@ EvoSprig brings visual workflows, persistent memory and evaluation-driven improv
 
 | Build an agent that… | Start here |
 | --- | --- |
+| Tailors a resume and runs interview practice | **[Career coach](examples/career-coach/)** — job fit, application materials and feedback |
+| Turns one announcement into a content campaign | **[Content studio](examples/content-studio/)** — parallel channels and shared editing skills |
+| Teaches a topic and reviews your answers | **[Study coach](examples/study-coach/)** — lessons, exercises and personal feedback |
 | Turns a brief into a working web app | **[Software team](examples/software-team/)** — design, implementation, browser checks and repair |
 | Runs Python and explains your data | **[Data Interpreter](examples/data-interpreter/)** — files, calculations and charts |
 | Helps you make a difficult decision | **[Decision room](examples/debate/)** — opposing arguments, rebuttals and a moderated recommendation |
@@ -48,6 +51,8 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 
 <img src="docs/assets/architecture.svg" alt="EvoSprig architecture: authoring, AgentSpec, durable runtime, tools and memory, evaluation, controlled evolution and release" width="100%" />
 
+[Download the editable architecture slide](docs/assets/architecture.pptx).
+
 ## Get started
 
 Requires **Python 3.12+**. Studio also requires **Node.js 20+**.
@@ -71,9 +76,11 @@ Open **http://127.0.0.1:18766**. Studio starts in English; switch to **中文** 
 
 For live models, configure environment-based credentials in a [deployment profile](examples/deployment.example.yaml). Follow the [quickstart](docs/quickstart.md) for model connections and export.
 
-## See what changes after evolution
+## Improve prompts and skills automatically
 
-Explore the **[book-writing comparison](examples/book-studio/results/)** and **[document-answering comparison](examples/document-chat/results/)** to see actual outputs before and after resource search. Each includes reusable prompts, the same task inputs and the measured change.
+Build your agent, add task inputs, select the resources to change and choose an algorithm. EvoSprig writes candidates and runs your application to compare them. Review the prompt or skill changes alongside the outputs, then enable your chosen version. [Configure your first improvement](docs/agent-resources.md#improve-selected-resources).
+
+Explore the **[book-writing comparison](examples/book-studio/)** and **[document-answering comparison](examples/document-chat/)** to see prompt changes and selected outputs. Each page shows what changed and how it affected the answer.
 
 Bring your own inputs to **[LLM-as-judge](docs/evaluation.md)**, or connect your evaluator. The **[method guide](docs/evolution.md)** explains which feedback each strategy uses. Review the diff and outputs before enabling a version; a search never publishes itself.
 

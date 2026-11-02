@@ -200,6 +200,8 @@ def test_same_version_score_variability_is_not_evolution_gain():
     after = {**before, "report_id": "second", "score": 0.9}
     record = comparison_record(before, after, method="opro", task_model="test")
     assert record["gain"] == 0 and not record["candidate_changed"]
-    assert "run variability" in markdown_comparison(record)
+    assert markdown_comparison(record).startswith("# Application result")
+    assert "### Before" not in markdown_comparison(record)
     reused = comparison_record(before, before, method="opro", task_model="test")
-    assert reused["validation_reused"] and "reused" in markdown_comparison(reused)
+    assert reused["validation_reused"]
+    assert markdown_comparison(reused).count("### Result") == 1

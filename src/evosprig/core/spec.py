@@ -120,6 +120,9 @@ class Node(Contract):
     output_schema: dict[str, Any]
     model: str | None = None
     instructions: str | ResourceRef = ""
+    skills: list[str] = Field(default_factory=list, max_length=32)
+    temperature: float | None = Field(default=None, ge=0, le=2, allow_inf_nan=False)
+    top_p: float | None = Field(default=None, gt=0, le=1, allow_inf_nan=False)
     tools: list[str] = Field(default_factory=list)
     tool: str | None = None
     response_format: Literal["text", "json"] = "text"
@@ -143,6 +146,12 @@ class Node(Contract):
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if self.type not in {"model", "agent"} and (
+            self.skills or self.temperature is not None or self.top_p is not None
+        ):
+            raise ValueError("skills and sampling parameters require a model or agent node")
+        if len(self.skills) != len(set(self.skills)):
+            raise ValueError("node skills must be unique")
         if self.max_output_tokens is not None and self.type not in {"model", "agent"}:
             raise ValueError("per-node output tokens require a model or agent node")
         if len(self.tools) != len(set(self.tools)):
@@ -301,6 +310,9 @@ class AgentSpec(Contract):
                 and node.instructions.resource not in self.resources
             ):
                 raise ValueError(f"{node_id}: unknown instruction resource")
+            for skill in node.skills:
+                if skill not in self.resources or self.resources[skill].role != "skill":
+                    raise ValueError(f"{node_id}: skills must reference declared skill resources")
             self._check_refs(node.inputs, ancestors[node_id], node_id)
             if node.items:
                 self._check_refs({"items": node.items}, ancestors[node_id], node_id)
@@ -363,6 +375,23 @@ class AgentSpec(Contract):
             )
         return order, ancestors
 
+    def used_resources(self) -> set[str]:
+        """Text resources consumed by nodes, including nested executable graphs."""
+        names = set()
+
+        def visit(graph):
+            for node in graph.nodes.values():
+                if isinstance(node.instructions, ResourceRef):
+                    names.add(node.instructions.resource)
+                names.update(node.skills)
+                if node.body:
+                    visit(node.body)
+                for branch in node.branches.values():
+                    visit(branch)
+
+        visit(self.graph)
+        return names
+
     def canonical(self) -> str:
         data = self.model_dump(mode="json")
 
@@ -377,6 +406,9 @@ class AgentSpec(Contract):
                     ("output_errors", "raise"),
                     ("max_output_retries", 1),
                     ("max_output_tokens", None),
+                    ("skills", []),
+                    ("temperature", None),
+                    ("top_p", None),
                 ):
                     if node[key] == default:
                         node.pop(key)

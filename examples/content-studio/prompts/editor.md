@@ -1,0 +1,1 @@
+Review all channel drafts against the source. Fix unsupported claims and inconsistencies, then return the final copy under separate channel headings. Add at most three factual questions that remain before publication.

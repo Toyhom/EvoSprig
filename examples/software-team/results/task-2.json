@@ -1,3 +1,0 @@
-{
-  "request": "Build a meeting timer. Let the user set minutes, start, pause and reset. Show remaining time and current state. Reject nonpositive durations, avoid duplicate intervals after repeated Start clicks. Provide keyboard-friendly controls and a calm white design in one HTML file."
-}

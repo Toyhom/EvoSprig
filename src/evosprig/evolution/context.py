@@ -31,6 +31,8 @@ class EvolutionContext:
     ):
         if not allowed or len(allowed) != len(set(allowed)) or set(allowed) - set(base.resources):
             raise ValueError("choose unique editable prompt/skill resources")
+        if set(allowed) - base.spec.used_resources():
+            raise ValueError("attach editable resources to a model or agent node before improvement")
         self.base, self.allowed, self.view, self.metric = base, tuple(allowed), view, metric
         self.evaluator, self.meter = evaluator, meter
         self.proposer = BudgetedProvider(proposer, meter)
