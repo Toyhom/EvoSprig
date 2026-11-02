@@ -75,6 +75,11 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
 
             config = HTTPToolConfig.model_validate(raw)
             tool = http_tool(config)
+        elif raw.get("kind") == "external_http":
+            from evosprig.plugins.external_http import ExternalHTTPConfig, external_http_tool
+
+            config = ExternalHTTPConfig.model_validate(raw)
+            tool = external_http_tool(config)
         elif raw.get("kind") == "mcp":
             from evosprig.plugins.mcp_tools import MCPToolConfig, mcp_tool
 

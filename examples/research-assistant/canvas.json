@@ -1,0 +1,58 @@
+{
+  "nodes": [
+    {
+      "id": "answer",
+      "position": {
+        "x": 0,
+        "y": 120
+      },
+      "data": {
+        "label": "answer",
+        "node": {
+          "type": "agent",
+          "inputs": {
+            "question": {
+              "ref": "input.question",
+              "optional": false,
+              "default": null
+            },
+            "evidence": {
+              "ref": "input.evidence",
+              "optional": false,
+              "default": null
+            }
+          },
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "answer": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "answer"
+            ],
+            "additionalProperties": false
+          },
+          "model": "research",
+          "instructions": {
+            "resource": "instructions"
+          },
+          "tools": [
+            "add",
+            "retrieve"
+          ],
+          "tool": null,
+          "response_format": "json",
+          "condition": null,
+          "body": null,
+          "branches": {},
+          "max_iterations": 1,
+          "until": null,
+          "join": "all"
+        }
+      }
+    }
+  ],
+  "edges": []
+}

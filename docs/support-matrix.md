@@ -1,35 +1,27 @@
-# 支持矩阵
+# 支持矩阵 · 0.1.0a1
 
-阶段：开源 Alpha 开发中，AgentSpec 0.1/0.2。以下状态对应实际实现范围。
+状态以契约测试与真实示例记录为依据。Alpha 面向单机自托管。
 
-| 能力 | 当前状态 | 范围 |
-| --- | --- | --- |
-| Python Builder / YAML / JSON Schema | 已验证 | Python 3.12、显式声明式构建、严格字段校验 |
-| 规格往返 | 已验证 | Builder → 规格 → React Flow 画布 → 规格，布局独立 |
-| 状态图 | 已验证 | 单入口图、条件边、转换、受限循环、并行与汇合 |
-| 模型节点与 Agent 工具循环 | 已验证 | 文本、JSON 对象、只读工具；预算与超时 |
-| DeepSeek API | 已验证 | 官方 deepseek-flash；文本、JSON、工具、流式与端到端调用 |
-| 通用兼容 API | 契约测试通过 | HTTPX、显式能力配置、环境凭据、错误分类 |
-| 流式模型接口 | 已验证 | 独立适配器接口；运行器当前使用完整响应 |
-| Python 工具插件 | 已验证 | 显式注册、版本、输入输出校验、超时；示例插件 |
-| 运行事件 | 已验证 | 顺序、关联调用 ID、用量、终态；服务持久化和 SSE 补读 |
-| 运行预算 | 已验证 | 步数、模型调用次数、token 预留、超时和取消 |
-| Studio | 已验证 | 节点拖动/连接/删除/自动排列，参数与规格编辑、运行、导出、双语 |
-| 版本并发 | 已验证 | SQLite 原子 revision 比较更新；冲突返回 409 |
-| Python 导出 | 已验证 | 内置工具、资源、最小运行源码、依赖锁、内容清单 |
-| TypeScript 导出 | 计划中 | 当前请求返回目标不兼容报告 |
-| 持久检查点、任务恢复 | 已验证 | SQLite、租约/fencing、操作日志、CLI/API/独立工程恢复 |
-| 条件、受限循环、并行调度、人工暂停 | 已验证 | 规格 0.2；前端编辑整合继续开发 |
-| 写入工具与外部异步 job | 已验证 | 三层写入授权、未知结果暂停、幂等提交/查询/取消 |
-| HTTP/OpenAPI | 已验证 | 显式 HTTP 配置与 OpenAPI 3 静态路径/JSON 子集；冻结绑定、限时、输出校验 |
-| MCP | 已验证 | 官方 SDK 1.30.0，2025-11-25 Streamable HTTP；实际工具/资源/提示与导出 |
-| vLLM 实测、原生供应商 | 计划中 | vLLM 为 Alpha 剩余验收项；原生供应商随后扩展 |
-| 长期记忆与检索 | 已验证 | SQLite 作用域、删除账本、恢复过滤、词法文档引用；Studio 页面继续开发 |
-| 评测、候选、OPRO、GEPA、自进化 | 计划中 | 后续按候选验证与发布协议实施 |
-| 视频应用、容器/HTTP 工程导出 | 计划中 | 后续 Alpha 阶段 |
+| 能力 | 实现与验证范围 |
+| --- | --- |
+| Builder / YAML / JSON Schema / 画布 | AgentSpec 0.1/0.2；布局与行为哈希独立，代码/画布往返 |
+| 状态图 | model、tool、agent、condition、transform、join、loop、parallel、human |
+| 持久运行 | SQLite 检查点、租约/fencing、写入 intent、未知结果处理、外部 job ID、取消与人工恢复 |
+| 预算 | 步数、模型调用、tokens、时间；并发先预留再结算，缺失 usage 保留预留 |
+| 模型 | OpenAI-compatible；真实 DeepSeek Flash 文本/JSON/工具/流式/运行；真实 vLLM 0.10.2 + Qwen3-0.6B 文本/JSON/流式/运行（未验证工具调用） |
+| 工具 | Python 契约、HTTP、OpenAPI 3 静态路径 JSON 子集、异步 HTTP job；MCP SDK 1.30.0 / 协议 2025-11-25 Streamable HTTP |
+| 记忆与资料 | tenant/user/project/role/namespace 隔离，独立删除账本，词法检索与字符位置引用 |
+| 评测 | search/selection/release/test 划分；exact、contains、tool_called 指标，逐样本用量与事件 |
+| 进化 | 原生轻量 OPRO；官方 GEPA 0.1.4 adapter；资源白名单、共享预算和独立发布验证 |
+| 版本 | 不可变快照、候选 diff、release revision CAS、显式启用与兼容回滚 |
+| Studio | 中英界面、图编辑、规格/代码、资源、历史/人工恢复、记忆、改进、版本与 ZIP 导入 |
+| 导出 | Python、HTTP 服务、容器 Dockerfile；固定版本、源码、依赖锁、文件清单 |
+| 导入 | 限量 ZIP，路径/符号链接/重复/哈希/插件校验；不执行归档源码 |
+| 研究助手 | 真实 DeepSeek、人工基线、OPRO、GEPA；9 个原创 smoke cases，测试集未见提升 |
+| 视觉示例 | 18 秒 / 3 镜头；真实模型分镜 + Pillow/FFmpeg 程序渲染，真实 job 恢复 |
 
-模型用量使用供应商返回值。请求前以 UTF-8 长度与协议开销保守估算输入额度，并预留输出 token。终端失败或取消时的 `unreported_model_calls` 表示尚无用量回执的请求；货币费用默认为未知，按供应商账单结算。
+真实金额未知，按供应商账单结算。同步 Python 工具在线程中运行，超时不保证终止线程；写入需幂等与恢复契约。模型流式接口可独立使用，状态图运行器当前等待完整响应。
 
-同步只读 Python 工具在线程中运行；超时后不再等待其结果，Python 线程可能继续完成计算。同步 Python 工具须为受信任代码；写工具需要幂等/恢复契约。服务使用有界 asyncio worker，SQLite 支持持久恢复与多 worker 租约竞争。
+当前未实现：原生 TypeScript 执行、MCP Server 导出、神经图像/视频生成适配器、外部记忆平台、更多进化方法、平台 PostgreSQL/多节点部署。容器目标提供构建配方；当前共享服务器无 Docker/Podman，镜像构建留给支持 OCI 的部署环境和 CI。独立 HTTP 服务在本地测试与干净环境运行验证。
 
-平台验证：Linux x86_64，Python 3.12.4，Node.js 20.17.0。其他平台按后续 CI 记录扩展。
+开发验证平台：Linux x86_64，Python 3.12（持久环境 3.12.16），Node.js 20.17.0。其他平台依后续 CI 扩展。

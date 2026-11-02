@@ -9,6 +9,10 @@ from pathlib import Path
 
 ROOT_FILES = {
     "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "pyproject.toml",
     ".gitignore",
     ".dockerignore",
@@ -86,7 +90,7 @@ def main():
     artifacts = []
     if args.artifacts:
         for file in sorted(args.artifacts.iterdir()):
-            if file.suffix == ".whl":
+            if file.suffix in {".whl", ".zip"}:
                 with zipfile.ZipFile(file) as archive:
                     for name in archive.namelist():
                         check(name, archive.read(name))

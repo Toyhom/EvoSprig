@@ -1,0 +1,188 @@
+{
+  "date": "2026-11-02",
+  "model": "deepseek-flash",
+  "suite_id": "4557445f24ad85969474f23071c7d2729717bcf6112aecf739aab1bb54ccb31e",
+  "split_counts": {
+    "search": 3,
+    "selection": 2,
+    "release": 2,
+    "test": 2
+  },
+  "base_version": "9530467ee6a15d4e809ad37fb08ce68dbc2a81457e267aa1b588035fb8f14608",
+  "results": {
+    "opro": {
+      "implementation": "native-score-history-baseline",
+      "version_id": "ad36a3a0a809269e6a1d5d1be7cb703a27decd2e44c34bce40980ec3325c9348",
+      "budget": {
+        "max_evaluations": 28,
+        "max_model_calls": 72,
+        "max_total_tokens": 120000,
+        "max_seconds": 900.0,
+        "max_candidates": 2,
+        "proposal_output_tokens": 1536
+      },
+      "usage": {
+        "candidates": 1,
+        "cost": null,
+        "currency": null,
+        "elapsed_seconds": 51.437629748135805,
+        "evaluations": 18,
+        "input_tokens": 16412,
+        "model_calls": 28,
+        "output_tokens": 826,
+        "reserved_tokens": 0,
+        "unreported_model_calls": 0
+      },
+      "release": {
+        "baseline": {
+          "score": 0.5,
+          "count": 2,
+          "tags": {
+            "qa": 0.0,
+            "tools": 1.0
+          },
+          "input_tokens": 1532,
+          "output_tokens": 74
+        },
+        "selected": {
+          "score": 1.0,
+          "count": 2,
+          "tags": {
+            "qa": 1.0,
+            "tools": 1.0
+          },
+          "input_tokens": 1991,
+          "output_tokens": 63
+        }
+      },
+      "test": {
+        "baseline": {
+          "score": 1.0,
+          "count": 2,
+          "tags": {
+            "qa": 1.0,
+            "tools": 1.0
+          },
+          "input_tokens": 1538,
+          "output_tokens": 63
+        },
+        "selected": {
+          "score": 1.0,
+          "count": 2,
+          "tags": {
+            "qa": 1.0,
+            "tools": 1.0
+          },
+          "input_tokens": 1997,
+          "output_tokens": 63
+        }
+      }
+    },
+    "gepa": {
+      "implementation": "official-gepa-0.1.4",
+      "version_id": "ce10a5b343d9c9e81ccd94e8e66e1e61deb8889aec67ee9725b660e25e1f8167",
+      "budget": {
+        "max_evaluations": 28,
+        "max_model_calls": 72,
+        "max_total_tokens": 120000,
+        "max_seconds": 900.0,
+        "max_candidates": 2,
+        "proposal_output_tokens": 1536
+      },
+      "usage": {
+        "candidates": 2,
+        "cost": null,
+        "currency": null,
+        "elapsed_seconds": 53.749500673264265,
+        "evaluations": 24,
+        "input_tokens": 30588,
+        "model_calls": 36,
+        "output_tokens": 1178,
+        "reserved_tokens": 0,
+        "unreported_model_calls": 0
+      },
+      "release": {
+        "baseline": {
+          "score": 0.5,
+          "count": 2,
+          "tags": {
+            "qa": 0.0,
+            "tools": 1.0
+          },
+          "input_tokens": 1532,
+          "output_tokens": 75
+        },
+        "selected": {
+          "score": 1.0,
+          "count": 2,
+          "tags": {
+            "qa": 1.0,
+            "tools": 1.0
+          },
+          "input_tokens": 2117,
+          "output_tokens": 63
+        }
+      },
+      "test": {
+        "baseline": {
+          "score": 1.0,
+          "count": 2,
+          "tags": {
+            "qa": 1.0,
+            "tools": 1.0
+          },
+          "input_tokens": 1538,
+          "output_tokens": 63
+        },
+        "selected": {
+          "score": 1.0,
+          "count": 2,
+          "tags": {
+            "qa": 1.0,
+            "tools": 1.0
+          },
+          "input_tokens": 2123,
+          "output_tokens": 63
+        }
+      }
+    }
+  },
+  "limitations": "Nine authored cases; deterministic exact-string rubric plus required tool receipts; each split has few samples. Results demonstrate execution, not general optimization effectiveness. No automatic release.",
+  "manual_baseline": {
+    "version_id": "31de754653002fc5bf61f106c417a21e181ad200ad3a872e76e670f927e9b055",
+    "usage": {
+      "evaluations": 4,
+      "candidates": 0,
+      "model_calls": 6,
+      "input_tokens": 3442,
+      "output_tokens": 130,
+      "reserved_tokens": 0,
+      "unreported_model_calls": 0,
+      "elapsed_seconds": 14.77215301990509,
+      "cost": null,
+      "currency": null
+    },
+    "reports": {
+      "release": {
+        "score": 1.0,
+        "count": 2,
+        "tags": {
+          "qa": 1.0,
+          "tools": 1.0
+        },
+        "input_tokens": 1718,
+        "output_tokens": 65
+      },
+      "test": {
+        "score": 1.0,
+        "count": 2,
+        "tags": {
+          "qa": 1.0,
+          "tools": 1.0
+        },
+        "input_tokens": 1724,
+        "output_tokens": 65
+      }
+    }
+  }
+}

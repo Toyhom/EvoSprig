@@ -44,6 +44,9 @@ def main():
         if name == "resume":
             sub.add_argument("--path", help="Waiting node or operation path")
             sub.add_argument("--response", help="JSON human input or reconciled tool result")
+    imported = commands.add_parser("import")
+    imported.add_argument("archive", type=Path)
+    imported.add_argument("--out", type=Path, help="Save validated declarative project data")
     serve = commands.add_parser("serve")
     serve.add_argument("--workspace", type=Path, default=Path(".evosprig"))
     serve.add_argument("--project", type=Path)
@@ -55,8 +58,36 @@ def main():
     )
     serve.add_argument("--token-env", help="Optional API bearer-token environment variable")
     serve.add_argument("--max-concurrent-runs", type=int, default=4)
+    from evosprig.evolution.cli import add_commands, run_command
+
+    add_commands(commands)
     args = parser.parse_args()
     try:
+        if args.command == "import":
+            from evosprig.core.spec import save_spec
+            from evosprig.exporters.importer import inspect_archive
+
+            version, report = inspect_archive(args.archive.read_bytes())
+            if args.out:
+                args.out.mkdir(parents=True, exist_ok=False)
+                save_spec(version.spec, args.out / "agent.yaml")
+                for key, resource in version.spec.resources.items():
+                    path = args.out / resource.path
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(version.resources[key])
+            print(json.dumps(report, indent=2))
+            return
+        if args.command in {
+            "evaluate",
+            "improve",
+            "studies",
+            "versions",
+            "release",
+            "rollback",
+            "export-version",
+        }:
+            run_command(args)
+            return
         if args.command in {"runs", "inspect", "resume", "cancel"}:
             journal = SQLiteJournal(args.workspace / "runs.sqlite")
             if args.command == "runs":
@@ -111,7 +142,7 @@ def main():
                         path = root / resource.path
                         path.parent.mkdir(parents=True, exist_ok=True)
                         path.write_text(version.resources[key])
-                    store.create(spec)
+                    store.create(spec, resources=version.resources)
             token = os.environ.get(args.token_env) if args.token_env else None
             if args.token_env and not token:
                 raise ValueError("API token environment variable is empty")

@@ -5,9 +5,10 @@ test('edit, save, run, export and preserve edits on conflicts', async ({ page, c
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
+  const creation = page.waitForResponse(response => response.request().method()==='POST' && new URL(response.url()).pathname==='/api/projects');
   await page.getByRole('button', { name: '＋ 新建项目' }).click();
-  await expect(page.locator('h1')).toContainText('agent-');
-  const id = (await page.locator('h1').innerText()).trim();
+  const id = (await (await creation).json()).id;
+  await expect(page.locator('h1')).toHaveText(id);
   await page.locator('.react-flow__node').click();
   await page.getByLabel('指令', { exact: true }).fill('Answer in one sentence.');
   await page.getByRole('button', { name: '保存', exact: true }).click();

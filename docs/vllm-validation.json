@@ -1,0 +1,24 @@
+{
+  "model": "Qwen/Qwen3-0.6B",
+  "vllm": "0.10.2",
+  "status": "passed",
+  "checks": {
+    "text": "READY",
+    "json": {
+      "ready": true
+    },
+    "stream": [
+      "text",
+      "text",
+      "usage"
+    ],
+    "runtime": {
+      "text": "READY."
+    }
+  },
+  "usage": {
+    "input_tokens": 83,
+    "output_tokens": 14
+  },
+  "uuid_compatibility": "test-local NVML UUID mapping; CUDA_VISIBLE_DEVICES unchanged"
+}

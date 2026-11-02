@@ -1,0 +1,75 @@
+execution:
+  max_model_calls: 3
+  max_output_tokens: 192
+  max_steps: 8
+  max_total_tokens: 8192
+  timeout_seconds: 90.0
+graph:
+  edges: []
+  entry: answer
+  nodes:
+    answer:
+      inputs:
+        evidence:
+          ref: input.evidence
+        question:
+          ref: input.question
+      instructions:
+        resource: instructions
+      model: research
+      output_schema:
+        additionalProperties: false
+        properties:
+          answer:
+            type: string
+        required:
+        - answer
+        type: object
+      response_format: json
+      tool: null
+      tools:
+      - add
+      - retrieve
+      type: agent
+  output:
+    answer:
+      ref: nodes.answer.output.answer
+id: research-assistant
+input_schema:
+  additionalProperties: false
+  properties:
+    evidence:
+      type: string
+    question:
+      type: string
+  required:
+  - question
+  - evidence
+  type: object
+models:
+  research:
+    binding: main
+    requires:
+    - text
+    - structured_output
+    - tool_calling
+output_schema:
+  additionalProperties: false
+  properties:
+    answer:
+      type: string
+  required:
+  - answer
+  type: object
+resources:
+  instructions:
+    path: prompts/assistant.md
+    role: prompt
+spec_version: '0.1'
+tools:
+  add:
+    plugin: builtin.add
+    version: '1'
+  retrieve:
+    plugin: documents.search
+    version: '1'

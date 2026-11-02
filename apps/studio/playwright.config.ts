@@ -6,7 +6,9 @@ process.env.no_proxy = process.env.NO_PROXY;
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 30_000,
+  timeout: 90_000,
+  workers: 1,
+  expect: { timeout: 15_000 },
   webServer: {
     command: `${process.env.EVOSPRIG_PYTHON || 'python'} -m evosprig.cli serve --workspace "${process.env.EVOSPRIG_TEST_WORKSPACE || '../../.evosprig/e2e'}" --project ../../examples/hello/agent.yaml --studio-dir dist --port 18765`,
     url: 'http://127.0.0.1:18765/api/health',

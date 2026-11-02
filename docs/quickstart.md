@@ -19,7 +19,7 @@ evosprig run examples/hello/agent.yaml --mock --input '{"question":"Hello EvoSpr
 python examples/hello/build_agent.py
 ```
 
-应用用户安装基础包即可使用规格、Builder 和离线运行器；`.[models]` 增加兼容 API，`.[server]` 增加本地 API。开发锁文件包含测试工具。
+应用用户安装基础包即可使用规格、Builder 和离线运行器；`.[models]` 增加兼容 API，`.[server]` 增加本地 API，`.[evolution]` 安装 GEPA，`.[mcp]` 安装 MCP SDK，`.[media]` 安装短片渲染依赖。开发锁文件包含测试工具。
 
 ## 真实模型
 
@@ -52,11 +52,13 @@ evosprig serve --workspace ../local-data/studio --project examples/hello/agent.y
 1. 选择示例或新建项目。拖动节点、连接端口，点击节点编辑参数。
 2. 在「规格」编辑输入输出、工具、资源引用、入口和执行预算。新增图节点后建立显式连线；校验会拒绝循环、断开的图和未知引用。
 3. 保存后运行离线演示。真实模型模式使用启动服务的进程环境和 `--profile`，界面无需保存模型密钥。
-4. 查看输出、事件和用量，再下载 Python 工程。
+4. 在资源页编辑提示，在改进页选择数据划分、可修改资源、方法和预算。
+5. 对比候选，在版本页手动启用或回滚；选择 Python、HTTP 或 Container 导出。
+6. 运行历史支持人工输入、恢复与取消，记忆页管理当前用户项目的事实和资料。
 
 revision 冲突返回 HTTP 409，页面保留本地修改。复制本地规格后重新加载比较。布局变化不改变规格哈希。「Python」页显示已保存版本的 Builder 代码。
 
-可用 `--token-env EVOSPRIG_API_TOKEN` 为 API 添加 bearer token；在 Studio「连接」中输入相同令牌。它仅保存在页面内存。当前服务按单用户、单进程工作空间运行。
+可用 `--token-env EVOSPRIG_API_TOKEN` 为 API 添加 bearer token；在 Studio「连接」中输入相同令牌。它仅保存在页面内存。多用户身份配置、持久目录和备份说明见 [部署文档](deployment.md)。
 
 前端热更新：另启 `npm run dev`，代理到默认 API 端口 8765。
 
@@ -72,7 +74,7 @@ python app.py --mock --input '{"question":"Hello"}'
 
 请在独立 Python 环境执行最后三步。导出包包含可读 Builder、AgentSpec、资源、版本锁、依赖锁、最小运行源码和 SHA-256 文件清单。运行时检查固定版本；修改资源后重新导出生成新版本。实际服务凭据在目标机器配置。
 
-当前导出支持 Python 和内置只读工具。自定义工具可通过 SDK 注册（见 `examples/custom_tool.py`）；包含未提供导出支持的插件或请求其他目标时，导出器给出不兼容项。
+当前导出支持 Python、HTTP 服务和容器构建工程；内置工具、记忆、HTTP、MCP 和异步 HTTP job 可移植。自定义工具可通过 SDK 注册（见 `examples/custom_tool.py`）；包含未提供导出支持的插件或请求 TypeScript 等未实现目标时，导出器给出不兼容项。
 
 ## 本地验证
 

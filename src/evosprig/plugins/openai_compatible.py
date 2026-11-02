@@ -33,8 +33,15 @@ class Connection(Contract):
             url.scheme == "http" and url.hostname in {"localhost", "127.0.0.1", "::1"}
         ):
             raise ValueError("use HTTPS, or HTTP for a loopback inference service")
-        if set(self.options) - {"thinking", "reasoning_effort"}:
+        if set(self.options) - {"thinking", "reasoning_effort", "chat_template_kwargs"}:
             raise ValueError("unsupported provider option")
+        template = self.options.get("chat_template_kwargs")
+        if template is not None and (
+            not isinstance(template, dict)
+            or set(template) != {"enable_thinking"}
+            or not isinstance(template["enable_thinking"], bool)
+        ):
+            raise ValueError("chat_template_kwargs supports only boolean enable_thinking")
         return self
 
 

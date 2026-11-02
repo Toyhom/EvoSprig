@@ -82,3 +82,15 @@ coverage does not imply compatibility with every third-party MCP implementation.
 
 Sources: [MCP specification](https://modelcontextprotocol.io/specification/2025-11-25),
 [official Python SDK](https://github.com/modelcontextprotocol/python-sdk).
+
+## Asynchronous HTTP jobs
+
+`kind: external_http` is a write-only, idempotent job binding. Configure `endpoint`,
+input/output schemas and optional `auth_env`, using the same HTTPS/loopback endpoint
+rules as ordinary HTTP tools. POST sends the validated arguments as JSON and a stable
+`Idempotency-Key` header, expecting `{"job_id":"safe-id"}`. GET `endpoint/{job_id}`
+returns `{"status":"pending|succeeded|failed|canceled","output":...}`. DELETE cancels.
+The job ID is journaled before polling; resume queries the saved ID. The remote service
+must atomically bind an idempotency key to its original arguments. See the short-film
+renderer for an executable example. Imported/exported bindings contain environment
+references, and restored runs reject binding changes.

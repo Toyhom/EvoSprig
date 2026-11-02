@@ -21,20 +21,24 @@ from evosprig.config import make_models, make_tools, restore_models
 from evosprig.core.journal import Scope
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import AgentSpec, Contract, canonical_json, digest
-from evosprig.core.version import SECRET, compile_agent
+from evosprig.core.version import SECRET, compile_agent, compile_snapshot
 from evosprig.exporters.python import builder_source, export_python
 from evosprig.plugins.sqlite_journal import SQLiteJournal
 from evosprig.plugins.sqlite_memory import SQLiteMemory
 from evosprig.plugins.sqlite_projects import ProjectStore, RevisionConflict
+from evosprig.plugins.sqlite_studies import StudyStore
 
 from .auth import Principal, current_principal
 from .canvas import to_canvas
+from .evolution_api import install_evolution_routes
 from .memory_api import install_memory_routes
+from .studies import StudyWorker
 from .worker import Worker
 
 
 class ProjectBody(Contract):
     spec: AgentSpec
+    resources: dict[str, str] | None = None
     layout: dict[str, dict[str, float]] = Field(default_factory=dict)
 
 
@@ -47,6 +51,8 @@ class RunBody(Contract):
     revision: int = Field(ge=1)
     mock: bool = True
     allow_writes: bool = False
+    version_id: str | None = None
+    use_release: bool = False
 
 
 class InputBody(Contract):
@@ -86,20 +92,26 @@ def create_app(
         )
 
     worker = Worker(journal, restore_runtime, max_concurrent_runs)
+    studies = StudyStore(workspace / "studies.sqlite")
+    study_worker = StudyWorker(studies, workspace / "evaluation")
 
     @asynccontextmanager
     async def lifespan(app):
         await worker.start()
+        await study_worker.start()
         try:
             yield
         finally:
+            await study_worker.stop()
             await worker.stop()
 
-    app = FastAPI(title="EvoSprig", version="0.1.0.dev0", lifespan=lifespan)
+    app = FastAPI(title="EvoSprig", version="0.1.0a1", lifespan=lifespan)
     app.state.projects = store
     app.state.journal = journal
     app.state.worker = worker
     app.state.memory = memory
+    app.state.studies = studies
+    app.state.study_worker = study_worker
     install_memory_routes(app, memory, store)
 
     @app.middleware("http")
@@ -172,6 +184,10 @@ def create_app(
         return root / "projects" / project_id
 
     def compile_document(document):
+        if document.get("resources") is not None:
+            return compile_snapshot(
+                AgentSpec.model_validate(document["spec"]), document["resources"]
+            )
         return compile_agent(
             AgentSpec.model_validate(document["spec"]), project_root(document["id"])
         )
@@ -179,15 +195,22 @@ def create_app(
     def validate_project(body):
         try:
             canonical_json(body.layout)
-            compile_agent(body.spec, project_root(body.spec.id))
+            if body.resources is None:
+                compile_agent(body.spec, project_root(body.spec.id))
+            else:
+                compile_snapshot(body.spec, body.resources)
         except (ValueError, OSError, ValidationError):
             raise HTTPException(422, "project resources or content failed validation") from None
+
+    install_evolution_routes(
+        app, studies, study_worker, store, compile_document, tools_for, profile
+    )
 
     @app.get("/api/health")
     async def health():
         return {
             "status": "degraded" if worker.last_error else "ok",
-            "stage": "alpha-development",
+            "stage": "alpha",
             "spec_version": "0.2",
             "worker_error": worker.last_error,
         }
@@ -196,26 +219,60 @@ def create_app(
     async def schema():
         return AgentSpec.model_json_schema()
 
+    def public_document(document):
+        if document.get("resources") is None:
+            return {**document, "resources": compile_document(document).resources}
+        return document
+
     @app.get("/api/projects")
     async def projects():
-        return store.list(identity=current_principal.get().key)
+        return [public_document(item) for item in store.list(identity=current_principal.get().key)]
+
+    @app.post("/api/import/inspect")
+    async def inspect_import(request: Request):
+        from evosprig.exporters.importer import inspect_archive
+
+        data = bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data) > 2_000_000:
+                raise HTTPException(413, "archive exceeds 2 MB API limit; use CLI")
+        try:
+            version, report = inspect_archive(bytes(data))
+        except ValueError:
+            raise HTTPException(422, "invalid or unsupported export archive") from None
+        return {
+            "spec": version.spec.model_dump(mode="json"),
+            "resources": version.resources,
+            "report": report,
+        }
 
     @app.post("/api/projects", status_code=201)
     async def create_project(body: ProjectBody):
         validate_project(body)
-        return store.create(body.spec, body.layout, identity=current_principal.get().key)
+        return store.create(
+            body.spec, body.layout, resources=body.resources, identity=current_principal.get().key
+        )
 
     @app.get("/api/projects/{project_id}")
     async def project(project_id: str):
-        return store.get(project_id, identity=current_principal.get().key)
+        return public_document(store.get(project_id, identity=current_principal.get().key))
 
     @app.put("/api/projects/{project_id}")
     async def update_project(project_id: str, body: UpdateBody):
         if project_id != body.spec.id:
             raise HTTPException(422, "project id cannot change")
+        existing = store.get(project_id, identity=current_principal.get().key)
+        if body.resources is None and existing.get("resources") is not None:
+            body = body.model_copy(update={"resources": existing["resources"]})
         validate_project(body)
         return store.update(
-            project_id, body.spec, body.layout, body.revision, identity=current_principal.get().key
+            project_id,
+            body.spec,
+            body.layout,
+            body.revision,
+            resources=body.resources,
+            identity=current_principal.get().key,
         )
 
     @app.get("/api/projects/{project_id}/canvas")
@@ -296,10 +353,23 @@ def create_app(
     @app.post("/api/projects/{project_id}/runs", status_code=202)
     async def start_run(project_id: str, body: RunBody):
         document = store.get(project_id, identity=current_principal.get().key)
-        if document["revision"] != body.revision:
+        if document["revision"] != body.revision and not (body.version_id or body.use_release):
             raise RevisionConflict("save or reload the current project before running")
         try:
-            version = compile_document(document)
+            if body.version_id and body.use_release:
+                raise ValueError("choose a specific version or the active release")
+            selected_id = body.version_id or (
+                studies.release(current_principal.get().scope(project_id))["version_id"]
+                if body.use_release
+                else None
+            )
+            if body.use_release and selected_id is None:
+                raise ValueError("project has no active release")
+            version = (
+                studies.get(current_principal.get().scope(project_id), selected_id)
+                if selected_id
+                else compile_document(document)
+            )
             runtime = Runtime(
                 make_models(version.spec, profile, body.mock),
                 tools_for(current_principal.get().scope(project_id)),
@@ -392,13 +462,19 @@ def create_app(
         )
 
     @app.post("/api/projects/{project_id}/export")
-    async def export(project_id: str):
-        version = compile_document(store.get(project_id, identity=current_principal.get().key))
+    async def export(project_id: str, version_id: str | None = None, target: str = "python"):
+        document = store.get(project_id, identity=current_principal.get().key)
+        version = (
+            studies.get(current_principal.get().scope(project_id), version_id)
+            if version_id
+            else compile_document(document)
+        )
         path = workspace / "exports" / uuid.uuid4().hex
         try:
             export_python(
                 version,
                 path,
+                target=target,
                 tool_bindings=tools_for(current_principal.get().scope(project_id)).bindings,
             )
             output = io.BytesIO()

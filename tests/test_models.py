@@ -134,3 +134,21 @@ async def test_missing_key_stops_before_network(connection, monkeypatch):
 def test_endpoint_validation(url):
     with pytest.raises(ValueError):
         Connection(base_url=url, model="test", api_key_env="KEY")
+
+
+def test_vllm_template_option_is_explicit_and_validated():
+    config = Connection(
+        base_url="http://localhost:8000/v1",
+        model="qwen3",
+        api_key_env="LOCAL_KEY",
+        options={"chat_template_kwargs": {"enable_thinking": False}},
+    )
+    payload = OpenAICompatibleProvider(config)._payload(ModelRequest([]))
+    assert payload["chat_template_kwargs"] == {"enable_thinking": False}
+    with pytest.raises(ValueError):
+        Connection(
+            base_url=config.base_url,
+            model=config.model,
+            api_key_env="LOCAL_KEY",
+            options={"chat_template_kwargs": {"enable_thinking": "false"}},
+        )

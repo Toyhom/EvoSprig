@@ -38,6 +38,7 @@ MODULES = (
     "plugins/memory_tools.py",
     "plugins/documents.py",
     "plugins/http_tools.py",
+    "plugins/external_http.py",
     "plugins/mcp_tools.py",
 )
 
@@ -132,14 +133,14 @@ def compatibility_report(
     version: AgentVersion, target: str = "python", *, tool_bindings=None
 ) -> dict:
     missing = []
-    if target != "python":
+    if target not in {"python", "http", "container"}:
         missing.append({"target": target, "reason": "target runtime is not implemented"})
     tool_bindings = tool_bindings or {}
     for name, binding in version.spec.tools.items():
         if binding.plugin in tool_bindings:
             config = tool_bindings[binding.plugin]
             if (
-                config.get("kind") in {"http", "mcp"}
+                config.get("kind") in {"http", "mcp", "external_http"}
                 and config.get("version", "1") == binding.version
             ):
                 continue
@@ -170,6 +171,10 @@ def export_python(
                 from evosprig.plugins.http_tools import HTTPToolConfig
 
                 config = HTTPToolConfig.model_validate(raw)
+            elif raw.get("kind") == "external_http":
+                from evosprig.plugins.external_http import ExternalHTTPConfig
+
+                config = ExternalHTTPConfig.model_validate(raw)
             elif raw.get("kind") == "mcp":
                 from evosprig.plugins.mcp_tools import MCPToolConfig
 
@@ -189,13 +194,20 @@ def export_python(
     staging = Path(tempfile.mkdtemp(prefix=".evosprig-export-", dir=destination.parent))
     try:
         root = Path(__file__).resolve().parents[1]
-        for module in MODULES:
+        modules = MODULES + (
+            ("server/__init__.py", "server/worker.py", "server/standalone.py")
+            if target != "python"
+            else ()
+        )
+        for module in modules:
             output = staging / "src" / "evosprig" / module
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_bytes((root / module).read_bytes())
         save_spec(version.spec, staging / "agent.yaml")
         files = {
             "app.py": APP,
+            "LICENSE": (Path(__file__).parent / "LICENSE").read_text(),
+            "NOTICE": "EvoSprig\nCopyright 2026 EvoSprig contributors\n",
             "tool-bindings.json": json.dumps(bindings, indent=2) + "\n",
             "build_agent.py": builder_source(version),
             "agent.lock.json": json.dumps(version.lock, indent=2) + "\n",
@@ -207,12 +219,24 @@ def export_python(
                 f"  {name}:\n    base_url: https://api.deepseek.com\n    model: deepseek-flash\n    api_key_env: DEEPSEEK_API_KEY\n    options:\n      thinking: {{type: disabled}}\n"
                 for name in report["external_services"]
             ),
-            "pyproject.toml": '[build-system]\nrequires = ["hatchling==1.27.0"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "evosprig-export-runtime"\nversion = "0.1.0.dev0"\nrequires-python = ">=3.12"\ndependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3", "httpx==0.28.1"]\n\n[tool.hatch.build.targets.wheel]\npackages = ["src/evosprig"]\n',
+            "pyproject.toml": '[build-system]\nrequires = ["hatchling==1.27.0"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "evosprig-export-runtime"\nversion = "0.1.0a1"\nrequires-python = ">=3.12"\nlicense = "Apache-2.0"\nlicense-files = ["LICENSE", "NOTICE"]\ndependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3", "httpx==0.28.1"]\n\n[tool.hatch.build.targets.wheel]\npackages = ["src/evosprig"]\n',
             "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, set DEEPSEEK_API_KEY and omit --mock. Use --profile deployment.example.yaml for explicit bindings. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n",
             "THIRD_PARTY_NOTICES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
         if any(binding["kind"] == "mcp" for binding in bindings.values()):
             files["requirements.lock"] += (Path(__file__).parent / "mcp.lock").read_text()
+        if target != "python":
+            files["requirements.lock"] += (Path(__file__).parent / "server.lock").read_text()
+            files["serve.py"] = SERVICE
+            files["README.md"] += SERVICE_README
+        if target == "container":
+            files["Dockerfile"] = DOCKERFILE
+            files[".dockerignore"] = (
+                "**\n!src/**\n!agent.yaml\n!agent.lock.json\n!tool-bindings.json\n!serve.py\n!requirements.lock\n!pyproject.toml\n!LICENSE\n!NOTICE\n"
+                + "".join(
+                    "!" + resource.path + "\n" for resource in version.spec.resources.values()
+                )
+            )
         for name, content in files.items():
             (staging / name).write_text(content, encoding="utf-8")
         for name, resource in version.spec.resources.items():
@@ -237,3 +261,65 @@ def export_python(
     except BaseException:
         shutil.rmtree(staging)
         raise
+
+
+SERVICE = """import argparse
+import os
+from pathlib import Path
+import uvicorn
+from evosprig.server.standalone import create_service
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--workspace", type=Path, default=Path(".evosprig"))
+    parser.add_argument("--profile", type=Path)
+    parser.add_argument("--mock", action="store_true")
+    parser.add_argument("--allow-writes", action="store_true")
+    parser.add_argument("--concurrency", type=int, default=4)
+    args = parser.parse_args()
+    app = create_service(Path(__file__).resolve().parent, args.workspace,
+                         token=os.environ.get("EVOSPRIG_SERVICE_TOKEN"), profile=args.profile,
+                         mock=args.mock, allow_writes=args.allow_writes, concurrency=args.concurrency)
+    uvicorn.run(app, host=args.host, port=args.port, access_log=False)
+"""
+
+SERVICE_README = """
+## HTTP service
+
+Set `EVOSPRIG_SERVICE_TOKEN` to a secret, then run `python serve.py --mock`.
+The service listens on loopback port 8080. Use `--profile deployment.yaml` for live
+models, `--workspace PATH` for persistent SQLite, and `--concurrency N` for its bounded
+worker pool. Writes require both the spec policy and operator `--allow-writes`.
+
+Send `Authorization: Bearer <token>` to `POST /runs` with `{"input": {...}}`.
+Poll `GET /runs/{run_id}`, read `/runs/{run_id}/events` (SSE, Last-Event-ID),
+submit `POST /runs/{run_id}/input` with `{"path": "...", "response": {...}}`, or
+`POST /runs/{run_id}/cancel`. Restarting the service resumes queued/checkpointed runs.
+This is a single-agent, single-trust-domain service. Use a separate workspace per
+exported version. Put TLS at a reverse proxy for remote access; browser origins are
+rejected. `/health` is public and contains no run data.
+
+## Container target
+
+When a Dockerfile is present: `docker build -t my-agent .`, then
+`docker run --rm -p 127.0.0.1:8080:8080 -e EVOSPRIG_SERVICE_TOKEN -e DEEPSEEK_API_KEY
+-v evosprig-state:/state my-agent --host 0.0.0.0 --workspace /state --mock`.
+Remove `--mock` for live calls. The image runs as UID 10001. Credentials, runtime
+history and model weights are not build inputs. The Python base image is tag-pinned;
+pin its digest in your deployment registry for immutable rebuilds.
+"""
+
+DOCKERFILE = """FROM python:3.12.12-slim
+WORKDIR /app
+COPY requirements.lock pyproject.toml ./
+RUN python -m pip install --no-cache-dir -r requirements.lock
+COPY . .
+RUN python -m pip install --no-cache-dir --no-deps . && mkdir /state && chown 10001:10001 /state
+USER 10001:10001
+EXPOSE 8080
+VOLUME ["/state"]
+ENTRYPOINT ["python", "serve.py"]
+CMD ["--host", "0.0.0.0", "--workspace", "/state"]
+"""

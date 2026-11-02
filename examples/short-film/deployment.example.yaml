@@ -1,0 +1,79 @@
+models:
+  main:
+    api_key_env: DEEPSEEK_API_KEY
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    options:
+      thinking:
+        type: disabled
+tools:
+  media.render:
+    auth_env: EVOSPRIG_RENDER_TOKEN
+    description: Render the approved three-shot original motion graphic
+    endpoint: http://127.0.0.1:18880/jobs
+    input_schema:
+      additionalProperties: false
+      properties:
+        storyboard:
+          additionalProperties: false
+          properties:
+            shots:
+              items:
+                additionalProperties: false
+                properties:
+                  caption:
+                    maxLength: 80
+                    minLength: 1
+                    type: string
+                  palette:
+                    enum:
+                    - dawn
+                    - day
+                    - night
+                  stage:
+                    enum:
+                    - seed
+                    - sprout
+                    - bloom
+                required:
+                - caption
+                - stage
+                - palette
+                type: object
+              maxItems: 3
+              minItems: 3
+              type: array
+            title:
+              maxLength: 48
+              minLength: 1
+              type: string
+          required:
+          - title
+          - shots
+          type: object
+      required:
+      - storyboard
+      type: object
+    job_timeout_seconds: 300.0
+    kind: external_http
+    name: media.render
+    output_schema:
+      additionalProperties: false
+      properties:
+        duration_seconds:
+          const: 18
+        job_id:
+          type: string
+        media_type:
+          const: video/mp4
+        path:
+          type: string
+        sha256:
+          type: string
+      required:
+      - path
+      - sha256
+      - media_type
+      - duration_seconds
+      - job_id
+      type: object

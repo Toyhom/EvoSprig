@@ -60,7 +60,7 @@ class AgentVersion:
 def compile_agent(spec: AgentSpec, root: str | Path = ".") -> AgentVersion:
     spec = AgentSpec.model_validate_json(spec.canonical())
     check_public_text(spec.canonical())
-    resources, hashes = {}, {}
+    resources = {}
     for name, resource in spec.resources.items():
         path = resource_path(Path(root), resource.path)
         if not path.is_file() or path.stat().st_size > 1_000_000:
@@ -69,7 +69,23 @@ def compile_agent(spec: AgentSpec, root: str | Path = ".") -> AgentVersion:
         text = content.decode("utf-8")
         check_public_text(text)
         resources[name] = text
-        hashes[name] = hashlib.sha256(content).hexdigest()
+    return compile_snapshot(spec, resources)
+
+
+def compile_snapshot(spec: AgentSpec, resources: dict[str, str]) -> AgentVersion:
+    """Compile an explicit resource snapshot without touching an editable project tree."""
+    spec = AgentSpec.model_validate_json(spec.canonical())
+    check_public_text(spec.canonical())
+    if set(resources) != set(spec.resources):
+        raise ValueError("resource snapshot must match the declared resource names")
+    hashes = {}
+    for name, text in resources.items():
+        if not isinstance(text, str) or len(text.encode()) > 1_000_000:
+            raise ValueError("snapshot resources must be text of at most 1 MB")
+        check_public_text(text)
+        # Validate portable paths even though no file is opened.
+        resource_path(Path.cwd(), spec.resources[name].path)
+        hashes[name] = hashlib.sha256(text.encode()).hexdigest()
     lock = {
         "format_version": "0.1",
         "runtime": __version__,

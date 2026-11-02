@@ -1,0 +1,233 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 1
+  max_output_tokens: 768
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 8
+  max_total_tokens: 4096
+  timeout_seconds: 120.0
+graph:
+  edges:
+  - source: review
+    target: render
+    when: null
+  - source: storyboard
+    target: review
+    when: null
+  entry: storyboard
+  nodes:
+    render:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        storyboard:
+          default: null
+          optional: false
+          ref: nodes.review.output
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          duration_seconds:
+            const: 18
+          job_id:
+            type: string
+          media_type:
+            const: video/mp4
+          path:
+            type: string
+          sha256:
+            type: string
+        required:
+        - path
+        - sha256
+        - media_type
+        - duration_seconds
+        - job_id
+        type: object
+      response_format: text
+      tool: render
+      tools: []
+      type: tool
+      until: null
+    review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        storyboard:
+          default: null
+          optional: false
+          ref: nodes.storyboard.output
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                caption:
+                  maxLength: 80
+                  minLength: 1
+                  type: string
+                palette:
+                  enum:
+                  - dawn
+                  - day
+                  - night
+                stage:
+                  enum:
+                  - seed
+                  - sprout
+                  - bloom
+              required:
+              - caption
+              - stage
+              - palette
+              type: object
+            maxItems: 3
+            minItems: 3
+            type: array
+          title:
+            maxLength: 48
+            minLength: 1
+            type: string
+        required:
+        - title
+        - shots
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: human
+      until: null
+    storyboard:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+      instructions:
+        resource: director
+      join: all
+      max_iterations: 1
+      model: director
+      output_schema:
+        additionalProperties: false
+        properties:
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                caption:
+                  maxLength: 80
+                  minLength: 1
+                  type: string
+                palette:
+                  enum:
+                  - dawn
+                  - day
+                  - night
+                stage:
+                  enum:
+                  - seed
+                  - sprout
+                  - bloom
+              required:
+              - caption
+              - stage
+              - palette
+              type: object
+            maxItems: 3
+            minItems: 3
+            type: array
+          title:
+            maxLength: 48
+            minLength: 1
+            type: string
+        required:
+        - title
+        - shots
+        type: object
+      response_format: json
+      tool: null
+      tools: []
+      type: model
+      until: null
+  output:
+    duration_seconds:
+      default: null
+      optional: false
+      ref: nodes.render.output.duration_seconds
+    job_id:
+      default: null
+      optional: false
+      ref: nodes.render.output.job_id
+    media_type:
+      default: null
+      optional: false
+      ref: nodes.render.output.media_type
+    path:
+      default: null
+      optional: false
+      ref: nodes.render.output.path
+    sha256:
+      default: null
+      optional: false
+      ref: nodes.render.output.sha256
+id: short-film
+input_schema:
+  additionalProperties: false
+  properties:
+    brief:
+      type: string
+  required:
+  - brief
+  type: object
+models:
+  director:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    duration_seconds:
+      const: 18
+    job_id:
+      type: string
+    media_type:
+      const: video/mp4
+    path:
+      type: string
+    sha256:
+      type: string
+  required:
+  - path
+  - sha256
+  - media_type
+  - duration_seconds
+  - job_id
+  type: object
+resources:
+  director:
+    path: prompts/director.md
+    role: prompt
+spec_version: '0.2'
+tools:
+  render:
+    plugin: media.render
+    version: '1'

@@ -1,0 +1,239 @@
+{
+  "nodes": [
+    {
+      "id": "storyboard",
+      "position": {
+        "x": 0,
+        "y": 120
+      },
+      "data": {
+        "label": "storyboard",
+        "node": {
+          "type": "model",
+          "inputs": {
+            "brief": {
+              "ref": "input.brief",
+              "optional": false,
+              "default": null
+            }
+          },
+          "output_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 48
+              },
+              "shots": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "caption": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "stage": {
+                      "enum": [
+                        "seed",
+                        "sprout",
+                        "bloom"
+                      ]
+                    },
+                    "palette": {
+                      "enum": [
+                        "dawn",
+                        "day",
+                        "night"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "caption",
+                    "stage",
+                    "palette"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "title",
+              "shots"
+            ]
+          },
+          "model": "director",
+          "instructions": {
+            "resource": "director"
+          },
+          "tools": [],
+          "tool": null,
+          "response_format": "json",
+          "condition": null,
+          "body": null,
+          "branches": {},
+          "max_iterations": 1,
+          "until": null,
+          "join": "all"
+        }
+      }
+    },
+    {
+      "id": "review",
+      "position": {
+        "x": 280,
+        "y": 120
+      },
+      "data": {
+        "label": "review",
+        "node": {
+          "type": "human",
+          "inputs": {
+            "storyboard": {
+              "ref": "nodes.storyboard.output",
+              "optional": false,
+              "default": null
+            }
+          },
+          "output_schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 48
+              },
+              "shots": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "caption": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "stage": {
+                      "enum": [
+                        "seed",
+                        "sprout",
+                        "bloom"
+                      ]
+                    },
+                    "palette": {
+                      "enum": [
+                        "dawn",
+                        "day",
+                        "night"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "caption",
+                    "stage",
+                    "palette"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "title",
+              "shots"
+            ]
+          },
+          "model": null,
+          "instructions": "",
+          "tools": [],
+          "tool": null,
+          "response_format": "text",
+          "condition": null,
+          "body": null,
+          "branches": {},
+          "max_iterations": 1,
+          "until": null,
+          "join": "all"
+        }
+      }
+    },
+    {
+      "id": "render",
+      "position": {
+        "x": 560,
+        "y": 120
+      },
+      "data": {
+        "label": "render",
+        "node": {
+          "type": "tool",
+          "inputs": {
+            "storyboard": {
+              "ref": "nodes.review.output",
+              "optional": false,
+              "default": null
+            }
+          },
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string"
+              },
+              "media_type": {
+                "const": "video/mp4"
+              },
+              "duration_seconds": {
+                "const": 18
+              },
+              "job_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "sha256",
+              "media_type",
+              "duration_seconds",
+              "job_id"
+            ],
+            "additionalProperties": false
+          },
+          "model": null,
+          "instructions": "",
+          "tools": [],
+          "tool": "render",
+          "response_format": "text",
+          "condition": null,
+          "body": null,
+          "branches": {},
+          "max_iterations": 1,
+          "until": null,
+          "join": "all"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "storyboard--review",
+      "source": "storyboard",
+      "target": "review"
+    },
+    {
+      "id": "review--render",
+      "source": "review",
+      "target": "render"
+    }
+  ]
+}
