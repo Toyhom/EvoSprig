@@ -74,7 +74,7 @@ class SQLiteMemory:
             db.close()
 
     @staticmethod
-    def _visible(db, scope, record):
+    def _visible(db, scope, record, seen=None):
         if canonical_json(record["scope"]) != scope.key:
             return False
         if db.execute(
@@ -84,7 +84,29 @@ class SQLiteMemory:
         row = db.execute(
             "SELECT deleted_at FROM ledger.namespaces WHERE scope=?", (scope.key,)
         ).fetchone()
-        return row is None or record["created_at"] > row[0]
+        if row is not None and record["created_at"] <= row[0]:
+            return False
+        seen = set() if seen is None else set(seen)
+        if record["id"] in seen or len(seen) >= 64:
+            return False
+        seen.add(record["id"])
+        for identifier in record.get("metadata", {}).get("derived_from", []):
+            source = db.execute(
+                "SELECT body FROM memories WHERE scope=? AND id=?", (scope.key, identifier)
+            ).fetchone()
+            if (
+                not source
+                or not SQLiteMemory._active(json.loads(source[0]))
+                or not SQLiteMemory._visible(db, scope, json.loads(source[0]), seen)
+            ):
+                return False
+            expected_revision = record["metadata"].get("derived_revisions", {}).get(identifier)
+            if (
+                expected_revision is not None
+                and json.loads(source[0])["revision"] != expected_revision
+            ):
+                return False
+        return True
 
     @staticmethod
     def _active(record, at=None):
@@ -264,15 +286,28 @@ class SQLiteMemory:
             raise ValueError("backup contains a different memory scope")
         restored, skipped = 0, 0
         with self._transaction() as db:
-            for record in records:
-                if not self._visible(db, scope, record):
-                    skipped += 1
-                    continue
-                # Never overwrite more recent live state during restore.
-                changed = db.execute(
-                    "INSERT OR IGNORE INTO memories VALUES (?, ?, ?, ?)",
-                    (scope.key, record["id"], self._fingerprint(record), canonical_json(record)),
-                ).rowcount
-                restored += changed
-                skipped += not changed
+            pending = records
+            for _ in range(65):
+                deferred = []
+                for record in pending:
+                    if not self._visible(db, scope, record):
+                        deferred.append(record)
+                        continue
+                    # Restore sources before derived summaries, independent of export order.
+                    changed = db.execute(
+                        "INSERT OR IGNORE INTO memories VALUES (?, ?, ?, ?)",
+                        (
+                            scope.key,
+                            record["id"],
+                            self._fingerprint(record),
+                            canonical_json(record),
+                        ),
+                    ).rowcount
+                    restored += changed
+                    skipped += not changed
+                if len(deferred) == len(pending) or not deferred:
+                    pending = deferred
+                    break
+                pending = deferred
+            skipped += len(pending)
         return {"restored": restored, "skipped": skipped}

@@ -132,10 +132,18 @@ class Node(Contract):
     items: Ref | Value | None = None
     max_items: int = Field(default=32, ge=1, le=256)
     tool_errors: Literal["raise", "feedback"] = "raise"
+    parallel_tool_calls: bool = False
+    tool_selection: Literal["all", "relevant"] = "all"
+    tool_limit: int = Field(default=8, ge=1, le=64)
+    max_tool_rounds: int | None = Field(default=None, ge=1, le=64)
+    output_errors: Literal["raise", "feedback"] = "raise"
+    max_output_retries: int = Field(default=1, ge=0, le=3)
 
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if len(self.tools) != len(set(self.tools)):
+            raise ValueError("agent tool aliases must be unique")
         if self.type == "tool":
             if (
                 not self.tool
@@ -168,6 +176,17 @@ class Node(Contract):
             raise ValueError("max_items belongs to map nodes")
         if self.type != "agent" and self.tool_errors != "raise":
             raise ValueError("tool feedback belongs to agent nodes")
+        if self.type != "agent" and (
+            self.parallel_tool_calls
+            or self.tool_selection != "all"
+            or self.tool_limit != 8
+            or self.max_tool_rounds is not None
+        ):
+            raise ValueError("tool policies belong to agent nodes")
+        if self.type not in {"agent", "model"} and (
+            self.output_errors != "raise" or self.max_output_retries != 1
+        ):
+            raise ValueError("output feedback belongs to model and agent nodes")
         if self.type != "loop" and (self.until is not None or self.max_iterations != 1):
             raise ValueError("iteration settings belong to loop nodes")
         if (self.type == "parallel") != bool(self.branches):
@@ -258,6 +277,15 @@ class AgentSpec(Contract):
                 raise ValueError("conditional edges must originate from a condition node")
         for node_id in order:
             node = graph.nodes[node_id]
+            if self.spec_version != "0.3" and (
+                node.parallel_tool_calls
+                or node.tool_selection != "all"
+                or node.tool_limit != 8
+                or node.max_tool_rounds is not None
+                or node.output_errors != "raise"
+                or node.max_output_retries != 1
+            ):
+                raise ValueError("tool policies require spec_version 0.3")
             if self.spec_version != "0.3" and (node.type == "map" or node.tool_errors != "raise"):
                 raise ValueError("map nodes and tool feedback require spec_version 0.3")
             if node.model and node.model not in self.models:
@@ -338,6 +366,16 @@ class AgentSpec(Contract):
         def normalize(graph):
             graph["edges"].sort(key=lambda edge: (edge["source"], edge["target"]))
             for node in graph["nodes"].values():
+                for key, default in (
+                    ("parallel_tool_calls", False),
+                    ("tool_selection", "all"),
+                    ("tool_limit", 8),
+                    ("max_tool_rounds", None),
+                    ("output_errors", "raise"),
+                    ("max_output_retries", 1),
+                ):
+                    if node[key] == default:
+                        node.pop(key)
                 if self.spec_version != "0.3":
                     for key in ("items", "max_items", "tool_errors"):
                         node.pop(key)

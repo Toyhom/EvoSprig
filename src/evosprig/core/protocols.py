@@ -19,6 +19,10 @@ class ExecutionError(Exception):
 class BudgetExceeded(ExecutionError):
     code = "budget_exhausted"
 
+    def __init__(self, message, *, scope="run"):
+        super().__init__(message)
+        self.code = "experiment_budget_exhausted" if scope == "experiment" else "budget_exhausted"
+
 
 class ProviderError(ExecutionError):
     def __init__(self, code: str, message: str):

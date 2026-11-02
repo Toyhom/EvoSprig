@@ -83,6 +83,8 @@ class StudyWorker:
                 scope=scope,
                 job_id=identifier,
                 tool_bindings=record["bindings"].get("tools", {}),
+                evaluation_config=record["bindings"].get("evaluation", {}),
+                mock=record["bindings"].get("mock", False),
                 on_event=lambda event: update(event=event),
                 on_usage=lambda usage: update(usage=usage),
                 cancel=cancel,

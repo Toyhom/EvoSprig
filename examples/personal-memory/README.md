@@ -22,3 +22,9 @@ Reuse the workspace to retain memory. `--allow-writes` enables the save tool dec
 ## Make it yours
 
 Change `prompts/persona.md`, add useful tools, and configure a profile block for your assistant's working context. An authenticated deployment binds memory to the current user and project. See the [memory guide](../../docs/memory.md) for retrieval and relationship options.
+
+The assistant also exposes experience recall and source-aware summaries. `recall` combines relevance, importance and recency; `summarize` retains source IDs so stale or deleted facts do not remain visible through a summary. Memory changes still require explicit user intent and write permission.
+
+## Before and after
+
+[Compare outputs and reusable versions](results/README.md) on the same application tasks.

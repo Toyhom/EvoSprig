@@ -4,10 +4,21 @@ from evosprig.core.memory import MemoryScope
 from evosprig.core.protocols import Tool
 
 from .documents import DocumentRetriever
+from .episodic_memory import EpisodicMemory
 from .structured_memory import StructuredMemory
 
 MEMORY_TOOL_NAMES = frozenset(
-    {"memory.search", "memory.write", "documents.search", "memory.context", "memory.relations"}
+    {
+        "memory.search",
+        "memory.write",
+        "documents.search",
+        "memory.context",
+        "memory.relations",
+        "memory.recall",
+        "memory.remember",
+        "memory.summarize",
+        "documents.retrieve",
+    }
 )
 
 
@@ -102,6 +113,100 @@ def register_memory_tools(registry, memory, scope):
             lambda subject, at=None, hops=1: {
                 "relations": structured.relations(facts, subject, at=at, hops=hops)
             },
+        )
+    )
+    episodic = EpisodicMemory(memory)
+    from .retrieval import retrieve_many
+
+    registry.register(
+        Tool(
+            "documents.retrieve",
+            "Search multiple query formulations, fuse ranks and diversify excerpts while retaining citations.",
+            {
+                "type": "object",
+                "properties": {
+                    "queries": {
+                        "type": "array",
+                        "items": {"type": "string", "maxLength": 4096},
+                        "minItems": 1,
+                        "maxItems": 8,
+                    },
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+                    "diversity": {"type": "number", "minimum": 0, "maximum": 1},
+                },
+                "required": ["queries"],
+                "additionalProperties": False,
+            },
+            {"type": "object"},
+            lambda queries, limit=5, diversity=0.25: {
+                "citations": retrieve_many(
+                    DocumentRetriever(memory), documents, queries, limit=limit, diversity=diversity
+                )
+            },
+        )
+    )
+    registry.register(
+        Tool(
+            "memory.recall",
+            "Recall experiences using relevance, importance and recency, including scoped linked records.",
+            query_schema,
+            {"type": "object"},
+            lambda query, limit=5: {"records": episodic.recall(facts, query, limit=limit)},
+        )
+    )
+    registry.register(
+        Tool(
+            "memory.remember",
+            "Save an explicit experience with importance, tags, related memory IDs and optional expiry.",
+            {
+                "type": "object",
+                "properties": {
+                    "content": {"type": "string", "minLength": 1, "maxLength": 100000},
+                    "source": {"type": "string", "minLength": 1, "maxLength": 2048},
+                    "importance": {"type": "number", "minimum": 0, "maximum": 1},
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string", "maxLength": 80},
+                        "maxItems": 16,
+                    },
+                    "links": {"type": "array", "items": {"type": "string"}, "maxItems": 16},
+                    "valid_until": {"type": "number"},
+                },
+                "required": ["content", "source"],
+                "additionalProperties": False,
+            },
+            {"type": "object"},
+            lambda content, source, idempotency_key, **options: episodic.remember(
+                facts, content, source=source, idempotency_key=idempotency_key, **options
+            ),
+            side_effect="write",
+            idempotent=True,
+        )
+    )
+    registry.register(
+        Tool(
+            "memory.summarize",
+            "Save a concise summary grounded in existing source memory IDs. Deleting a source hides dependent summaries.",
+            {
+                "type": "object",
+                "properties": {
+                    "content": {"type": "string", "minLength": 1, "maxLength": 12000},
+                    "source_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1,
+                        "maxItems": 32,
+                    },
+                },
+                "required": ["content", "source_ids"],
+                "additionalProperties": False,
+            },
+            {"type": "object"},
+            lambda content, source_ids, idempotency_key: episodic.summarize(
+                facts, content, source_ids, idempotency_key=idempotency_key
+            ),
+            side_effect="write",
+            idempotent=True,
         )
     )
     return registry

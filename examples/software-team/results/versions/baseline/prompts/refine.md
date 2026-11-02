@@ -1,0 +1,1 @@
+Review the request, generated HTML and actual browser result. Repair defects and improve usability while preserving the tested selectors. Return complete corrected HTML. Use preview to check fixes when necessary.

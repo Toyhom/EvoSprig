@@ -57,3 +57,14 @@ VideoClaw supports providers including Wan, Seedance and Kling. This example ada
 Open the main project in Studio with its deployment profile. The History page exposes script, frame and timeline checkpoints. Review outputs are typed JSON; edit them before continuing.
 
 For a retake, run `shot-agent.yaml` with the selected `shot`, existing `catalog` and `style`. Its output contains the new `clip` and `first_frame`. Pass that clip alongside the unchanged clips to `compose-agent.yaml` as `{"clips":[...],"audio":[],"subtitles":""}`. Each run retains its inputs and outputs, including the original production. A changed script or character catalog may require regenerating affected shots.
+
+## Improve the story before rendering
+
+`script-agent.yaml` exposes the same director resource as a standalone planning stage. Try it without a media-service connection:
+
+```bash
+evosprig run examples/video-studio/script-agent.yaml \
+  --input '{"brief":"A 12-second silent film about a paper boat. Three shots, one recurring character, no text overlays."}'
+```
+
+Use that stage to compare and evolve storyboards, then apply the chosen director resource to the production workflow. [Storyboard comparisons](results/README.md) show planning outputs; image/video rendering remains in the tool providers you connect.

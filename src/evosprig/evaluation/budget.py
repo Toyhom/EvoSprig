@@ -9,7 +9,7 @@ from dataclasses import asdict, replace
 
 from pydantic import Field
 
-from evosprig.core.protocols import BudgetExceeded
+from evosprig.core.protocols import BudgetExceeded, ProviderError
 from evosprig.core.spec import Contract, canonical_json
 
 
@@ -54,9 +54,9 @@ class BudgetMeter:
 
     def check(self):
         if self.canceled.is_set():
-            raise BudgetExceeded("experiment canceled")
+            raise BudgetExceeded("experiment canceled", scope="experiment")
         if self.snapshot()["elapsed_seconds"] >= self.limits.max_seconds:
-            raise BudgetExceeded("experiment time budget exhausted")
+            raise BudgetExceeded("experiment time budget exhausted", scope="experiment")
 
     def consume(self, kind, count=1):
         with self.lock:
@@ -64,7 +64,7 @@ class BudgetMeter:
             if kind not in {"evaluations", "candidates"} or count < 0:
                 raise ValueError("invalid budget counter")
             if self.state[kind] + count > getattr(self.limits, "max_" + kind):
-                raise BudgetExceeded(f"experiment {kind} budget exhausted")
+                raise BudgetExceeded(f"experiment {kind} budget exhausted", scope="experiment")
             self.state[kind] += count
             self.changed()
 
@@ -72,7 +72,7 @@ class BudgetMeter:
         with self.lock:
             self.check()
             if self.state["model_calls"] >= self.limits.max_model_calls:
-                raise BudgetExceeded("experiment model-call budget exhausted")
+                raise BudgetExceeded("experiment model-call budget exhausted", scope="experiment")
             estimate = len(canonical_json(asdict(request)).encode()) + 256
             remaining = (
                 self.limits.max_total_tokens
@@ -82,7 +82,9 @@ class BudgetMeter:
             )
             allowance = min(request.max_output_tokens, remaining - estimate)
             if allowance < 1:
-                raise BudgetExceeded("experiment token budget cannot reserve another call")
+                raise BudgetExceeded(
+                    "experiment token budget cannot reserve another call", scope="experiment"
+                )
             reservation = estimate + allowance
             self.state["model_calls"] += 1
             self.state["reserved_tokens"] += reservation
@@ -103,7 +105,9 @@ class BudgetMeter:
                 + self.state["reserved_tokens"]
                 > self.limits.max_total_tokens
             ):
-                raise BudgetExceeded("provider usage exceeded the reserved experiment budget")
+                raise BudgetExceeded(
+                    "provider usage exceeded the reserved experiment budget", scope="experiment"
+                )
 
 
 class BudgetedProvider:
@@ -114,8 +118,16 @@ class BudgetedProvider:
             self.connection = provider.connection
 
     async def complete(self, request):
+        requested = request.max_output_tokens
         request, reservation = self.meter.reserve(request)
         # Failed/canceled calls keep their reservation: unreported usage is not free.
-        response = await self.provider.complete(request)
+        try:
+            response = await self.provider.complete(request)
+        except ProviderError as exc:
+            if exc.code == "output_limit" and request.max_output_tokens < requested:
+                raise BudgetExceeded(
+                    "experiment token allowance truncated a response", scope="experiment"
+                ) from None
+            raise
         self.meter.settle(reservation, response.usage)
         return response

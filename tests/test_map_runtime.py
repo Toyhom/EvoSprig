@@ -106,7 +106,7 @@ def test_map_requires_new_spec_and_preserves_legacy_canonical_hashes():
     old = json.loads((root / "spec/agent-spec-0.2.schema.json").read_text())
     from evosprig.core.spec import load_spec
 
-    for path in [root / "examples/hello/agent.yaml", root / "examples/customer-support/agent.yaml"]:
+    for path in [root / "examples/hello/agent.yaml", root / "tests/fixtures/support-v02.yaml"]:
         legacy = load_spec(path)
         Draft202012Validator(old).validate(json.loads(legacy.canonical()))
         assert '"max_items"' not in legacy.canonical()

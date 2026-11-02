@@ -4,7 +4,7 @@ import { ReactFlow, Background, Controls, MiniMap, Position, addEdge, applyEdgeC
   type Node, type Edge, type Connection, type NodeChange, type EdgeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './style.css';
-import { orderedNodes, starter, nodeTemplate, type Document, type NodeSpec, type NodeKind, type Spec, type Run } from './types';
+import { orderedNodes, starter, nodeTemplate, initialInput, type Document, type NodeSpec, type NodeKind, type Spec, type Run } from './types';
 import { useDraftGuard } from './draft-guard';
 import { Icon, FitWorkflowView, nodeTypes, tabIcons } from './studio-ui';
 import { ResourcesPanel, MemoryPanel, RunsPanel, RunDetails, ImprovePanel, VersionsPanel } from './panels';
@@ -107,6 +107,7 @@ function App() {
     setSidebarOpen(false); setDoc(next); setNodes(orderedNodes(next.spec).map(([id, config], index) => ({ id, sourcePosition: Position.Right, targetPosition: Position.Left,
       position: next.layout[id] ?? { x: index * 300 + 40, y: 140 }, data: { label: `${id} · ${config.type}`, config } })));
     setEdges(flowEdges(next.spec));
+    if(next.id!==doc?.id) setInput(JSON.stringify(initialInput(next.spec.input_schema),null,2));
     setSpecText(JSON.stringify(next.spec, null, 2)); setSelected(null);setSelectedEdge(null); setDirty(false); setNodeDraftDirty(false); setResult(null);
   };
   const refresh = useCallback(async () => {
@@ -218,7 +219,10 @@ function App() {
     try {
       const response = await api(`/projects/${doc.id}/export?target=${exportTarget}${versionId?`&version_id=${encodeURIComponent(versionId)}`:''}`, { method: 'POST' });
       const url = URL.createObjectURL(await response.blob()); const link = document.createElement('a');
-      link.href = url; link.download = `${doc.id}.zip`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      link.href = url; link.download = `${doc.id}.zip`; link.hidden = true;
+      document.body.appendChild(link); link.click(); link.remove();
+      // Keep the blob alive while the browser hands the download to a slow filesystem.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) { error(e); } finally { setBusy(false); }
   };
 

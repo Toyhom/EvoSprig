@@ -14,7 +14,7 @@ test('English is the default and Chinese persists across reloads', async ({ page
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await page.locator('.project[title="hello"]').click();
   await page.getByRole('button', { name: 'Improve', exact: true }).click();
-  await expect(page.getByLabel('Evolution method').locator('option')).toHaveCount(6);
+  await expect(page.getByLabel('Evolution method').locator('option')).toHaveCount(13);
 });
 
 test('context block edits and temporal relations are usable in Studio', async ({ page }) => {

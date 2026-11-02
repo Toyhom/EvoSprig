@@ -1,60 +1,84 @@
-spec_version: '0.3'
+execution:
+  allow_side_effects: false
+  max_model_calls: 8
+  max_output_tokens: 1800
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 24000
+  timeout_seconds: 180.0
+graph:
+  edges: []
+  entry: answer
+  nodes:
+    answer:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions:
+        resource: instructions
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_tool_rounds: 4
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: feedback
+      tools:
+      - search
+      type: agent
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.answer.output.text
 id: document-chat
 input_schema:
-  type: object
+  additionalProperties: false
   properties:
     question:
-      type: string
       minLength: 1
+      type: string
   required:
   - question
-  additionalProperties: false
-output_schema:
   type: object
-  properties:
-    text:
-      type: string
-  required:
-  - text
-  additionalProperties: false
 models:
   main:
     binding: main
     requires:
     - text
     - tool_calling
-tools:
-  search:
-    plugin: documents.search
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
 resources:
   instructions:
     path: prompts/assistant.md
-graph:
-  entry: answer
-  nodes:
-    answer:
-      type: agent
-      inputs:
-        question:
-          ref: input.question
-      output_schema:
-        type: object
-        properties:
-          text:
-            type: string
-        required:
-        - text
-        additionalProperties: false
-      model: main
-      instructions:
-        resource: instructions
-      tools:
-      - search
-      tool_errors: feedback
-  output:
-    text:
-      ref: nodes.answer.output.text
-execution:
-  max_total_tokens: 24000
-  max_output_tokens: 1800
-  timeout_seconds: 180.0
+    role: prompt
+spec_version: '0.3'
+tools:
+  search:
+    plugin: documents.search
+    version: '1'

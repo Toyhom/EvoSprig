@@ -1,0 +1,199 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 3
+  max_output_tokens: 4096
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 32000
+  timeout_seconds: 60.0
+graph:
+  edges: []
+  entry: script
+  nodes:
+    script:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+      instructions:
+        resource: director
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: director
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            type: array
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  type: array
+                description:
+                  minLength: 1
+                  type: string
+                dialogue:
+                  type: string
+                duration_seconds:
+                  maximum: 20
+                  minimum: 1
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              - camera
+              - dialogue
+              - characters
+              - duration_seconds
+              type: object
+            maxItems: 12
+            minItems: 1
+            type: array
+          style:
+            minLength: 1
+            type: string
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - style
+        - characters
+        - shots
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    plan:
+      default: null
+      optional: false
+      ref: nodes.script.output
+id: video-script
+input_schema:
+  additionalProperties: false
+  properties:
+    brief:
+      minLength: 1
+      type: string
+  required:
+  - brief
+  type: object
+models:
+  director:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    plan:
+      additionalProperties: false
+      properties:
+        characters:
+          items:
+            additionalProperties: false
+            properties:
+              description:
+                minLength: 1
+                type: string
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - description
+            type: object
+          type: array
+        shots:
+          items:
+            additionalProperties: false
+            properties:
+              camera:
+                minLength: 1
+                type: string
+              characters:
+                items:
+                  minLength: 1
+                  type: string
+                type: array
+              description:
+                minLength: 1
+                type: string
+              dialogue:
+                type: string
+              duration_seconds:
+                maximum: 20
+                minimum: 1
+                type: integer
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - description
+            - camera
+            - dialogue
+            - characters
+            - duration_seconds
+            type: object
+          maxItems: 12
+          minItems: 1
+          type: array
+        style:
+          minLength: 1
+          type: string
+        title:
+          minLength: 1
+          type: string
+      required:
+      - title
+      - style
+      - characters
+      - shots
+      type: object
+  required:
+  - plan
+  type: object
+resources:
+  director:
+    path: prompts/director.md
+    role: prompt
+spec_version: '0.3'
+tools: {}

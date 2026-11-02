@@ -40,6 +40,20 @@ class MockProvider:
                 model=self.model_id,
                 usage=Usage(8, 8),
             )
+        if request.messages[0]["content"].startswith("You are an independent task evaluator"):
+            return ModelResponse(
+                text=json.dumps(
+                    {
+                        "score": 0.5,
+                        "feedback": "Offline judge placeholder",
+                        "confidence": 0.0,
+                        "evidence": [],
+                        "limitations": "No model quality assessment in mock mode",
+                    }
+                ),
+                model=self.model_id,
+                usage=Usage(8, 8),
+            )
         text = "Mock: " + request.messages[-1]["content"]
         if request.json_output:
             text = json.dumps({"answer": "mock"})

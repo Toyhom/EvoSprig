@@ -1,0 +1,78 @@
+models:
+  main:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    options:
+      thinking:
+        type: disabled
+tools:
+  toolbox.preview:
+    kind: http
+    name: toolbox.preview
+    endpoint: http://127.0.0.1:18769/preview
+    method: POST
+    description: Open self-contained HTML in an isolated browser. Each action uses
+      kind and selector. kind=fill also requires value; kind=text requires contains;
+      kind=click needs no extra field. Returns actual page text, checks, errors and
+      screenshot artifact URLs.
+    input_schema:
+      type: object
+      properties:
+        html:
+          type: string
+          maxLength: 500000
+        actions:
+          type: array
+          maxItems: 20
+          items:
+            oneOf:
+            - type: object
+              properties:
+                kind:
+                  const: click
+                selector:
+                  type: string
+                  minLength: 1
+                  maxLength: 300
+              required:
+              - kind
+              - selector
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  const: fill
+                selector:
+                  type: string
+                  minLength: 1
+                  maxLength: 300
+                value:
+                  type: string
+              required:
+              - kind
+              - selector
+              - value
+              additionalProperties: false
+            - type: object
+              properties:
+                kind:
+                  const: text
+                selector:
+                  type: string
+                  minLength: 1
+                  maxLength: 300
+                contains:
+                  type: string
+              required:
+              - kind
+              - selector
+              - contains
+              additionalProperties: false
+      required:
+      - html
+      - actions
+      additionalProperties: false
+    output_schema:
+      type: object
+    timeout_seconds: 45

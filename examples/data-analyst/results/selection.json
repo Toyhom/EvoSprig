@@ -1,0 +1,56 @@
+{
+  "method": "fewshot_search",
+  "task_model": "deepseek-flash",
+  "judge_model": "deepseek-flash",
+  "sample_count": 1,
+  "split": "selection",
+  "baseline_version": "b493b56705b3b08dcbf4a3aa2fcf77b0ec83d90f9abbb8e62b0ce01faf4f3982",
+  "evolved_version": "ea0fdf407d2afbbf635afe1bc0afbe1df9daf9dd1ad1f5370e0138e67e06b03e",
+  "candidate_changed": true,
+  "baseline_score": 1.0,
+  "evolved_score": 1.0,
+  "gain": 0.0,
+  "validation_reused": false,
+  "cases": [
+    {
+      "input": {
+        "question": "Which product has the higher revenue per unit across the complete dataset? Use totals, not an unweighted mean of orders."
+      },
+      "baseline": {
+        "output": {
+          "text": "**Desk lamp** has the higher revenue per unit across the full dataset: **40.00 per unit** vs. **12.00 per unit** for Notebook.\n\nThis is computed as total revenue ÷ total units (a weighted ratio), not an average of per-order ratios:\n\n| Product | Orders | Total units | Total revenue | Revenue per unit |\n|---|---|---|---|---|\n| Desk lamp | 6 | 81 | 3,240 | 40.00 |\n| Notebook | 6 | 143 | 1,716 | 12.00 |\n\nSQL used:\n```sql\nSELECT product,\n       COUNT(*) AS orders,\n       SUM(quantity) AS total_units,\n       SUM(revenue) AS total_revenue,\n       SUM(revenue) / NULLIF(SUM(quantity), 0) AS revenue_per_unit\nFROM orders\nGROUP BY product\nORDER BY revenue_per_unit DESC;\n```\n\nNote: the dataset contains only two products, so the comparison is limited to Desk lamp vs. Notebook."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "selection-1-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "## Revenue per unit by product (whole dataset)\n\n| Product | Orders | Total units | Total revenue | Revenue per unit |\n|---|---|---|---|---|\n| **Desk lamp** | 6 | 81 | $3,240 | **$40.00** |\n| Notebook | 6 | 143 | $1,716 | $12.00 |\n\n**Answer: the Desk lamp** has the higher revenue per unit — $40.00 vs. $12.00 for the Notebook, more than 3× higher.\n\nNote that the Notebook actually sells far more units (143 vs. 81) and appears in the same number of orders, but at a much lower price point, so its total revenue ($1,716) is only about half the Desk lamp's ($3,240).\n\n**SQL used:**\n```sql\nSELECT product,\n       COUNT(*) AS orders,\n       SUM(quantity) AS total_units,\n       SUM(revenue) AS total_revenue,\n       ROUND(SUM(revenue) / NULLIF(SUM(quantity), 0), 2) AS revenue_per_unit\nFROM orders\nGROUP BY product\nORDER BY revenue_per_unit DESC;\n```\n\nThis uses the ratio of totals (total revenue ÷ total units), as requested, rather than averaging per-order ratios — so large orders are weighted by their actual volume.\n\n**Caveats:** The dataset is small (12 orders total, 6 per product), and the `product` column is stored as a numeric type while holding text values like \"Desk lamp\" — a schema mismatch worth flagging. The per-unit figures are exact round numbers here, which suggests they may be fixed list prices rather than realized prices."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "selection-1-evolved.md"
+      }
+    }
+  ],
+  "date": "2026-11-02",
+  "purpose": "selection",
+  "rubric": {
+    "kind": "llm_judge",
+    "target": "output",
+    "node": null,
+    "rubric": "Grade 0..1: correct numeric answer using actual SQL results (0.5), correct grouping and denominator (0.25), clear units and concise explanation (0.25). Inspect tool receipts; do not reward merely plausible numbers.",
+    "judge_binding": null,
+    "repeats": 1,
+    "scorer": null,
+    "schema_": null,
+    "components": [],
+    "weight": 1.0,
+    "required": false,
+    "threshold": 0.5,
+    "reference_path": "",
+    "output_path": "",
+    "normalize_text": false
+  }
+}

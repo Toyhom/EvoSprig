@@ -1,0 +1,240 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 32
+  max_output_tokens: 4096
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 100
+  max_total_tokens: 180000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: extract
+    target: review
+    when: null
+  - source: review
+    target: finalize
+    when: null
+  entry: extract
+  nodes:
+    extract:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        meeting_date:
+          default: null
+          optional: false
+          ref: input.meeting_date
+        transcript:
+          default: null
+          optional: false
+          ref: input.transcript
+      instructions:
+        resource: extract
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          actions:
+            items:
+              additionalProperties: false
+              properties:
+                due:
+                  type: string
+                owner:
+                  type: string
+                task:
+                  type: string
+              required:
+              - task
+              - owner
+              - due
+              type: object
+            type: array
+          decisions:
+            items:
+              type: string
+            type: array
+          open_questions:
+            items:
+              type: string
+            type: array
+        required:
+        - decisions
+        - actions
+        - open_questions
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    finalize:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        meeting_date:
+          default: null
+          optional: false
+          ref: input.meeting_date
+        record:
+          default: null
+          optional: false
+          ref: nodes.extract.output
+        review:
+          default: null
+          optional: false
+          ref: nodes.review.output.text
+        transcript:
+          default: null
+          optional: false
+          ref: input.transcript
+      instructions:
+        resource: finalize
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          actions:
+            items:
+              additionalProperties: false
+              properties:
+                due:
+                  type: string
+                owner:
+                  type: string
+                task:
+                  type: string
+              required:
+              - task
+              - owner
+              - due
+              type: object
+            type: array
+          notes:
+            type: string
+        required:
+        - notes
+        - actions
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        record:
+          default: null
+          optional: false
+          ref: nodes.extract.output
+        transcript:
+          default: null
+          optional: false
+          ref: input.transcript
+      instructions:
+        resource: review
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    actions:
+      default: null
+      optional: false
+      ref: nodes.finalize.output.actions
+    notes:
+      default: null
+      optional: false
+      ref: nodes.finalize.output.notes
+id: meeting-assistant
+input_schema:
+  additionalProperties: false
+  properties:
+    meeting_date:
+      type: string
+    transcript:
+      type: string
+  required:
+  - transcript
+  - meeting_date
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    actions:
+      items:
+        additionalProperties: false
+        properties:
+          due:
+            type: string
+          owner:
+            type: string
+          task:
+            type: string
+        required:
+        - task
+        - owner
+        - due
+        type: object
+      type: array
+    notes:
+      type: string
+  required:
+  - notes
+  - actions
+  type: object
+resources:
+  extract:
+    path: prompts/extract.md
+    role: prompt
+  finalize:
+    path: prompts/finalize.md
+    role: prompt
+  review:
+    path: prompts/review.md
+    role: prompt
+spec_version: '0.3'
+tools: {}

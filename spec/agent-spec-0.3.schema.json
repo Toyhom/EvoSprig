@@ -343,6 +343,57 @@
           ],
           "title": "Tool Errors",
           "type": "string"
+        },
+        "parallel_tool_calls": {
+          "default": false,
+          "title": "Parallel Tool Calls",
+          "type": "boolean"
+        },
+        "tool_selection": {
+          "default": "all",
+          "enum": [
+            "all",
+            "relevant"
+          ],
+          "title": "Tool Selection",
+          "type": "string"
+        },
+        "tool_limit": {
+          "default": 8,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Tool Limit",
+          "type": "integer"
+        },
+        "max_tool_rounds": {
+          "anyOf": [
+            {
+              "maximum": 64,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tool Rounds"
+        },
+        "output_errors": {
+          "default": "raise",
+          "enum": [
+            "raise",
+            "feedback"
+          ],
+          "title": "Output Errors",
+          "type": "string"
+        },
+        "max_output_retries": {
+          "default": 1,
+          "maximum": 3,
+          "minimum": 0,
+          "title": "Max Output Retries",
+          "type": "integer"
         }
       },
       "required": [

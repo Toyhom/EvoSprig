@@ -1,0 +1,78 @@
+{
+  "method": "opro",
+  "task_model": "deepseek-flash",
+  "judge_model": "deepseek-flash",
+  "sample_count": 2,
+  "split": "release",
+  "baseline_version": "991664ac4e1a4611e3a3812c0341e5fea836b0453702f5f216c5a1bfc908a8ef",
+  "evolved_version": "991664ac4e1a4611e3a3812c0341e5fea836b0453702f5f216c5a1bfc908a8ef",
+  "candidate_changed": false,
+  "baseline_score": 0.86,
+  "evolved_score": 0.86,
+  "gain": 0.0,
+  "validation_reused": true,
+  "cases": [
+    {
+      "input": {
+        "request": "Plan one Monday in Lakeford for two adults with a total $100 budget for meals, transport and attractions. Prefer art, avoid closed venues.",
+        "travel_notes": "Art museum closed Monday; otherwise $15 each. Sculpture garden open daily 9-18, $5 each, step-free. Lake ferry Monday 10-16, $12 per person. Meals estimate lunch $14 and dinner $18 per person. Day bus pass $6 per person. Garden and lake are a 15-minute walk apart. Hotel and breakfast prepaid."
+      },
+      "baseline": {
+        "output": {
+          "text": "# Monday in Lakeford — Final Itinerary (2 Adults, $100 Cap)\n\n**Budget check (verified):** Attractions $34 (garden $10 + ferry $24) + Meals $64 (lunch $28 + dinner $36) + Transport $0 = **$98 total, $2 remaining.**\n\n**Schedule check against notes:** ✅ Sculpture garden 9:00–10:30 falls inside its 9–18 daily hours. ✅ Ferry 11:00–12:30 falls inside its Monday 10–16 window. ✅ The 15-min garden→lake walk (10:30–10:45) leaves a 15-min buffer before the ferry. ✅ Art museum correctly excluded — it's closed Monday (would have been $15 each).\n\n---\n\n## Itinerary\n\n| Time | Activity | Cost (2 adults) | Notes |\n|---|---|---|---|\n| 08:00–08:45 | Breakfast at hotel | $0 | Prepaid |\n| 09:00–10:30 | **Sculpture garden** (open daily 9–18) | $10 | $5 each; step-free |\n| 10:30–10:45 | Walk to lake | $0 | 15 min, step-free route |\n| 11:00–12:30 | **Lake ferry** (Monday 10–16) | $24 | $12 each |\n| 12:45–13:45 | Lunch | $28 | $14 each (estimate) |\n| 14:00–17:00 | Lakefront stroll | $0 | Free; step-free lakeside path assumed |\n| 18:00–19:00 | Dinner | $36 | $18 each (estimate) |\n| Evening | Return to hotel | $0 | Walk if close; otherwise single bus fares (not supplied) |\n\n**Transport:** Day pass ($12) skipped — walk where feasible, single bus trips only if needed. Garden and lake are a 15-min step-free walk apart.\n\n---\n\n## Cost Summary\n\n| Item | Cost |\n|---|---|\n| Attractions (garden $10 + ferry $24) | $34 |\n| Meals (lunch $28 + dinner $36) | $64 |\n| Transport (day pass skipped) | $0 + any single fares |\n| **Total** | **$98** |\n| **Remaining** | **$2** |\n\n**Status:** Within the $100 cap — *provided* any single bus fares used stay within ~$2 total, which is uncertain since fares weren't supplied.\n\n---\n\n## Safer Alternative — Option 3: Keep the day pass, drop the ferry\n\n| Item | Cost |\n|---|---|\n| Sculpture garden | $10 |\n| Meals | $64 |\n| Day bus pass ($6 each) | $12 |\n| **Total** | **$86** |\n| **Remaining** | **$14** |\n\nGuaranteed transport coverage and a comfortable buffer, at the cost of the lake ferry. The free lakefront stroll still fits the afternoon.\n\n---\n\n## Accessibility\n- Sculpture garden: step-free (confirmed).\n- Garden–lake walk: 15 min, step-free route (confirmed).\n- Ferry and lakefront: accessibility not specified — **confirm boarding/ramp access with the ferry operator**.\n\n## Still to Book / Confirm\n- **Ferry tickets** — no reservation confirmed; arrive with buffer for the 11:00 sailing.\n- **Lunch and dinner** — no reservations confirmed.\n- **Single bus fares** — not supplied; confirm prices if you rely on Option 1.\n- **Ferry accessibility** — confirm ramp/boarding access.\n\n**Bottom line:** Option 1 ($98, $2 spare) if walking is fine and single fares are cheap; otherwise Option 3 ($86, $14 spare) for guaranteed transport coverage."
+        },
+        "score": 0.82,
+        "status": "succeeded",
+        "output_file": "release-1-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "# Monday in Lakeford — Final Itinerary (2 Adults, $100 Cap)\n\n**Budget check (verified):** Attractions $34 (garden $10 + ferry $24) + Meals $64 (lunch $28 + dinner $36) + Transport $0 = **$98 total, $2 remaining.**\n\n**Schedule check against notes:** ✅ Sculpture garden 9:00–10:30 falls inside its 9–18 daily hours. ✅ Ferry 11:00–12:30 falls inside its Monday 10–16 window. ✅ The 15-min garden→lake walk (10:30–10:45) leaves a 15-min buffer before the ferry. ✅ Art museum correctly excluded — it's closed Monday (would have been $15 each).\n\n---\n\n## Itinerary\n\n| Time | Activity | Cost (2 adults) | Notes |\n|---|---|---|---|\n| 08:00–08:45 | Breakfast at hotel | $0 | Prepaid |\n| 09:00–10:30 | **Sculpture garden** (open daily 9–18) | $10 | $5 each; step-free |\n| 10:30–10:45 | Walk to lake | $0 | 15 min, step-free route |\n| 11:00–12:30 | **Lake ferry** (Monday 10–16) | $24 | $12 each |\n| 12:45–13:45 | Lunch | $28 | $14 each (estimate) |\n| 14:00–17:00 | Lakefront stroll | $0 | Free; step-free lakeside path assumed |\n| 18:00–19:00 | Dinner | $36 | $18 each (estimate) |\n| Evening | Return to hotel | $0 | Walk if close; otherwise single bus fares (not supplied) |\n\n**Transport:** Day pass ($12) skipped — walk where feasible, single bus trips only if needed. Garden and lake are a 15-min step-free walk apart.\n\n---\n\n## Cost Summary\n\n| Item | Cost |\n|---|---|\n| Attractions (garden $10 + ferry $24) | $34 |\n| Meals (lunch $28 + dinner $36) | $64 |\n| Transport (day pass skipped) | $0 + any single fares |\n| **Total** | **$98** |\n| **Remaining** | **$2** |\n\n**Status:** Within the $100 cap — *provided* any single bus fares used stay within ~$2 total, which is uncertain since fares weren't supplied.\n\n---\n\n## Safer Alternative — Option 3: Keep the day pass, drop the ferry\n\n| Item | Cost |\n|---|---|\n| Sculpture garden | $10 |\n| Meals | $64 |\n| Day bus pass ($6 each) | $12 |\n| **Total** | **$86** |\n| **Remaining** | **$14** |\n\nGuaranteed transport coverage and a comfortable buffer, at the cost of the lake ferry. The free lakefront stroll still fits the afternoon.\n\n---\n\n## Accessibility\n- Sculpture garden: step-free (confirmed).\n- Garden–lake walk: 15 min, step-free route (confirmed).\n- Ferry and lakefront: accessibility not specified — **confirm boarding/ramp access with the ferry operator**.\n\n## Still to Book / Confirm\n- **Ferry tickets** — no reservation confirmed; arrive with buffer for the 11:00 sailing.\n- **Lunch and dinner** — no reservations confirmed.\n- **Single bus fares** — not supplied; confirm prices if you rely on Option 1.\n- **Ferry accessibility** — confirm ramp/boarding access.\n\n**Bottom line:** Option 1 ($98, $2 spare) if walking is fine and single fares are cheap; otherwise Option 3 ($86, $14 spare) for guaranteed transport coverage."
+        },
+        "score": 0.82,
+        "status": "succeeded",
+        "output_file": "release-1-evolved.md"
+      }
+    },
+    {
+      "input": {
+        "request": "Plan one Saturday in Seabrook for a family of two adults and a 7-year-old. Total $115 excluding hotel. Child needs a lunch break at noon and activities must be step-free.",
+        "travel_notes": "Aquarium 9-18: adults $22, child $12, step-free. Beach free, step-free boardwalk. Lighthouse $8 adult/$4 child, 90 stairs. Bus family pass $12. Lunch family estimate $28, dinner $35. Aquarium to beach 20 minutes by bus. Breakfast prepaid."
+      },
+      "baseline": {
+        "output": {
+          "text": "# Saturday in Seabrook — Final Itinerary (2 adults + 7-year-old)\n\n**Constraints met:** step-free throughout · child lunch at noon · $115 budget excl. hotel.\n\n## Schedule\n\n| Time | Activity | Cost | Notes |\n|---|---|---|---|\n| 08:30–09:10 | Breakfast (hotel, prepaid) | $0 | 40 min |\n| 09:15–11:15 | **Aquarium** (step-free) | $56 | 2 adults × $22 + child $12; closes 18:00, no conflict |\n| 11:15–11:35 | Bus to beach (20 min, step-free) | $12 | Family day pass covers the day's rides |\n| 11:35–12:00 | Settle at beach | $0 | 25 min buffer |\n| **12:00–12:45** | **Lunch** (child eats at noon) | $28 | Family estimate |\n| 13:00–15:15 | Beach & boardwalk (step-free) | $0 | 2 hr 15 min |\n| 15:30 | ~~Lighthouse~~ **SKIPPED** | — | 90 stairs, not step-free |\n| 15:30–17:15 | Free time / boardwalk | $0 | Rest, snack |\n| 17:30–18:30 | Dinner — picnic/simple meal | $15 | Option A swap (replaces $35 dinner out) |\n| 19:00 | Evening boardwalk stroll | $0 | Optional, flexible |\n\n## Budget Check (verified in Python)\n\n| Item | Cost |\n|---|---|\n| Breakfast (prepaid) | $0 |\n| Aquarium | $56 |\n| Bus family pass | $12 |\n| Lunch | $28 |\n| Dinner (picnic, est.) | $15 |\n| Beach / boardwalk / stroll | $0 |\n| **Total** | **$111** |\n\n**Total: $111 · Remaining: $4 of $115.**\n\n## Schedule conflicts resolved\n- **Bus leg matches the notes exactly** — 11:15→11:35 is 20 min, as stated. No conflict.\n- **Noon lunch protected** — arrival at 11:35 leaves 25 min to settle before the child's 12:00 lunch.\n- **Aquarium timing safe** — visit ends 11:15, well before the 18:00 close.\n- **Lighthouse correctly excluded** — 90 stairs violates the step-free requirement.\n- **⚠️ One unverified gap:** the notes give **no hotel→aquarium travel time**. The plan only allows a **5-minute buffer** (09:10–09:15). If the hotel isn't within a 5-minute step-free walk of the aquarium, either start breakfast at 08:15 or trim the aquarium visit slightly. This is the only soft spot in the schedule.\n\n## Alternatives (if preferences change)\n- **Option B — skip aquarium:** $75 total, **$40 remaining** (largest buffer).\n- **Option C — keep aquarium, drop bus pass:** $119 → **$4 over**. Only works with a $12 lunch instead of $28 → **$115, exactly on budget** — and only if prepaid transport or a step-free walk is actually available (not confirmed in notes).\n\n## Still to book / confirm\n1. **Aquarium tickets** — not booked; $56 is an estimate from the notes.\n2. **Bus family day pass** — not booked; confirm it covers all of the day's rides.\n3. **Lunch venue** — not booked; **step-free seating is not specified in the notes** — confirm on arrival or reserve ahead.\n4. **Picnic/simple dinner** — the $15 figure is an **estimate, not a confirmed booking**; confirm a step-free picnic spot or venue.\n5. **Hotel→aquarium travel time** — missing from the notes; verify the route is step-free and fits the 5-minute buffer (or adjust breakfast earlier).\n\nAll figures are estimates from the supplied notes; nothing is prepaid except hotel breakfast."
+        },
+        "score": 0.9,
+        "status": "succeeded",
+        "output_file": "release-2-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "# Saturday in Seabrook — Final Itinerary (2 adults + 7-year-old)\n\n**Constraints met:** step-free throughout · child lunch at noon · $115 budget excl. hotel.\n\n## Schedule\n\n| Time | Activity | Cost | Notes |\n|---|---|---|---|\n| 08:30–09:10 | Breakfast (hotel, prepaid) | $0 | 40 min |\n| 09:15–11:15 | **Aquarium** (step-free) | $56 | 2 adults × $22 + child $12; closes 18:00, no conflict |\n| 11:15–11:35 | Bus to beach (20 min, step-free) | $12 | Family day pass covers the day's rides |\n| 11:35–12:00 | Settle at beach | $0 | 25 min buffer |\n| **12:00–12:45** | **Lunch** (child eats at noon) | $28 | Family estimate |\n| 13:00–15:15 | Beach & boardwalk (step-free) | $0 | 2 hr 15 min |\n| 15:30 | ~~Lighthouse~~ **SKIPPED** | — | 90 stairs, not step-free |\n| 15:30–17:15 | Free time / boardwalk | $0 | Rest, snack |\n| 17:30–18:30 | Dinner — picnic/simple meal | $15 | Option A swap (replaces $35 dinner out) |\n| 19:00 | Evening boardwalk stroll | $0 | Optional, flexible |\n\n## Budget Check (verified in Python)\n\n| Item | Cost |\n|---|---|\n| Breakfast (prepaid) | $0 |\n| Aquarium | $56 |\n| Bus family pass | $12 |\n| Lunch | $28 |\n| Dinner (picnic, est.) | $15 |\n| Beach / boardwalk / stroll | $0 |\n| **Total** | **$111** |\n\n**Total: $111 · Remaining: $4 of $115.**\n\n## Schedule conflicts resolved\n- **Bus leg matches the notes exactly** — 11:15→11:35 is 20 min, as stated. No conflict.\n- **Noon lunch protected** — arrival at 11:35 leaves 25 min to settle before the child's 12:00 lunch.\n- **Aquarium timing safe** — visit ends 11:15, well before the 18:00 close.\n- **Lighthouse correctly excluded** — 90 stairs violates the step-free requirement.\n- **⚠️ One unverified gap:** the notes give **no hotel→aquarium travel time**. The plan only allows a **5-minute buffer** (09:10–09:15). If the hotel isn't within a 5-minute step-free walk of the aquarium, either start breakfast at 08:15 or trim the aquarium visit slightly. This is the only soft spot in the schedule.\n\n## Alternatives (if preferences change)\n- **Option B — skip aquarium:** $75 total, **$40 remaining** (largest buffer).\n- **Option C — keep aquarium, drop bus pass:** $119 → **$4 over**. Only works with a $12 lunch instead of $28 → **$115, exactly on budget** — and only if prepaid transport or a step-free walk is actually available (not confirmed in notes).\n\n## Still to book / confirm\n1. **Aquarium tickets** — not booked; $56 is an estimate from the notes.\n2. **Bus family day pass** — not booked; confirm it covers all of the day's rides.\n3. **Lunch venue** — not booked; **step-free seating is not specified in the notes** — confirm on arrival or reserve ahead.\n4. **Picnic/simple dinner** — the $15 figure is an **estimate, not a confirmed booking**; confirm a step-free picnic spot or venue.\n5. **Hotel→aquarium travel time** — missing from the notes; verify the route is step-free and fits the 5-minute buffer (or adjust breakfast earlier).\n\nAll figures are estimates from the supplied notes; nothing is prepaid except hotel breakfast."
+        },
+        "score": 0.9,
+        "status": "succeeded",
+        "output_file": "release-2-evolved.md"
+      }
+    }
+  ],
+  "date": "2026-11-02",
+  "purpose": "release",
+  "rubric": {
+    "kind": "llm_judge",
+    "target": "output",
+    "node": null,
+    "rubric": "Grade 0..1: arithmetic and full budget coverage (0.3), opening-day and time feasibility (0.25), traveler constraints and accessibility (0.25), usable itinerary with estimates distinguished from bookings (0.2). If constraints cannot all be met, acknowledge the conflict and give an explicit feasible alternative. Check supplied prices.",
+    "judge_binding": null,
+    "repeats": 1,
+    "scorer": null,
+    "schema_": null,
+    "components": [],
+    "weight": 1.0,
+    "required": false,
+    "threshold": 0.5,
+    "output_path": "",
+    "normalize_text": false
+  }
+}

@@ -2,18 +2,7 @@
 
 AgentSpec is the shared contract for Python, Studio, evaluation and export. A version combines a validated graph, content-addressed resources and dependency information. Layout changes do not change the behavior hash.
 
-```mermaid
-flowchart LR
-  Python[Python Builder] --> Spec[AgentSpec + resources]
-  Studio[Studio] --> Spec
-  Spec --> Runtime[Durable runtime]
-  Spec --> Export[Standalone export]
-  Runtime --> Tools[Models / tools / memory]
-  Runtime --> Evaluate[Evaluation]
-  Evaluate --> Evolve[Candidate search]
-  Evolve --> Release[Compare and release]
-  Release --> Spec
-```
+![EvoSprig architecture](assets/architecture.svg)
 
 | Module | Responsibility |
 | --- | --- |

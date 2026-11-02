@@ -1,0 +1,48 @@
+models:
+  main:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    options:
+      thinking:
+        type: disabled
+tools:
+  toolbox.ocr:
+    kind: http
+    name: toolbox.ocr
+    endpoint: http://127.0.0.1:18769/ocr
+    method: POST
+    description: Read English text from base64-encoded image bytes using offline OCR.
+    input_schema:
+      type: object
+      properties:
+        image_base64: &id001
+          type: string
+      required:
+      - image_base64
+      additionalProperties: false
+    output_schema: &id002
+      type: object
+    timeout_seconds: 45
+  toolbox.python:
+    kind: http
+    name: toolbox.python
+    endpoint: http://127.0.0.1:18769/python
+    method: POST
+    description: Execute Python in a fresh browser WASM filesystem. Standard library
+      plus evosprig_plot.bar(labels, values, path='chart.svg', title=''). Pass files
+      as a map of simple filenames to text. Returns stdout, stderr, ok and artifact
+      URLs. No network or host files.
+    input_schema:
+      type: object
+      properties:
+        code: *id001
+        files:
+          type: object
+          additionalProperties: *id001
+      required:
+      - code
+      - files
+      additionalProperties: false
+    output_schema: *id002
+    timeout_seconds: 45

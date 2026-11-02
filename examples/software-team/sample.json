@@ -1,0 +1,3 @@
+{
+  "request": "Build a compact expense tracker for a freelancer. Add labeled amount and category inputs, an Add expense button, a list with Delete controls and a total that updates. Reject negative or empty amounts. White background, readable typography, keyboard-friendly controls. Deliver one offline HTML file."
+}

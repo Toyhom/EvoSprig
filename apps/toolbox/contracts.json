@@ -1,0 +1,86 @@
+{
+  "preview": {
+    "type": "object",
+    "properties": {
+      "html": {
+        "type": "string",
+        "maxLength": 500000
+      },
+      "actions": {
+        "type": "array",
+        "maxItems": 20,
+        "items": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "click"
+                },
+                "selector": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                }
+              },
+              "required": [
+                "kind",
+                "selector"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "fill"
+                },
+                "selector": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "selector",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "text"
+                },
+                "selector": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "contains": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "selector",
+                "contains"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      }
+    },
+    "required": [
+      "html",
+      "actions"
+    ],
+    "additionalProperties": false
+  }
+}

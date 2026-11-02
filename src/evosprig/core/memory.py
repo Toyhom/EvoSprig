@@ -44,6 +44,24 @@ class MemoryRecord(Contract):
     @model_validator(mode="after")
     def validate_record(self):
         canonical_json(self.model_dump())
+        for key in ("derived_from", "links"):
+            values = self.metadata.get(key, [])
+            if (
+                not isinstance(values, list)
+                or len(values) > 32
+                or any(not isinstance(value, str) or not 1 <= len(value) <= 128 for value in values)
+            ):
+                raise ValueError("memory references must be bounded record IDs")
+        revisions = self.metadata.get("derived_revisions", {})
+        if (
+            not isinstance(revisions, dict)
+            or len(revisions) > 32
+            or any(
+                not isinstance(key, str) or not isinstance(value, int) or value < 1
+                for key, value in revisions.items()
+            )
+        ):
+            raise ValueError("invalid source memory revisions")
         if self.valid_from is not None and self.valid_until is not None:
             if self.valid_until <= self.valid_from:
                 raise ValueError("valid_until must follow valid_from")

@@ -1,0 +1,80 @@
+{
+  "method": "opro",
+  "task_model": "deepseek-flash",
+  "judge_model": "deepseek-flash",
+  "sample_count": 1,
+  "split": "selection",
+  "baseline_version": "9eb46e99afcbfe80ce00f89eb4dc23fa4b9c3b71a36162fb921e5ebec88ac7b5",
+  "evolved_version": "464a1a469ea1a2b729123227854deea72733965afe48fab1d4019907ebe68216",
+  "candidate_changed": true,
+  "baseline_score": 1.0,
+  "evolved_score": 1.0,
+  "gain": 0.0,
+  "validation_reused": false,
+  "cases": [
+    {
+      "input": {
+        "meeting_date": "2026-11-03",
+        "transcript": "Maya: Should we change support hours to weekends? Theo: Not yet. Two customers asked but we have no staffing plan. Rina: I will survey the team by November 10. Ben: I can calculate the cost if Rina sends expected hours first. Maya: Let us run a two-week volunteer pilot only after both are ready. No pilot start date was agreed."
+      },
+      "baseline": {
+        "output": {
+          "actions": [
+            {
+              "due": "2026-11-10",
+              "owner": "Rina",
+              "task": "Survey the team about weekend support hours"
+            },
+            {
+              "due": "",
+              "owner": "Ben",
+              "task": "Calculate the cost of weekend support hours after Rina sends expected hours"
+            }
+          ],
+          "notes": "Meeting on 2026-11-03. Topic: whether to change support hours to weekends. Decision: not yet — two customers asked, but there is no staffing plan. Rina will survey the team by 2026-11-10. Ben will calculate the cost once Rina sends the expected hours (no due date was set). A two-week volunteer pilot will run only after both the survey and cost calculation are ready; no pilot start date was agreed. Open questions: what the survey shows about interest, what the cost will be, and when the pilot would start."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "selection-1-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "actions": [
+            {
+              "due": "November 10",
+              "owner": "Rina",
+              "task": "survey the team"
+            },
+            {
+              "due": "",
+              "owner": "Ben",
+              "task": "calculate the cost if Rina sends expected hours first"
+            }
+          ],
+          "notes": "Meeting held 2026-11-03. Maya raised whether support hours should change to weekends; Theo deferred the change (\"Not yet\"), citing two customer requests but no staffing plan. Rina committed to survey the team by November 10. Ben offered to calculate the cost if Rina sends expected hours first. Maya proposed a two-week volunteer pilot only after both are ready; no pilot start date was agreed. The weekend support change is not a decision, and the pilot remains conditional with no start date."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "selection-1-evolved.md"
+      }
+    }
+  ],
+  "date": "2026-11-02",
+  "purpose": "selection",
+  "rubric": {
+    "kind": "llm_judge",
+    "target": "output",
+    "node": null,
+    "rubric": "Grade 0..1: correct decisions versus proposals (0.3), complete action items with faithful owners (0.3), explicit dates anchored to meeting date or marked unknown (0.25), concise usable notes (0.15). Penalize assigning unaccepted work or inventing dates. Compare the actual transcript to the final notes and actions.",
+    "judge_binding": null,
+    "repeats": 1,
+    "scorer": null,
+    "schema_": null,
+    "components": [],
+    "weight": 1.0,
+    "required": false,
+    "threshold": 0.5,
+    "output_path": "",
+    "normalize_text": false
+  }
+}

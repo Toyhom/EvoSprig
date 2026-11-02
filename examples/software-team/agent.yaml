@@ -1,0 +1,416 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 32
+  max_output_tokens: 4096
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 100
+  max_total_tokens: 180000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: build
+    target: checks
+    when: null
+  - source: checks
+    target: preview
+    when: null
+  - source: design
+    target: build
+    when: null
+  - source: preview
+    target: refine
+    when: null
+  - source: refine
+    target: verify
+    when: null
+  - source: requirements
+    target: design
+    when: null
+  - source: verify
+    target: handoff
+    when: null
+  entry: requirements
+  nodes:
+    build:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        design:
+          default: null
+          optional: false
+          ref: nodes.design.output.text
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: build
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          html:
+            type: string
+        required:
+        - html
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    checks:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: nodes.requirements.output.text
+        html:
+          default: null
+          optional: false
+          ref: nodes.build.output.html
+      instructions:
+        resource: checks
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          actions:
+            items:
+              oneOf:
+              - additionalProperties: false
+                properties:
+                  kind:
+                    const: click
+                  selector:
+                    maxLength: 300
+                    minLength: 1
+                    type: string
+                required:
+                - kind
+                - selector
+                type: object
+              - additionalProperties: false
+                properties:
+                  kind:
+                    const: fill
+                  selector:
+                    maxLength: 300
+                    minLength: 1
+                    type: string
+                  value:
+                    type: string
+                required:
+                - kind
+                - selector
+                - value
+                type: object
+              - additionalProperties: false
+                properties:
+                  contains:
+                    type: string
+                  kind:
+                    const: text
+                  selector:
+                    maxLength: 300
+                    minLength: 1
+                    type: string
+                required:
+                - kind
+                - selector
+                - contains
+                type: object
+            maxItems: 10
+            type: array
+        required:
+        - actions
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    design:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: nodes.requirements.output.text
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: design
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    handoff:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        browser:
+          default: null
+          optional: false
+          ref: nodes.verify.output
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: handoff
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    preview:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        actions:
+          default: null
+          optional: false
+          ref: nodes.checks.output.actions
+        html:
+          default: null
+          optional: false
+          ref: nodes.build.output.html
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: preview
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    refine:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        browser:
+          default: null
+          optional: false
+          ref: nodes.preview.output
+        html:
+          default: null
+          optional: false
+          ref: nodes.build.output.html
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: refine
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      max_tool_rounds: 4
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          html:
+            type: string
+        required:
+        - html
+        type: object
+      parallel_tool_calls: true
+      response_format: json
+      tool: null
+      tool_errors: feedback
+      tools:
+      - preview
+      type: agent
+      until: null
+    requirements:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: requirements
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    verify:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        actions:
+          default: null
+          optional: false
+          ref: nodes.checks.output.actions
+        html:
+          default: null
+          optional: false
+          ref: nodes.refine.output.html
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: preview
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+  output:
+    html:
+      default: null
+      optional: false
+      ref: nodes.refine.output.html
+    preview:
+      default: null
+      optional: false
+      ref: nodes.verify.output
+    summary:
+      default: null
+      optional: false
+      ref: nodes.handoff.output.text
+id: software-team
+input_schema:
+  additionalProperties: false
+  properties:
+    request:
+      type: string
+  required:
+  - request
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    html:
+      type: string
+    preview:
+      type: object
+    summary:
+      type: string
+  required:
+  - html
+  - preview
+  - summary
+  type: object
+resources:
+  build:
+    path: prompts/build.md
+    role: prompt
+  checks:
+    path: prompts/checks.md
+    role: prompt
+  design:
+    path: prompts/design.md
+    role: prompt
+  handoff:
+    path: prompts/handoff.md
+    role: prompt
+  refine:
+    path: prompts/refine.md
+    role: prompt
+  requirements:
+    path: prompts/requirements.md
+    role: prompt
+spec_version: '0.3'
+tools:
+  preview:
+    plugin: toolbox.preview
+    version: '1'

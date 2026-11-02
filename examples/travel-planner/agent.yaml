@@ -1,0 +1,222 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 32
+  max_output_tokens: 4096
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 100
+  max_total_tokens: 180000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: days
+    target: concierge
+    when: null
+  - source: plan
+    target: days
+    when: null
+  entry: plan
+  nodes:
+    concierge:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        days:
+          default: null
+          optional: false
+          ref: nodes.days.output.items
+        notes:
+          default: null
+          optional: false
+          ref: input.travel_notes
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: concierge
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      max_tool_rounds: 4
+      model: main
+      output_errors: feedback
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      parallel_tool_calls: true
+      response_format: text
+      tool: null
+      tool_errors: feedback
+      tools:
+      - python
+      type: agent
+      until: null
+    days:
+      body:
+        edges: []
+        entry: day
+        nodes:
+          day:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              day:
+                default: null
+                optional: false
+                ref: input.item
+              notes:
+                default: null
+                optional: false
+                ref: input.context.notes
+              request:
+                default: null
+                optional: false
+                ref: input.context.request
+            instructions:
+              resource: day
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              properties:
+                text:
+                  type: string
+              required:
+              - text
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: model
+            until: null
+        output:
+          text:
+            default: null
+            optional: false
+            ref: nodes.day.output.text
+      branches: {}
+      condition: null
+      inputs:
+        notes:
+          default: null
+          optional: false
+          ref: input.travel_notes
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: nodes.plan.output.days
+      join: all
+      max_items: 5
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+    plan:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        travel_notes:
+          default: null
+          optional: false
+          ref: input.travel_notes
+      instructions:
+        resource: plan
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          days:
+            items:
+              type: string
+            maxItems: 5
+            minItems: 1
+            type: array
+        required:
+        - days
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.concierge.output.text
+id: travel-planner
+input_schema:
+  additionalProperties: false
+  properties:
+    request:
+      type: string
+    travel_notes:
+      type: string
+  required:
+  - request
+  - travel_notes
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
+resources:
+  concierge:
+    path: prompts/concierge.md
+    role: prompt
+  day:
+    path: prompts/day.md
+    role: prompt
+  plan:
+    path: prompts/plan.md
+    role: prompt
+spec_version: '0.3'
+tools:
+  python:
+    plugin: toolbox.python
+    version: '1'

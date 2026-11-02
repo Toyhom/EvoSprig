@@ -44,3 +44,14 @@ jobs:
         working-directory: apps/studio
         env:
           EVOSPRIG_TEST_WORKSPACE: ${{ runner.temp }}/studio
+  toolbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci && npx playwright install --with-deps chromium --only-shell
+        working-directory: apps/toolbox
+      - run: npm test
+        working-directory: apps/toolbox

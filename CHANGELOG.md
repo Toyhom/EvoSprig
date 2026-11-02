@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add seven native application templates: software team, Data Interpreter, decision room, receipts, meetings, book writing and travel planning, with reusable version comparisons.
+- Expand training-free evolution to 13 strategies across 11 families, including instruction induction, textual gradients, few-shot search, mutation-prompt coevolution, reflections and experience rules.
+- Accept input-only task suites with LLM-as-judge; support references, node/tool/environment checks, external scorers and weighted metrics with mandatory conditions.
+- Add isolated evaluation environments, explicit approval responses and shared task/judge/search budgets.
+- Add linked episodic memory, source-aware summaries with invalidation, relevance/importance/recency recall and multi-query retrieval.
+- Add allowlisted tool discovery, read-only parallel calls, bounded tool rounds and structured output repair.
+- Add an optional Toolbox for browser-based Python execution, HTML interaction checks and offline OCR.
+- Show paired application outputs in Studio; refresh the homepage with a multi-stage application canvas, architecture and generated deliverables.
+
 - Add AgentSpec 0.3 dynamic map nodes with ordered results, bounded concurrency and per-item checkpoints.
 - Let agents correct invalid arguments and explicit read-only tool rejections through structured feedback.
 - Add read-only SQLite bindings and shared CSV/document loading commands.

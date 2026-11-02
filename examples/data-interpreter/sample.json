@@ -1,0 +1,6 @@
+{
+  "question": "Compare net revenue by region, excluding canceled orders and subtracting refunds. Report the top region, its share and a chart. Handle blanks explicitly.",
+  "files": {
+    "orders.csv": "region,status,gross,refund\nEast,paid,120,20\nWest,paid,200,80\nEast,canceled,300,0\nWest,paid,50,0\nNorth,paid,100,\n"
+  }
+}

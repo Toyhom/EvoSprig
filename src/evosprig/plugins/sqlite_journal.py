@@ -148,6 +148,16 @@ class SQLiteJournal:
                 )
             ]
 
+    def operations(self, run_id, scope=None):
+        self.get(run_id, scope)
+        with self._transaction(False) as db:
+            return [
+                json.loads(row[0])
+                for row in db.execute(
+                    "SELECT body FROM runtime_operations WHERE run_id=? ORDER BY rowid", (run_id,)
+                )
+            ]
+
     def operation(self, lease, operation_id, intent=None, update=None):
         with self._transaction() as db:
             check_lease(self._read(db, lease.run_id), lease)

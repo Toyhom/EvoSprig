@@ -31,6 +31,8 @@ class Adapter:
         )
 
     def make_reflective_dataset(self, candidate, eval_batch, components_to_update):
+        from evosprig.evaluation.evidence import model_evidence
+
         if eval_batch.trajectories is None:
             raise ValueError("GEPA reflection requires captured trajectories")
         feedback = [
@@ -47,7 +49,7 @@ class Adapter:
             }
             for sample in eval_batch.trajectories
         ]
-        return {component: feedback for component in components_to_update}
+        return {component: model_evidence(feedback) for component in components_to_update}
 
 
 class EventLogger:

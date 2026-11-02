@@ -41,21 +41,23 @@ def main():
                 "licenseDeclared": "NOASSERTION",
             }
         )
-    npm = json.loads((root / "apps/studio/package-lock.json").read_text())
-    for key, item in sorted(npm["packages"].items()):
-        if not key:
-            continue
-        packages.append(
-            {
-                "SPDXID": "SPDXRef-npm-" + hashlib.sha256(key.encode()).hexdigest()[:16],
-                "name": key.split("node_modules/")[-1],
-                "versionInfo": item["version"],
-                "downloadLocation": item.get("resolved", "NOASSERTION"),
-                "filesAnalyzed": False,
-                "licenseConcluded": "NOASSERTION",
-                "licenseDeclared": item.get("license", "NOASSERTION"),
-            }
-        )
+    for lockfile in sorted((root / "apps").glob("*/package-lock.json")):
+        npm = json.loads(lockfile.read_text())
+        for key, item in sorted(npm["packages"].items()):
+            if not key:
+                continue
+            packages.append(
+                {
+                    "SPDXID": "SPDXRef-npm-"
+                    + hashlib.sha256((lockfile.parent.name + ":" + key).encode()).hexdigest()[:16],
+                    "name": key.split("node_modules/")[-1],
+                    "versionInfo": item["version"],
+                    "downloadLocation": item.get("resolved", "NOASSERTION"),
+                    "filesAnalyzed": False,
+                    "licenseConcluded": "NOASSERTION",
+                    "licenseDeclared": item.get("license", "NOASSERTION"),
+                }
+            )
     sbom = {
         "spdxVersion": "SPDX-2.3",
         "dataLicense": "CC0-1.0",

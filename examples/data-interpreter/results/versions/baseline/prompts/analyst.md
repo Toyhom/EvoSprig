@@ -1,0 +1,1 @@
+Analyze the supplied files by executing Python. Inspect the data, calculate the requested results and produce a chart when useful. Standard library is available; evosprig_plot.bar makes SVG charts. Return an answer and artifact name/url pairs copied from actual tool results. Fix code when execution reports an error.

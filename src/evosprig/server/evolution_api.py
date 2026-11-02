@@ -1,7 +1,9 @@
 """Evaluation, candidate comparison and manual release routes."""
 
 from dataclasses import asdict
+from pathlib import Path
 
+import yaml
 from fastapi import HTTPException
 from pydantic import Field
 
@@ -21,6 +23,13 @@ class StudyBody(Contract):
     config: StudyConfig
     mock: bool = True
     proposer_binding: str | None = None
+
+
+class InputsBody(Contract):
+    inputs: list[dict] = Field(min_length=4, max_length=10000)
+    name: str = "my-tasks"
+    rubric: str = Field(default="", max_length=12000)
+    seed: int = Field(default=0, ge=0)
 
 
 class PublishBody(Contract):
@@ -46,6 +55,12 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
         document(project_id)
         return current_principal.get().scope(project_id)
 
+    @app.get("/api/evolution/methods")
+    async def methods():
+        from evosprig.evolution.methods import METHODS
+
+        return METHODS
+
     @app.get("/api/projects/{project_id}/suites")
     async def suites(project_id: str):
         return store.suites(scope(project_id))
@@ -53,6 +68,17 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
     @app.post("/api/projects/{project_id}/suites", status_code=201)
     async def add_suite(project_id: str, body: EvalSuite):
         return {"suite_id": store.put_suite(scope(project_id), body)}
+
+    @app.post("/api/projects/{project_id}/suites/from-inputs", status_code=201)
+    async def add_inputs(project_id: str, body: InputsBody):
+        from evosprig.evaluation.authoring import suite_from_inputs
+
+        selected_scope = scope(project_id)
+        try:
+            suite = suite_from_inputs(**body.model_dump())
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+        return {"suite_id": store.put_suite(selected_scope, suite)}
 
     @app.get("/api/projects/{project_id}/studies")
     async def studies(project_id: str):
@@ -69,7 +95,13 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             raise HTTPException(422, "editable resources are absent from this version")
         if body.config.budget.max_evaluations <= 2 * (len(suite.release) + len(suite.test)):
             raise HTTPException(422, "budget must cover search plus paired validation")
+        evaluation_config = (
+            yaml.safe_load(Path(profile).read_text()).get("evaluation", {}) if profile else {}
+        )
         try:
+            from evosprig.evaluation.deployment import EvaluationConfig
+
+            evaluation = EvaluationConfig.model_validate(evaluation_config)
             models = make_models(base.spec, profile, body.mock)
             if body.mock:
                 proposer = MockProvider()
@@ -82,8 +114,12 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             proposer_metadata = Runtime({"proposer": proposer})._engine.model_metadata()["proposer"]
             tools = tools_for(selected_scope)
             for binding in base.spec.tools.values():
-                if tools.resolve(binding.plugin, binding.version).side_effect != "read_only":
-                    raise ValueError("evaluation requires read-only tool bindings")
+                tool = tools.resolve(binding.plugin, binding.version)
+                if tool.side_effect != "read_only" and not (
+                    evaluation.environment.memory_writes
+                    and tool.name in {"memory.write", "memory.remember", "memory.summarize"}
+                ):
+                    raise ValueError("write tools need an SDK evaluation environment")
         except (ValueError, OSError):
             raise HTTPException(422, "model or evaluation tool configuration is invalid") from None
         store.put(selected_scope, base)
@@ -92,7 +128,13 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             base.version_id,
             body.suite_id,
             body.config.model_dump(),
-            {"models": model_metadata, "proposer": proposer_metadata, "tools": tools.bindings},
+            {
+                "models": model_metadata,
+                "proposer": proposer_metadata,
+                "tools": tools.bindings,
+                "evaluation": evaluation_config,
+                "mock": body.mock,
+            },
         )
         worker.dispatch(record)
         return {"id": record["id"], "status": "queued", "base_version": base.version_id}
@@ -100,6 +142,26 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
     @app.get("/api/projects/{project_id}/studies/{study_id}")
     async def study(project_id: str, study_id: str):
         return store.study(scope(project_id), study_id)
+
+    @app.get("/api/projects/{project_id}/studies/{study_id}/comparison")
+    async def comparison(project_id: str, study_id: str, split: str = "release"):
+        from evosprig.evaluation.comparison import comparison_record
+
+        selected_scope = scope(project_id)
+        study = store.study(selected_scope, study_id)
+        group = (study.get("result") or {}).get("reports", {}).get(split, {})
+        if split not in {"release", "test"} or not {"baseline", "selected"} <= group.keys():
+            raise HTTPException(409, "paired validation is not available")
+        models = study["bindings"]["models"]
+        judges = study["bindings"].get("evaluation", {}).get("judges", {})
+        task_model = next(iter(models.values()), {}).get("model", "configured model")
+        return comparison_record(
+            store.get_report(selected_scope, group["baseline"]["report_id"]),
+            store.get_report(selected_scope, group["selected"]["report_id"]),
+            method=study["config"]["method"],
+            task_model=task_model,
+            judge_model=next(iter(judges.values()), {}).get("model"),
+        )
 
     @app.post("/api/projects/{project_id}/studies/{study_id}/cancel", status_code=202)
     async def cancel_study(project_id: str, study_id: str):

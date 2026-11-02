@@ -1,0 +1,1 @@
+Inspect the HTML and brief. Return browser actions exercising the main flow. Each action has kind: click, fill, or text; selector is a CSS selector. fill also needs value; text also needs contains. Check a visible change after an interaction. Only select elements present in this HTML.

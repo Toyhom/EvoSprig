@@ -148,3 +148,18 @@ def test_openapi_import_is_explicit_about_unsupported_contracts():
     document["paths"]["/facts"]["get"]["parameters"][0]["in"] = "header"
     with pytest.raises(ValueError, match="only query"):
         from_openapi(document, "lookup", base_url="https://service.example")
+
+
+@pytest.mark.parametrize("status", [400, 422])
+async def test_only_read_only_argument_rejections_produce_safe_feedback(status):
+    from evosprig.core.protocols import ToolFeedbackError
+
+    transport = httpx.MockTransport(lambda request: httpx.Response(status, text="private payload"))
+    with pytest.raises(ToolFeedbackError, match="rejected the arguments") as caught:
+        await http_tool(config(), transport=transport).invoke({"query": "bad"})
+    assert "private" not in str(caught.value)
+    with pytest.raises(ExecutionError) as write_error:
+        await http_tool(config(method="POST", side_effect="write"), transport=transport).invoke(
+            {"query": "bad"}, operation_id="write"
+        )
+    assert not isinstance(write_error.value, ToolFeedbackError)

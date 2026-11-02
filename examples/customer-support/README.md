@@ -19,3 +19,7 @@ In Studio, enable writes for the run and enter `{"order_id":"YOUR_ORDER_ID","que
 ## Make it yours
 
 Edit `prompts/policy.md` for your store's tone and rules. Add shipping or inventory tools, or change the workflow to route different requests to different teams. The graph uses EvoSprig's conditions, approval nodes and durable tool execution.
+
+## Before and after
+
+[Compare outputs and reusable versions](results/README.md) on the same application tasks.

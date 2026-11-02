@@ -213,9 +213,23 @@ def profile():
     }
 
 
+def script_agent():
+    source = production()
+    b = Builder("video-script", source.input_schema, obj(plan=PLAN), spec_version="0.3")
+    b.model("director", "main", ["text", "structured_output"])
+    b.resource("director", "prompts/director.md")
+    node = source.graph.nodes["script"].model_dump(exclude={"type"})
+    node.update(output_errors="feedback", max_output_retries=1)
+    b.node("script", "model", **node).output(plan={"ref": "nodes.script.output"})
+    return b.execution(
+        max_model_calls=3, max_output_tokens=4096, max_total_tokens=32000
+    ).build_spec()
+
+
 if __name__ == "__main__":
     root = Path(__file__).parent
     save_spec(production(), root / "agent.yaml")
+    save_spec(script_agent(), root / "script-agent.yaml")
     save_spec(shot_builder().build_spec(), root / "shot-agent.yaml")
     compose = Builder("video-compose", TIMELINE, obj(film=ASSET), spec_version="0.2").tool(
         "compose", "media.compose"

@@ -24,3 +24,7 @@ You can also start from the CLI with `evosprig run` and complete the review with
 Load your own documents. Edit the planner, researcher and writer prompts. Add a web search HTTP/MCP tool to the researcher's tool list to investigate external sources. The included template researches the document collection you supply.
 
 The framework's `map` node handles the variable task list, bounded parallel work and checkpoints. No separate team scheduler is needed. [Open Deep Research](https://github.com/langchain-ai/open_deep_research) is a useful reference for the broader research-agent application pattern.
+
+## Before and after
+
+[Compare outputs and reusable versions](results/README.md) on the same application tasks.

@@ -7,6 +7,8 @@ export type NodeSpec = {
   instructions?: string | { resource: string }; tools?: string[]; tool?: string | null;
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;
   items?: Binding|null; max_items?: number; tool_errors?: 'raise'|'feedback';
+  parallel_tool_calls?: boolean; tool_selection?: 'all'|'relevant'; tool_limit?: number; max_tool_rounds?: number|null;
+  output_errors?: 'raise'|'feedback'; max_output_retries?: number;
   branches?: Record<string, Graph>; max_iterations?: number; until?: Predicate|null; join?: 'all'|'selected';
 };
 export type GraphEdge = { source: string; target: string; when?: boolean|null };
@@ -51,4 +53,15 @@ export function nodeTemplate(kind:NodeKind, model='main', tool='add'):NodeSpec {
   if(kind==='loop') return {type:kind,inputs:{},output_schema:objectSchema('text'),body:inner,max_iterations:3};
   if(kind==='parallel') return {type:kind,inputs:{},output_schema:{type:'object'},branches:{first:inner,second:structuredClone(inner)},join:'all'};
   return {type:kind,inputs:{text:{value:'example'}},output_schema:objectSchema('text'),...(kind==='join'?{join:'all' as const}:{})};
+}
+
+export function initialInput(schema:Json):unknown {
+  if ('default' in schema) return schema.default;
+  if (Array.isArray(schema.examples)&&schema.examples.length) return schema.examples[0];
+  if (Array.isArray(schema.enum)&&schema.enum.length) return schema.enum[0];
+  if(schema.type==='object'||schema.properties) return Object.fromEntries(Object.entries((schema.properties??{}) as Record<string,Json>).filter(([key])=>!Array.isArray(schema.required)||schema.required.includes(key)).map(([key,child])=>[key,initialInput(child)]));
+  if(schema.type==='array') return [];
+  if(schema.type==='boolean') return false;
+  if(schema.type==='number'||schema.type==='integer') return typeof schema.minimum==='number'?schema.minimum:0;
+  return '';
 }

@@ -30,6 +30,7 @@ MODULES = (
     "core/journal.py",
     "core/expressions.py",
     "core/memory.py",
+    "core/tool_policy.py",
     "sdk/__init__.py",
     "sdk/builder.py",
     "plugins/__init__.py",
@@ -40,10 +41,12 @@ MODULES = (
     "plugins/sqlite_memory.py",
     "plugins/sqlite_tools.py",
     "plugins/structured_memory.py",
+    "plugins/episodic_memory.py",
     "plugins/semantic_memory.py",
     "plugins/embeddings.py",
     "plugins/memory_tools.py",
     "plugins/documents.py",
+    "plugins/retrieval.py",
     "plugins/http_tools.py",
     "plugins/external_http.py",
     "plugins/mcp_tools.py",
@@ -62,7 +65,9 @@ from evosprig.core.runtime import Runtime
 from evosprig.plugins.sqlite_journal import SQLiteJournal
 
 parser = argparse.ArgumentParser(description="Run the exported EvoSprig agent")
-parser.add_argument("--input", help="JSON input object")
+inputs = parser.add_mutually_exclusive_group()
+inputs.add_argument("--input", help="JSON input object")
+inputs.add_argument("--input-file", type=Path, help="JSON task input file")
 parser.add_argument("--mock", action="store_true")
 parser.add_argument("--profile")
 parser.add_argument("--workspace", type=Path)
@@ -80,7 +85,7 @@ if version.lock != expected:
     raise SystemExit("Project changed: rebuild the export to update agent.lock.json")
 workspace = args.workspace or root / ".evosprig"
 if args.documents:
-    if args.input or args.resume or args.path or args.response:
+    if args.input or args.input_file or args.resume or args.path or args.response:
         parser.error("load documents separately from running or resuming the agent")
     from evosprig.data_cli import add_documents
     print(json.dumps(add_documents(args.documents, workspace, spec.id), indent=2))
@@ -98,12 +103,12 @@ if args.resume:
                       allow_writes=record["metadata"]["allow_writes"])
     result = asyncio.run(runtime.resume(args.resume))
 else:
-    if args.input is None:
+    if args.input is None and args.input_file is None:
         parser.error("provide --input for a new run")
     bindings = None if args.profile else json.loads((root / "tool-bindings.json").read_text())
     runtime = Runtime(make_models(spec, args.profile, args.mock), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=bindings), journal=journal,
                       allow_writes=args.allow_writes)
-    result = asyncio.run(runtime.run(version, json.loads(args.input)))
+    result = asyncio.run(runtime.run(version, json.loads(args.input_file.read_text() if args.input_file else args.input)))
 print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
 raise SystemExit(1 if result.status in {"failed", "canceled"} else 0)
 """

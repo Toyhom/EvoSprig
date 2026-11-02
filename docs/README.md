@@ -6,6 +6,7 @@ Start with the [quickstart](quickstart.md), then open a runnable application fro
 | --- | --- |
 | [Architecture](architecture.md) | AgentSpec, graphs, resources and plugins |
 | [Evolution](evolution.md) | Search methods, task splits, budgets and releases |
+| [Evaluation](evaluation.md) | Input-only tasks, LLM judges, custom scorers and environments |
 | [Memory](memory.md) | Retrieval, context blocks, relations and deletion |
 | [Tools](tools.md) | Python, HTTP, external jobs and MCP |
 | [Durable runtime](durable-runtime.md) | Checkpoints, approvals and recovery |

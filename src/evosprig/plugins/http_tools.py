@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 import httpx
 from pydantic import Field, model_validator
 
-from evosprig.core.protocols import ExecutionError, Tool
+from evosprig.core.protocols import ExecutionError, Tool, ToolFeedbackError
 from evosprig.core.spec import Contract, canonical_json, check_schema
 from evosprig.core.version import check_public_text
 
@@ -82,6 +82,11 @@ def http_tool(config: HTTPToolConfig, *, transport=None):
                     config.method, config.endpoint, headers=headers, **payload
                 ) as response:
                     if not 200 <= response.status_code < 300:
+                        if config.side_effect == "read_only" and response.status_code in {400, 422}:
+                            raise ToolFeedbackError(
+                                "invalid_arguments",
+                                "The read-only service rejected the arguments. Check the tool schema and revise the request.",
+                            )
                         raise ExecutionError(f"HTTP tool returned status {response.status_code}")
                     content = bytearray()
                     async for part in response.aiter_bytes():

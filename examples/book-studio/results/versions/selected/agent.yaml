@@ -1,0 +1,235 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 32
+  max_output_tokens: 4096
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 100
+  max_total_tokens: 180000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: chapters
+    target: editor
+    when: null
+  - source: outline
+    target: chapters
+    when: null
+  entry: outline
+  nodes:
+    chapters:
+      body:
+        edges: []
+        entry: write
+        nodes:
+          write:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              book:
+                default: null
+                optional: false
+                ref: input.context.outline
+              brief:
+                default: null
+                optional: false
+                ref: input.context.brief
+              chapter:
+                default: null
+                optional: false
+                ref: input.item
+            instructions:
+              resource: chapter
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              properties:
+                text:
+                  type: string
+              required:
+              - text
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: model
+            until: null
+        output:
+          text:
+            default: null
+            optional: false
+            ref: nodes.write.output.text
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        outline:
+          default: null
+          optional: false
+          ref: nodes.outline.output
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: nodes.outline.output.chapters
+      join: all
+      max_items: 4
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+    editor:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        chapters:
+          default: null
+          optional: false
+          ref: nodes.chapters.output.items
+      instructions:
+        resource: editor
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    outline:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+      instructions:
+        resource: outline
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          chapters:
+            items:
+              additionalProperties: false
+              properties:
+                brief:
+                  type: string
+                title:
+                  type: string
+              required:
+              - title
+              - brief
+              type: object
+            maxItems: 4
+            minItems: 2
+            type: array
+          title:
+            type: string
+        required:
+        - title
+        - chapters
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    chapters:
+      default: null
+      optional: false
+      ref: nodes.chapters.output.items
+    editorial:
+      default: null
+      optional: false
+      ref: nodes.editor.output.text
+    title:
+      default: null
+      optional: false
+      ref: nodes.outline.output.title
+id: book-studio
+input_schema:
+  additionalProperties: false
+  properties:
+    brief:
+      type: string
+  required:
+  - brief
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    chapters:
+      items:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      type: array
+    editorial:
+      type: string
+    title:
+      type: string
+  required:
+  - title
+  - chapters
+  - editorial
+  type: object
+resources:
+  chapter:
+    path: prompts/chapter.md
+    role: prompt
+  editor:
+    path: prompts/editor.md
+    role: prompt
+  outline:
+    path: prompts/outline.md
+    role: prompt
+spec_version: '0.3'
+tools: {}

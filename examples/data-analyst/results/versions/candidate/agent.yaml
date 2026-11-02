@@ -1,0 +1,88 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 12
+  max_output_tokens: 1800
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 40
+  max_total_tokens: 24000
+  timeout_seconds: 180.0
+graph:
+  edges: []
+  entry: analyst
+  nodes:
+    analyst:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions:
+        resource: instructions
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_tool_rounds: 4
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: feedback
+      tools:
+      - schema
+      - query
+      type: agent
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.analyst.output.text
+id: data-analyst
+input_schema:
+  additionalProperties: false
+  properties:
+    question:
+      minLength: 1
+      type: string
+  required:
+  - question
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
+resources:
+  instructions:
+    path: prompts/analyst.md
+    role: prompt
+spec_version: '0.3'
+tools:
+  query:
+    plugin: database.query
+    version: '1'
+  schema:
+    plugin: database.schema
+    version: '1'

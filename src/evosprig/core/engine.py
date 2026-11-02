@@ -20,6 +20,7 @@ from .protocols import (
     ExternalStatus,
     ExternalTool,
     ModelRequest,
+    ProviderError,
     ToolFeedbackError,
 )
 from .spec import ResourceRef, canonical_json, digest
@@ -175,8 +176,17 @@ class Engine:
             session.finish("failed")
         except Exception as exc:
             await session.cancel_external()
+
+            def experiment_limit(error):
+                return getattr(error, "code", None) == "experiment_budget_exhausted" or (
+                    isinstance(error, BaseExceptionGroup)
+                    and any(experiment_limit(child) for child in error.exceptions)
+                )
+
             session.cp["error"] = {
-                "code": getattr(
+                "code": "experiment_budget_exhausted"
+                if experiment_limit(exc)
+                else getattr(
                     exc,
                     "code",
                     "validation_error" if isinstance(exc, ValueError) else "execution_error",
@@ -456,6 +466,29 @@ class ExecutionSession:
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": canonical_json(arguments)},
             ]
+
+        def feedback(reason, previous=None):
+            if (
+                node.output_errors != "feedback"
+                or slot.get("output_retries", 0) >= node.max_output_retries
+            ):
+                return False
+            if previous:
+                slot["messages"].append({"role": "assistant", "content": previous})
+            slot["messages"].append(
+                {
+                    "role": "user",
+                    "content": "Output validation: "
+                    + reason
+                    + ". Return a concise complete answer satisfying the original output contract. Do not repeat completed tool actions.",
+                }
+            )
+            slot["output_retries"] = slot.get("output_retries", 0) + 1
+            slot["response"] = None
+            slot["assistant_recorded"] = False
+            self.save("model.feedback", path, reason=reason, retry=slot["output_retries"])
+            return True
+
         while True:
             if slot.get("response") is None:
                 async with self.model_slots:
@@ -463,9 +496,28 @@ class ExecutionSession:
                     usage, budget = self.cp["usage"], self.spec.execution
                     if usage["model_calls"] >= budget.max_model_calls:
                         raise BudgetExceeded("model call budget exhausted")
-                    descriptors = [
-                        self.bound_tools[alias].descriptor(alias) for alias in node.tools
-                    ]
+                    aliases = node.tools
+                    if node.tool_selection == "relevant":
+                        from .tool_policy import select_tools
+
+                        aliases = select_tools(
+                            aliases, self.bound_tools, canonical_json(arguments), node.tool_limit
+                        )
+                    if (
+                        node.max_tool_rounds is not None
+                        and slot.get("tool_rounds", 0) >= node.max_tool_rounds
+                    ):
+                        aliases = []
+                        if not slot.get("tool_round_limit_noted"):
+                            slot["messages"].append(
+                                {
+                                    "role": "user",
+                                    "content": "The tool-round limit is reached. Give the final answer using the collected evidence and state any unresolved gaps.",
+                                }
+                            )
+                            slot["tool_round_limit_noted"] = True
+                    slot["exposed_tools"] = aliases
+                    descriptors = [self.bound_tools[alias].descriptor(alias) for alias in aliases]
                     estimate = (
                         len(
                             canonical_json(
@@ -497,14 +549,21 @@ class ExecutionSession:
                         max_output_tokens=allowance,
                         reserved_tokens=reservation,
                     )
-                    response = await provider.complete(
-                        ModelRequest(
-                            copy.deepcopy(slot["messages"]),
-                            descriptors,
-                            node.response_format == "json",
-                            allowance,
+                    try:
+                        response = await provider.complete(
+                            ModelRequest(
+                                copy.deepcopy(slot["messages"]),
+                                descriptors,
+                                node.response_format == "json",
+                                allowance,
+                            )
                         )
-                    )
+                    except ProviderError as exc:
+                        if exc.code == "output_limit" and feedback(
+                            "Response exceeded the output-token limit"
+                        ):
+                            continue
+                        raise
                     usage["input_tokens"] += response.usage.input_tokens
                     usage["output_tokens"] += response.usage.output_tokens
                     usage["reserved_tokens"] -= reservation
@@ -528,14 +587,27 @@ class ExecutionSession:
             response = slot["response"]
             calls = response["tool_calls"]
             if not calls:
-                return (
-                    json.loads(response["text"])
-                    if node.response_format == "json"
-                    else {"text": response["text"]}
-                )
+                try:
+                    output = (
+                        json.loads(response["text"])
+                        if node.response_format == "json"
+                        else {"text": response["text"]}
+                    )
+                    Draft202012Validator(node.output_schema).validate(output)
+                    return output
+                except (ValueError, ValidationError) as exc:
+                    reason = (
+                        "Invalid JSON"
+                        if isinstance(exc, ValueError)
+                        else f"Output does not satisfy {exc.validator} at {list(exc.path)}"
+                    )
+                    if feedback(reason, response["text"]):
+                        continue
+                    raise
             if node.type != "agent" or len({call["id"] for call in calls}) != len(calls):
                 raise ExecutionError("unexpected or duplicate tool calls")
             if not slot.get("assistant_recorded"):
+                slot["tool_rounds"] = slot.get("tool_rounds", 0) + 1
                 slot["messages"].append(
                     {
                         "role": "assistant",
@@ -555,9 +627,9 @@ class ExecutionSession:
                 )
                 slot["assistant_recorded"] = True
                 self.save()
-            while slot["tool_index"] < len(calls):
-                call = calls[slot["tool_index"]]
-                if call["name"] not in node.tools:
+
+            async def execute_call(call):
+                if call["name"] not in slot.get("exposed_tools", node.tools):
                     raise ExecutionError("tool call is outside this node's allowlist")
                 try:
                     # Argument feedback happens before an operation can have side effects.
@@ -590,6 +662,27 @@ class ExecutionSession:
                         call_id=call["id"],
                         feedback=output,
                     )
+                return output
+
+            pending_calls = calls[slot["tool_index"] :]
+            can_parallel = (
+                node.parallel_tool_calls
+                and len(pending_calls) > 1
+                and all(
+                    call["name"] in slot.get("exposed_tools", node.tools)
+                    and self.bound_tools[call["name"]].side_effect == "read_only"
+                    and not isinstance(self.bound_tools[call["name"]], ExternalTool)
+                    for call in pending_calls
+                )
+            )
+            if can_parallel:
+                async with asyncio.TaskGroup() as group:
+                    tasks = [group.create_task(execute_call(call)) for call in pending_calls]
+                outputs = [task.result() for task in tasks]
+            else:
+                outputs = None
+            for index, call in enumerate(pending_calls):
+                output = outputs[index] if outputs is not None else await execute_call(call)
                 slot["messages"].append(
                     {"role": "tool", "tool_call_id": call["id"], "content": canonical_json(output)}
                 )

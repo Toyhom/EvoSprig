@@ -18,10 +18,27 @@ from evosprig.plugins.mock import MockProvider
 from evosprig.plugins.sqlite_studies import StudyStore
 
 from .gate import ReleaseGate
+from .methods import METHODS
 from .study import StudyConfig
 
 
 def add_commands(commands):
+    suite_parser = commands.add_parser(
+        "suite", help="Create an LLM-judged suite from JSONL task inputs"
+    )
+    suite_parser.add_argument("--inputs", type=Path, required=True)
+    suite_parser.add_argument("--out", type=Path, required=True)
+    suite_parser.add_argument("--name", default="my-tasks")
+    suite_parser.add_argument("--rubric", default="")
+    suite_parser.add_argument("--seed", type=int, default=0)
+    comparison = commands.add_parser(
+        "compare", help="Write an application-facing before/after comparison"
+    )
+    comparison.add_argument("project")
+    comparison.add_argument("--study", required=True)
+    comparison.add_argument("--workspace", type=Path, default=Path(".evosprig"))
+    comparison.add_argument("--out", type=Path, required=True)
+
     for name in ("evaluate", "improve"):
         parser = commands.add_parser(name)
         parser.add_argument("spec", type=Path)
@@ -38,7 +55,11 @@ def add_commands(commands):
                 "--split", choices=["search", "selection", "release", "test"], default="release"
             )
         else:
-            parser.add_argument("--method", choices=["opro", "gepa", "evoprompt_ga", "evoprompt_de", "self_refine", "ace"], required=True)
+            parser.add_argument(
+                "--method",
+                choices=list(METHODS),
+                required=True,
+            )
             parser.add_argument("--resource", action="append", required=True)
             parser.add_argument("--rounds", type=int, default=3)
             parser.add_argument("--population-size", type=int, default=4)
@@ -65,7 +86,55 @@ def add_commands(commands):
 
 
 def run_command(args):
+    if args.command == "suite":
+        from evosprig.evaluation.authoring import suite_from_inputs
+
+        values = [json.loads(line) for line in args.inputs.read_text().splitlines() if line.strip()]
+        suite = suite_from_inputs(values, name=args.name, rubric=args.rubric, seed=args.seed)
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(
+            yaml.safe_dump(
+                suite.model_dump(mode="json", by_alias=True, exclude_defaults=True), sort_keys=False
+            )
+        )
+        print(json.dumps({"suite_id": suite.suite_id, "samples": len(values)}))
+        return
     store = StudyStore(args.workspace / "studies.sqlite")
+    if args.command == "compare":
+        from evosprig.evaluation.comparison import comparison_record, markdown_comparison
+
+        scope = Scope(args.project)
+        study = store.study(scope, args.study)
+        if study["status"] != "completed" or "release" not in (study.get("result") or {}).get(
+            "reports", {}
+        ):
+            raise ValueError("study needs a completed paired release comparison")
+        group = study["result"]["reports"]["release"]
+        baseline = store.get_report(scope, group["baseline"]["report_id"])
+        selected = store.get_report(scope, group["selected"]["report_id"])
+        judges = study["bindings"].get("evaluation", {}).get("judges", {})
+        task_models = study["bindings"]["models"]
+        model = next(iter(task_models.values()))["model"] if task_models else "none"
+        suite = store.get_suite(scope, study["suite_id"])
+        judge = (
+            next(iter(judges.values()))["model"]
+            if judges
+            else model
+            if suite.metric.kind == "llm_judge"
+            else None
+        )
+        record = comparison_record(
+            baseline,
+            selected,
+            method=study["config"]["method"],
+            task_model=model,
+            judge_model=judge,
+        )
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(markdown_comparison(record))
+        args.out.with_suffix(".json").write_text(json.dumps(record, indent=2, ensure_ascii=False))
+        print(json.dumps({"comparison": str(args.out), "samples": record["sample_count"]}))
+        return
     if args.command in {"studies", "versions", "release", "rollback", "export-version"}:
         scope = Scope(args.project)
         if args.command == "studies":
@@ -116,6 +185,9 @@ def run_command(args):
     store.put_suite(scope, suite)
     models = make_models(spec, args.profile, args.mock)
     tools = make_tools(args.workspace, scope, profile=args.profile)
+    evaluation_config = (
+        yaml.safe_load(args.profile.read_text()).get("evaluation", {}) if args.profile else {}
+    )
     budget = ExperimentBudget(
         max_evaluations=args.max_evaluations,
         max_model_calls=args.max_model_calls,
@@ -126,8 +198,14 @@ def run_command(args):
     )
     if args.command == "evaluate":
         meter = BudgetMeter(budget)
+        from evosprig.evaluation.deployment import evaluation_dependencies
+
         evaluator = Evaluator(
-            args.workspace / "evaluation", models, meter, tool_bindings=tools.bindings
+            args.workspace / "evaluation",
+            models,
+            meter,
+            tool_bindings=tools.bindings,
+            **evaluation_dependencies(evaluation_config, mock=args.mock),
         )
         result = asyncio.run(
             evaluator.evaluate(
@@ -163,7 +241,13 @@ def run_command(args):
             base.version_id,
             suite.suite_id,
             config.model_dump(),
-            {"models": metadata, "proposer": proposer_metadata, "tools": tools.bindings},
+            {
+                "models": metadata,
+                "proposer": proposer_metadata,
+                "tools": tools.bindings,
+                "evaluation": evaluation_config,
+                "mock": args.mock,
+            },
         )
         worker = StudyWorker(store, args.workspace / "evaluation")
         asyncio.run(worker._work(record))

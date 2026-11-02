@@ -26,7 +26,9 @@ def main():
         sub = commands.add_parser(name)
         sub.add_argument("spec", type=Path)
         if name == "run":
-            sub.add_argument("--input", required=True, help="JSON input")
+            inputs = sub.add_mutually_exclusive_group(required=True)
+            inputs.add_argument("--input", help="JSON input")
+            inputs.add_argument("--input-file", type=Path, help="JSON task input file")
             sub.add_argument("--mock", action="store_true")
             sub.add_argument("--profile", type=Path)
             sub.add_argument("--workspace", type=Path, default=Path(".evosprig"))
@@ -83,6 +85,8 @@ def main():
             print(json.dumps(report, indent=2))
             return
         if args.command in {
+            "suite",
+            "compare",
             "evaluate",
             "improve",
             "studies",
@@ -176,7 +180,11 @@ def main():
                     make_tools(args.workspace, Scope(spec.id), profile=args.profile),
                     journal=SQLiteJournal(args.workspace / "runs.sqlite"),
                     allow_writes=args.allow_writes,
-                ).run(version, json.loads(args.input), run_id=args.run_id)
+                ).run(
+                    version,
+                    json.loads(args.input_file.read_text() if args.input_file else args.input),
+                    run_id=args.run_id,
+                )
             )
             print(json.dumps(result.to_dict(), indent=2, ensure_ascii=False))
             if result.status in {"failed", "canceled"}:

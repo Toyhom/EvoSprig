@@ -25,3 +25,12 @@ Describe the problem, resulting behavior and validation in your pull request. Fo
 English is the primary language for code and documentation. Keep `README.zh-CN.md` and Studio's Chinese interface aligned with user-facing changes.
 
 For bug reports, include a minimal specification, expected behavior, version and sanitized error. Report security issues through the channel described in [SECURITY.md](SECURITY.md). Contributions are provided under Apache-2.0.
+
+The optional Toolbox has its own execution checks:
+
+```bash
+npm --prefix apps/toolbox ci
+cd apps/toolbox
+npx playwright install chromium --only-shell
+npm test
+```

@@ -145,3 +145,33 @@ transport details out of that message. General exceptions, output-schema failure
 and tool-allowlist violations still stop the run. Write operations with an unknown
 outcome pause for reconciliation. The default `tool_errors: raise` preserves the
 existing fail-fast behavior.
+
+## Tool selection and concurrent calls
+
+AgentSpec 0.3 agent nodes can opt into reusable tool policies:
+
+```yaml
+type: agent
+model: main
+tools: [search, lookup, calculator]
+parallel_tool_calls: true
+tool_errors: feedback
+tool_selection: relevant
+tool_limit: 2
+```
+
+`parallel_tool_calls` overlaps independent read-only calls from one model response, respecting `execution.max_parallel_tools`. Results return to the model in request order and each operation keeps its durable receipt. Write calls and asynchronous job tools remain sequential inside a model response. Graph-level `parallel` and `map` remain available for independent branches and batches.
+
+`tool_selection: relevant` ranks names/descriptions against the node's inputs and exposes the top `tool_limit` tools from its existing allowlist. It is deterministic lexical discovery, useful for large registries; choose `all` when every tool should be available. A model call to an unexposed tool is rejected. Selection cannot discover or grant access to undeclared tools.
+
+`tool_errors: feedback` lets the agent correct invalid arguments and explicitly declared read-only rejections. Read-only HTTP bindings turn status 400/422 into a generic argument-rejection observation without exposing the upstream response body. Other transport/server failures remain terminal. Uncertain writes still require reconciliation. Together with ReAct-style tool loops, JSON-schema validation, dynamic map and human approvals, these policies work across applications.
+
+## Code, browser and OCR tools
+
+The optional [Toolbox](../apps/toolbox/README.md) provides Python execution, HTML interaction checks/screenshots and offline English OCR through standard HTTP bindings. Artifacts are returned as download receipts, so binary images do not fill the model's context. Use the same contracts to bind your own sandbox or media service.
+
+## Bounded output repair
+
+Model and agent nodes in AgentSpec 0.3 can set `output_errors: feedback` and `max_output_retries: 2`. Invalid JSON, schema mismatches and explicit output-limit errors receive a bounded correction turn. Network errors are not automatically retried. All correction calls consume the original run/study budget; unknown usage from a truncated provider call remains reserved.
+
+An agent can also set `max_tool_rounds: 4`. Once the limit is reached, the runtime removes tool descriptors and asks for a final answer from the collected observations. This bounds repeated retrieval without changing the application's tools or prompts. Omit it to retain the run-wide call limit.

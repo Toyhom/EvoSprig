@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/hero.svg" alt="EvoSprig · 衍芽" width="880" />
+<img src="docs/assets/hero.svg" alt="EvoSprig — 构建持续成长的智能体" width="880" />
 
-**构建智能体，用评测驱动改进，交付可独立运行的应用。**
+**开发智能体，用实际任务改进它，再独立部署。**
 
 [![CI](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml/badge.svg)](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB)](https://www.python.org/)
@@ -10,61 +10,68 @@
 
 [English](README.md) · **简体中文**
 
-[快速开始](docs/quickstart.md) · [案例库](examples/README.md) · [自进化](docs/evolution.md) · [文档](docs/README.md)
+[快速开始](docs/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/evolution.md) · [文档](docs/README.md)
 
 </div>
 
-EvoSprig 将可视化工作流、持久记忆和评测驱动的自进化放在同一个智能体开发平台中。用 Python 或 Studio 构建，在自己的任务上比较候选版本，再导出独立应用。
+EvoSprig 将可视化工作流、持久记忆、工具调用和可控自进化整合在同一个智能体开发平台。使用 Python 或 Studio 开发，用自己的任务比较版本，再导出独立应用。
 
-<img src="docs/assets/studio.png" alt="EvoSprig Studio 工作流画布" width="100%" />
+<img src="docs/assets/studio.png" alt="EvoSprig Studio 软件开发团队画布" width="100%" />
 
-## 可以构建什么？
+## 你可以开发什么？
 
-| 应用 | 试着让它做什么 |
+<img src="docs/assets/applications.png" alt="使用 EvoSprig 开发的网页应用、数据图表、收据助手和书籍创作" width="100%" />
+
+| 想做什么 | 从这里开始 |
 | --- | --- |
-| **[数据分析助手](examples/data-analyst/)** | “哪个地区增长最快？”直接提问，查看数据结果和查询 SQL。 |
-| **[文档问答](examples/document-chat/)** | 把团队手册、会议记录和产品资料变成带来源的回答。 |
-| **[调研团队](examples/research-team/)** | 拆分一个大问题，分工查资料，整理成由你审阅的报告。 |
-| **[视频工作室](examples/video-studio/)** | 从创意到剧本、分镜、视频和合成，接入自己的媒体工具，随时重做某个镜头。 |
-| **[客服助手](examples/customer-support/)** | 查询订单、回答客户问题，由人工确认退款。 |
-| **[个人助手](examples/personal-memory/)** | 记住偏好，在下次会话中继续使用。 |
+| 把需求变成能操作的网页 | [软件开发团队](examples/software-team/)：设计、编码、浏览器检查与修复 |
+| 让智能体运行代码分析数据 | [Data Interpreter](examples/data-interpreter/)：文件、计算与图表 |
+| 从多个角度分析决策 | [决策讨论室](examples/debate/)：正反论证、回应与建议 |
+| 自动整理票据与报销 | [收据助手](examples/receipt-assistant/)：OCR、结构化提取、算账与规则核对 |
+| 组织团队完成资料研究 | [研究团队](examples/research-team/)：并行调查、引用与人工审稿 |
+| 把想法变成视频 | [视频工作室](examples/video-studio/)：分镜、素材工具、审核与局部重做 |
+| 安排日常工作与创作 | [会议助手](examples/meeting-assistant/) · [书籍创作](examples/book-studio/) · [旅行规划](examples/travel-planner/) |
 
-打开 **[案例库](examples/README.md)**，选一个模板，开始开发自己的应用。每个模板都由 EvoSprig 的 SDK、AgentSpec 和运行器执行。
+还有 [SQL 分析](examples/data-analyst/)、[文档对话](examples/document-chat/)、[客服](examples/customer-support/)和[个人记忆](examples/personal-memory/)。所有案例均使用 EvoSprig 自身框架编排，打开[应用库](examples/README.md)即可修改成自己的智能体。
 
-## 核心能力
+## 平台特色
 
-- **代码与画布共用一套规格**：Python Builder、Studio、条件分支、循环、并行协作与人工节点。
-- **可评测的自进化**：OPRO、GEPA、EvoPrompt GA/DE、Self-Refine、ACE；保留候选差异、评测、血缘与预算。
-- **有来源的持久记忆**：BM25、可插拔语义检索、上下文块、时序关系及用户作用域。
-- **可恢复的执行**：检查点、外部任务 ID 与幂等键支持重启、审核和长任务恢复。
-- **独立交付**：导出 Python、HTTP 服务或容器构建工程，运行时无需连接 Studio。
-- **模型与工具扩展**：兼容模型 API、Python、HTTP 与 MCP。
+- **可控自进化**：13 种无需模型训练的策略，覆盖 11 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
+- **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
+- **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核。
+- **可用的长期记忆**：作用域隔离、混合检索、上下文块、时序关系、关联经验和保留来源的摘要。
+- **面向实际工作的工具**：HTTP、MCP、SQL 与 Python 插件，可选代码执行、浏览器和 OCR 服务，以及只读并发与错误反馈。
+- **恢复和独立部署**：持久检查点、外部任务回执、版本比较与回滚；导出 Python、HTTP 服务或容器构建工程。
+
+## 框架结构
+
+<img src="docs/assets/architecture.svg" alt="EvoSprig 框架架构" width="100%" />
 
 ## 快速开始
 
-需要 **Python 3.12+**，Studio 构建还需要 **Node.js 20+**。
+需要 Python 3.12+，Studio 还需要 Node.js 20+。
 
 ```bash
 git clone https://github.com/Toyhom/EvoSprig.git
 cd EvoSprig
 python -m pip install -e '.[server,evolution,mcp]'
-evosprig run examples/hello/agent.yaml --input '{"question":"你好"}' --mock
+evosprig run examples/hello/agent.yaml --input '{"question":"Hello"}' --mock
 npm --prefix apps/studio ci
 npm --prefix apps/studio run build
 evosprig serve --project examples/hello/agent.yaml \
   --studio-dir apps/studio/dist --workspace .evosprig
 ```
 
-打开 **http://127.0.0.1:18766**，在侧栏选择 **中文**；浏览器会记住语言设置。真实模型使用环境变量和[部署配置](examples/deployment.example.yaml)。
+打开 http://127.0.0.1:18766，在侧栏切换 **中文**，语言选择会保留。实际模型连接通过[部署配置](examples/deployment.example.yaml)设置，凭据使用环境变量。
 
-## 改进你的智能体
+## 看看进化前后有什么变化
 
-准备应用需要处理的任务，选择允许改进的提示词或技能，在 Studio 中比较候选版本。可以使用 OPRO、GEPA、EvoPrompt GA/DE、Self-Refine 或 ACE，审阅结果后启用新版本。[自进化指南](docs/evolution.md)介绍完整用法。
+[应用对比](examples/README.md#before-and-after)展示固定任务上的原始输出和搜索后保留的版本，可查看实际产物、候选资源以及最终选择。候选未改善选择集表现时，平台保留基线；搜索不会自动改变线上版本。
 
-## 参与开发
+使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[方法指南](docs/evolution.md)说明各方法需要的反馈形式，随后可以在 Studio 中检查差异并手动发布。
 
-欢迎提交问题、案例与集成，开发和检查方式见[贡献指南](CONTRIBUTING.md)。
+## 文档与贡献
 
-## 许可证
+[架构](docs/architecture.md) · [记忆](docs/memory.md) · [工具](docs/tools.md) · [部署](docs/deployment.md) · [路线图](docs/roadmap.md) · [贡献指南](CONTRIBUTING.md)
 
-[Apache-2.0](LICENSE)。
+[Apache-2.0](LICENSE)

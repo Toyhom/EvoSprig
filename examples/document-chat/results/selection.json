@@ -1,0 +1,56 @@
+{
+  "method": "protesgi",
+  "task_model": "deepseek-flash",
+  "judge_model": "deepseek-flash",
+  "sample_count": 1,
+  "split": "selection",
+  "baseline_version": "f07712024adaec3236b1b5f8de1f359273e9a8b01e2765189ca24f61102f9c02",
+  "evolved_version": "d2ef770da93c001141123e1d5bf56b39f3b64ad2e20a354bce8ccb1e3f8ec3f3",
+  "candidate_changed": true,
+  "baseline_score": 0.95,
+  "evolved_score": 1.0,
+  "gain": 0.050000000000000044,
+  "validation_reused": false,
+  "cases": [
+    {
+      "input": {
+        "question": "I work remotely in another time zone. When must I overlap with the team, and does the handbook require daily office attendance? Cite sources."
+      },
+      "baseline": {
+        "output": {
+          "text": "**Time zone overlap:** You must be available during the team overlap window of **14:00–16:00 UTC, Tuesday through Thursday**. All other hours are flexible [3969ba3dc3df:0-543].\n\n**Daily office attendance:** The handbook does not require it. The only attendance-type requirement it states is the overlap window above, and it explicitly says \"Other hours are flexible\" [3969ba3dc3df:0-543]. The document contains no office-attendance mandate at all — its other sections cover the learning budget and home office equipment allowance, and the equipment allowance for a chair, monitor, or keyboard suggests remote/home-based work is expected [3969ba3dc3df:0-543].\n\nOne caveat: the handbook is silent on office attendance rather than explicitly permitting fully remote work, so if you need a definitive statement that no in-office days are expected, that policy isn't in this document — you'd need to confirm with your team lead."
+        },
+        "score": 0.95,
+        "status": "succeeded",
+        "output_file": "selection-1-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "**Time zone overlap:** Under the \"Working hours\" section, the team works across time zones and the required team overlap is **14:00–16:00 UTC, Tuesday through Thursday**. All other hours are flexible [3969ba3dc3df:0-543].\n\n**Daily office attendance:** The handbook is **silent** on this. It contains no rule requiring daily office attendance, and no rule prohibiting it either — the only location-related provision is the home office allowance of $350 in the first year, which covers a chair, monitor or keyboard [3969ba3dc3df:0-543]. Since the document doesn't address attendance, confirm with your team lead rather than assuming either way.\n\nNote: the handbook is short (three sections: Working hours, Learning budget, Equipment), so if there is a separate remote-work or attendance policy, it isn't in this collection."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "selection-1-evolved.md"
+      }
+    }
+  ],
+  "date": "2026-11-02",
+  "purpose": "selection",
+  "rubric": {
+    "kind": "llm_judge",
+    "target": "output",
+    "node": null,
+    "rubric": "Grade 0..1: accurate use of supplied handbook facts (0.4), coverage of all parts of the question (0.25), traceable citations (0.2), clear distinction between stated policy and missing information (0.15). Do not reward invented policies.",
+    "judge_binding": null,
+    "repeats": 1,
+    "scorer": null,
+    "schema_": null,
+    "components": [],
+    "weight": 1.0,
+    "required": false,
+    "threshold": 0.5,
+    "reference_path": "",
+    "output_path": "",
+    "normalize_text": false
+  }
+}

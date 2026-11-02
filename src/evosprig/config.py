@@ -19,7 +19,11 @@ def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool =
 
     if profile:
         raw = yaml.safe_load(Path(profile).read_text())
-        if not isinstance(raw, dict) or set(raw) - {"models", "tools"} or "models" not in raw:
+        if (
+            not isinstance(raw, dict)
+            or set(raw) - {"models", "tools", "evaluation"}
+            or "models" not in raw
+        ):
             raise ValueError("deployment profile needs models and optional tools")
         profiles = raw["models"]
     else:

@@ -1,0 +1,56 @@
+{
+  "method": "opro",
+  "task_model": "deepseek-flash",
+  "judge_model": "deepseek-flash",
+  "sample_count": 1,
+  "split": "selection",
+  "baseline_version": "991664ac4e1a4611e3a3812c0341e5fea836b0453702f5f216c5a1bfc908a8ef",
+  "evolved_version": "e5f053664b9abb307742d3bf1ef9066c2f8bcb7b2c8010e44dd44184b41f3c7c",
+  "candidate_changed": true,
+  "baseline_score": 0.9,
+  "evolved_score": 0.9,
+  "gain": 0.0,
+  "validation_reused": false,
+  "cases": [
+    {
+      "input": {
+        "request": "Plan two weekdays in Brookhaven for one adult with $130 for meals, transport and attractions. Keep one afternoon free for work and finish all activities by 17:00.",
+        "travel_notes": "Science museum Tue-Sat 9-17 $20; botanical garden daily 9-17 $10; old town walking route free. Transit $7 daily. Meals estimate $10 breakfast, $15 lunch, $18 dinner daily. Sites are 30 minutes apart by transit. Hotel excluded."
+      },
+      "baseline": {
+        "output": {
+          "text": "# Brookhaven — Two Weekdays, One Adult, $130\n\n**Budget verified:** Day 1 = $70, Day 2 = $60, **total $130, remaining $0.**\n\n---\n\n## Day 1 (Tuesday) — Science Museum + Free Work Afternoon\n\n| Time | Activity | Cost |\n|---|---|---|\n| 09:00–10:00 | Breakfast near hotel | $10 |\n| 10:00–10:30 | Transit to science museum (daily pass) | $7 (pass) |\n| 10:30–13:00 | Science museum (open Tue–Sat 9–17 ✓) | $20 |\n| 13:00–14:00 | Lunch near museum | $15 |\n| **14:00–17:00** | **Free afternoon for work** | $0 |\n| After 17:00 | Dinner | $18 |\n\n**Day 1 total: $70**\n\n## Day 2 (Wednesday) — Botanical Garden + Old Town Walk\n\n| Time | Activity | Cost |\n|---|---|---|\n| 09:00–10:00 | Breakfast | $10 |\n| 10:00–10:30 | Transit to botanical garden (daily pass) | $7 (pass) |\n| 10:30–12:30 | Botanical garden (open daily 9–17 ✓) | $10 |\n| 12:30–13:30 | Lunch | $15 |\n| 13:30–14:00 | Transit to old town | — |\n| 14:00–16:30 | Old town walking route (free, self-guided) | $0 |\n| 16:30–17:00 | Return / finish | — |\n| After 17:00 | Dinner | $18 |\n\n**Day 2 total: $60**\n\n---\n\n## Budget Summary\n\n| Category | Amount |\n|---|---|\n| Meals (6 × est.) | $86 |\n| Transit (2 daily passes) | $14 |\n| Attractions (museum $20 + garden $10) | $30 |\n| **Total** | **$130** |\n| **Remaining** | **$0** |\n\n## Conflicts resolved against your notes\n- **Free afternoon:** Only Day 1 holds it (14:00–17:00, 3 hrs). Day 2 is fully scheduled — this is the one real tension in the drafts, and it's resolved by keeping the work block on Day 1.\n- **Opening hours:** Museum Tue–Sat 9–17 → Tuesday visit valid. Garden daily 9–17 → Wednesday visit valid. Both blocks sit inside opening hours.\n- **17:00 cutoff:** All activities end by 17:00 both days; dinner is after.\n- **Transit timing:** Sites are 30 min apart, and each hop is allotted exactly 30 min — **zero buffer**. Add ~10 min per hop if accessibility needs slow you down (this may push the garden block slightly; trim old town to ~1.5 hrs if needed).\n\n## Still to book / confirm\n1. **Nothing is booked.** No reservations, tickets, or transit passes are purchased.\n2. **Science museum** — verify hours and $20 admission on the official site; check step-free entrance, elevator, accessible restrooms.\n3. **Botanical garden** — verify $10 admission; ask at entry for accessible route map and accessible restrooms.\n4. **Transit** — confirm $7 daily pass price and step-free station/lift access with the local transit authority.\n5. **Old town route** — confirm curb cuts/step-free segments; historic paving may be uneven.\n6. **Cafés/restaurants** — no reservations needed, but confirm step-free entry on arrival.\n\n⚠️ **Zero contingency:** At exactly $130, any price increase or extra café stop breaks budget. To build a buffer, swap the botanical garden ($10) for a second free walking route."
+        },
+        "score": 0.9,
+        "status": "succeeded",
+        "output_file": "selection-1-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "# Brookhaven — 2 Weekdays, 1 Adult (Final Verified Itinerary)\n\n**Budget:** $130 (meals, transport, attractions; hotel excluded) · All activities end by 17:00 · One free afternoon for work\n\n## Day 1 — Tuesday\n| Time | Activity | Cost (est.) |\n|---|---|---|\n| 08:00–08:45 | Breakfast (café) | $10 |\n| 08:45–09:00 | Walk/transit to Science Museum | — (day pass) |\n| 09:00–12:00 | **Science Museum** (Tue–Sat 9–17) | $20 |\n| 12:00–13:00 | Lunch near museum | $15 |\n| 13:00–13:30 | Transit to Botanical Garden (~30 min) | — (day pass) |\n| 13:30–15:00 | **Botanical Garden** (daily 9–17) | $10 |\n| 15:00–17:00 | **Free afternoon — work block** | $0 |\n| Evening | Dinner | $18 |\n| | **Day 1 transit pass** | $7 |\n| | **Day 1 total** | **$80** |\n\n## Day 2 — Wednesday\n| Time | Activity | Cost (est.) |\n|---|---|---|\n| 08:00–08:45 | Breakfast | $10 |\n| 09:00–10:30 | **Old Town walking route** (free) | $0 |\n| 10:30–11:00 | Transit to old town surroundings | — (day pass) |\n| 11:00–12:00 | Old town surroundings at leisure | $0 |\n| 12:00–13:00 | Lunch | $15 |\n| 13:00–15:00 | **Free afternoon — work block** | $0 |\n| 15:00–17:00 | Optional second old-town walk or rest | $0 |\n| Evening | Dinner | $18 |\n| | **Day 2 transit pass** | $7 |\n| | **Day 2 total** | **$50** |\n\n## Cost Verification (supplied prices only)\n| Category | Amount |\n|---|---|\n| Activities (Museum $20 + Garden $10 + Old Town $0) | $30 |\n| Transport (2 × $7 daily pass) | $14 |\n| Meals (2 × [$10 + $15 + $18]) | $86 |\n| **Total** | **$130** |\n| **Budget** | $130 |\n| **Remaining** | **$0** |\n| **Shortfall** | **$0** |\n\nAll figures are estimates from your notes; no bookings are held.\n\n## Compliance Checks\n- **Opening days/hours:** Science Museum Tue 09:00–12:00 ✔ (Tue–Sat 9–17); Botanical Garden Tue 13:30–15:00 ✔ (daily 9–17); Old Town Wed 09:00–10:30 ✔ (free, outdoor).\n- **No schedule conflicts:** No overlapping blocks on either day; both days end at 17:00 ✔.\n- **Free afternoon:** Day 1 15:00–17:00 and Day 2 13:00–15:00 both protected ✔.\n- **Mobility/daily limits:** Max 2 paid activities/day; longest single block 3 hrs; one ~30-min transit leg/day; both venues assumed step-free (unverified).\n- **Budget:** Exactly at ceiling — **zero buffer**.\n\n## Still to Book / Confirm\n1. **Science Museum** — hours and $20 price on the actual Tuesday; step-free entry and accessible restrooms.\n2. **Botanical Garden** — hours and $10 price on the actual Tuesday; accessibility.\n3. **Transit passes** — purchase both days; confirm accessible vehicles on the 30-min leg (taxi fallback would exceed budget).\n4. **Old Town route** — confirm step-free segments and bench/rest points (uneven historic paving).\n5. **Meals** — no reservations held; all meal costs are estimates.\n6. **Buffer decision** — at $0 remaining, any paid add-on (e.g., $10 garden swap on Day 2) requires dropping an equivalent cost."
+        },
+        "score": 0.9,
+        "status": "succeeded",
+        "output_file": "selection-1-evolved.md"
+      }
+    }
+  ],
+  "date": "2026-11-02",
+  "purpose": "selection",
+  "rubric": {
+    "kind": "llm_judge",
+    "target": "output",
+    "node": null,
+    "rubric": "Grade 0..1: arithmetic and full budget coverage (0.3), opening-day and time feasibility (0.25), traveler constraints and accessibility (0.25), usable itinerary with estimates distinguished from bookings (0.2). If constraints cannot all be met, acknowledge the conflict and give an explicit feasible alternative. Check supplied prices.",
+    "judge_binding": null,
+    "repeats": 1,
+    "scorer": null,
+    "schema_": null,
+    "components": [],
+    "weight": 1.0,
+    "required": false,
+    "threshold": 0.5,
+    "output_path": "",
+    "normalize_text": false
+  }
+}

@@ -132,3 +132,27 @@ remove obsolete records in Studio when replacing a collection. The CLI uses the
 local identity. In an authenticated deployment, add documents through the signed-in
 user's Studio/API to retain that user's scope. Run the agent with the same workspace
 and project ID. See [Chat with your documents](../examples/document-chat/).
+
+## Experience recall and linked summaries
+
+`EpisodicMemory` ranks authorized records using query relevance, importance and exponential recency decay. Weights and half-life are configurable in the SDK. Links connect related records inside the same scope, and recall can include those neighbors.
+
+```python
+from evosprig.plugins.episodic_memory import EpisodicMemory
+
+experiences = EpisodicMemory(memory)
+record = experiences.remember(scope, "The user avoids peanuts", source="user:explicit",
+                              importance=1.0, tags=["food"])
+experiences.summarize(scope, "Avoid peanuts when planning meals", [record["id"]])
+hits = experiences.recall(scope, "meal preferences", limit=5)
+```
+
+Native tools `memory.remember`, `memory.recall` and `memory.summarize` expose these operations to agents. Summaries are supplied by the calling model and retain their source IDs and revisions. Deleting, expiring or changing a source hides stale derived summaries, including after restoration. Summary generation and link choice are explicit agent decisions; the store does not run a hidden LLM or perform automatic semantic consolidation.
+
+This adds relevance/importance/recency recall and linked experience notes alongside BM25, hybrid semantic retrieval, context blocks and temporal relationships. It draws on ideas used by [Generative Agents](https://github.com/joonspk-research/generative_agents) and [A-Mem](https://github.com/agiresearch/A-mem); it is a native memory policy, not an adapter to either project.
+
+## Multi-query retrieval
+
+`documents.retrieve` accepts `queries` (up to eight), `limit` and `diversity`. An agent can formulate complementary queries, combine their results with reciprocal-rank fusion and reduce near-duplicate excerpts with a lexical diversity penalty. Every result keeps its original citation and source offsets. It uses the same document store and scope checks as single-query search.
+
+Use single-query BM25 for exact terms, multi-query retrieval for questions with several facets, hybrid retrieval when paraphrases matter, and context blocks for short facts that must always be available. Embeddings remain optional; none of these strategies requires training model weights.

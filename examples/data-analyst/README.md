@@ -29,3 +29,7 @@ evosprig serve --project examples/data-analyst/agent.yaml \
 ```
 
 Change the assistant's prompt to focus on sales, inventory or another domain. Tool errors return to the agent so it can correct a query within its run budget. The SQL-agent pattern is also explored in [LangChain's SQL tutorial](https://docs.langchain.com/oss/python/langgraph/sql-agent); this template uses EvoSprig's own agent loop and database adapter.
+
+## Before and after
+
+[Compare outputs and reusable versions](results/README.md) on the same application tasks.

@@ -1,22 +1,225 @@
-spec_version: '0.3'
+execution:
+  allow_side_effects: false
+  max_model_calls: 32
+  max_output_tokens: 2000
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 100
+  max_total_tokens: 80000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: plan
+    target: research
+    when: null
+  - source: research
+    target: writer
+    when: null
+  - source: writer
+    target: editor
+    when: null
+  entry: plan
+  nodes:
+    editor:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        draft:
+          default: null
+          optional: false
+          ref: nodes.writer.output.text
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    plan:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions:
+        resource: planner
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          tasks:
+            items:
+              minLength: 1
+              type: string
+            maxItems: 6
+            minItems: 1
+            type: array
+        required:
+        - tasks
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    research:
+      body:
+        edges: []
+        entry: research
+        nodes:
+          research:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              question:
+                default: null
+                optional: false
+                ref: input.context.question
+              task:
+                default: null
+                optional: false
+                ref: input.item
+            instructions:
+              resource: researcher
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            max_tool_rounds: 3
+            model: main
+            output_errors: feedback
+            output_schema:
+              additionalProperties: false
+              properties:
+                text:
+                  type: string
+              required:
+              - text
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: feedback
+            tools:
+            - search
+            type: agent
+            until: null
+        output:
+          text:
+            default: null
+            optional: false
+            ref: nodes.research.output.text
+      branches: {}
+      condition: null
+      inputs:
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: nodes.plan.output.tasks
+      join: all
+      max_items: 6
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              properties:
+                text:
+                  type: string
+              required:
+              - text
+              type: object
+            type: array
+        required:
+        - items
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+    writer:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        findings:
+          default: null
+          optional: false
+          ref: nodes.research.output.items
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions:
+        resource: writer
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.editor.output.text
 id: research-team
 input_schema:
-  type: object
+  additionalProperties: false
   properties:
     question:
-      type: string
       minLength: 1
+      type: string
   required:
   - question
-  additionalProperties: false
-output_schema:
   type: object
-  properties:
-    text:
-      type: string
-  required:
-  - text
-  additionalProperties: false
 models:
   main:
     binding: main
@@ -24,138 +227,26 @@ models:
     - text
     - tool_calling
     - structured_output
-tools:
-  search:
-    plugin: documents.search
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
 resources:
   planner:
     path: prompts/planner.md
+    role: prompt
   researcher:
     path: prompts/researcher.md
+    role: prompt
   writer:
     path: prompts/writer.md
-graph:
-  entry: plan
-  nodes:
-    plan:
-      type: model
-      inputs:
-        question:
-          ref: input.question
-      output_schema:
-        type: object
-        properties:
-          tasks:
-            type: array
-            items:
-              type: string
-              minLength: 1
-            minItems: 1
-            maxItems: 6
-        required:
-        - tasks
-        additionalProperties: false
-      model: main
-      instructions:
-        resource: planner
-      response_format: json
-    research:
-      type: map
-      inputs:
-        question:
-          ref: input.question
-      output_schema:
-        type: object
-        properties:
-          items:
-            type: array
-            items:
-              type: object
-              properties:
-                text:
-                  type: string
-              required:
-              - text
-              additionalProperties: false
-        required:
-        - items
-        additionalProperties: false
-      body:
-        entry: research
-        nodes:
-          research:
-            type: agent
-            inputs:
-              task:
-                ref: input.item
-              question:
-                ref: input.context.question
-            output_schema:
-              type: object
-              properties:
-                text:
-                  type: string
-              required:
-              - text
-              additionalProperties: false
-            model: main
-            instructions:
-              resource: researcher
-            tools:
-            - search
-            tool_errors: feedback
-        output:
-          text:
-            ref: nodes.research.output.text
-      items:
-        ref: nodes.plan.output.tasks
-      max_items: 6
-    writer:
-      type: model
-      inputs:
-        question:
-          ref: input.question
-        findings:
-          ref: nodes.research.output.items
-      output_schema:
-        type: object
-        properties:
-          text:
-            type: string
-        required:
-        - text
-        additionalProperties: false
-      model: main
-      instructions:
-        resource: writer
-    editor:
-      type: human
-      inputs:
-        draft:
-          ref: nodes.writer.output.text
-      output_schema:
-        type: object
-        properties:
-          text:
-            type: string
-        required:
-        - text
-        additionalProperties: false
-  edges:
-  - source: plan
-    target: research
-  - source: research
-    target: writer
-  - source: writer
-    target: editor
-  output:
-    text:
-      ref: nodes.editor.output.text
-execution:
-  max_steps: 100
-  max_model_calls: 32
-  max_total_tokens: 80000
-  max_output_tokens: 2000
-  timeout_seconds: 300.0
-  max_parallel_nodes: 3
-  max_parallel_tools: 3
+    role: prompt
+spec_version: '0.3'
+tools:
+  search:
+    plugin: documents.search
+    version: '1'

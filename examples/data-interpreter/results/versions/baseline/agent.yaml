@@ -1,0 +1,181 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 32
+  max_output_tokens: 4096
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 100
+  max_total_tokens: 180000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: analyst
+    target: review
+    when: null
+  entry: analyst
+  nodes:
+    analyst:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        files:
+          default: null
+          optional: false
+          ref: input.files
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions:
+        resource: analyst
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          answer:
+            type: string
+          artifacts:
+            items:
+              properties:
+                name:
+                  type: string
+                url:
+                  type: string
+              required:
+              - name
+              - url
+              type: object
+            type: array
+        required:
+        - answer
+        - artifacts
+        type: object
+      parallel_tool_calls: true
+      response_format: json
+      tool: null
+      tool_errors: feedback
+      tools:
+      - python
+      type: agent
+      until: null
+    review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        analysis:
+          default: null
+          optional: false
+          ref: nodes.analyst.output
+        files:
+          default: null
+          optional: false
+          ref: input.files
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions:
+        resource: review
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          answer:
+            type: string
+          artifacts:
+            items:
+              properties:
+                name:
+                  type: string
+                url:
+                  type: string
+              required:
+              - name
+              - url
+              type: object
+            type: array
+        required:
+        - answer
+        - artifacts
+        type: object
+      parallel_tool_calls: true
+      response_format: json
+      tool: null
+      tool_errors: feedback
+      tools:
+      - python
+      type: agent
+      until: null
+  output:
+    answer:
+      default: null
+      optional: false
+      ref: nodes.review.output.answer
+    artifacts:
+      default: null
+      optional: false
+      ref: nodes.review.output.artifacts
+id: data-interpreter
+input_schema:
+  additionalProperties: false
+  properties:
+    files:
+      additionalProperties:
+        type: string
+      type: object
+    question:
+      type: string
+  required:
+  - question
+  - files
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    answer:
+      type: string
+    artifacts:
+      items:
+        properties:
+          name:
+            type: string
+          url:
+            type: string
+        required:
+        - name
+        - url
+        type: object
+      type: array
+  required:
+  - answer
+  - artifacts
+  type: object
+resources:
+  analyst:
+    path: prompts/analyst.md
+    role: prompt
+  review:
+    path: prompts/review.md
+    role: prompt
+spec_version: '0.3'
+tools:
+  python:
+    plugin: toolbox.python
+    version: '1'

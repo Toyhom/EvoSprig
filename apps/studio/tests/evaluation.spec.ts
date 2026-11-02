@@ -1,0 +1,28 @@
+import {test,expect} from '@playwright/test';
+
+test('input-only tasks use judge scoring and expose all registered strategies',async({page,request})=>{
+  await page.addInitScript(()=>localStorage.setItem('evosprig.language','en'));
+  await page.goto('/');
+  const creation=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/projects');
+  await page.getByRole('button',{name:'＋ New project'}).click();
+  const id=(await(await creation).json()).id;
+  await expect(page.locator('h1')).toHaveText(id);
+  await page.getByRole('button',{name:'Resources',exact:true}).click();
+  await page.getByRole('button',{name:'Create instruction resource'}).click();
+  await page.getByRole('button',{name:'Save',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Saved');
+  await page.getByRole('button',{name:'Improve',exact:true}).click();
+  await expect(page.getByLabel('Evolution method').locator('option')).toHaveCount(13);
+  await page.getByText('Create from task inputs · LLM judge',{exact:true}).click();
+  await page.getByLabel('Task inputs JSON').fill(JSON.stringify(['pricing','roadmap','support','launch'].map(question=>({question}))));
+  await page.getByLabel('Judge rubric').fill('Answer the user request clearly.');
+  await page.getByRole('button',{name:'Create task suite',exact:true}).click();
+  await expect(page.getByLabel('Evaluation suite',{exact:true})).not.toHaveValue('');
+  const suites=await(await request.get(`/api/projects/${id}/suites`)).json();
+  expect(suites[0].suite.metric.kind).toBe('llm_judge');
+  await page.getByRole('button',{name:'Start improvement',exact:true}).click();
+  await expect(page.locator('.history-list')).toContainText('completed',{timeout:30000});
+  await page.getByRole('button',{name:'Compare application outputs',exact:true}).click();
+  await expect(page.locator('.comparison-case')).toHaveCount(2);
+  await expect(page.locator('.comparison-case').first()).toContainText('0.50');
+});

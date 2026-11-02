@@ -1,0 +1,77 @@
+{
+  "method": "fewshot_search",
+  "task_model": "deepseek-flash",
+  "judge_model": "deepseek-flash",
+  "sample_count": 2,
+  "split": "release",
+  "baseline_version": "b493b56705b3b08dcbf4a3aa2fcf77b0ec83d90f9abbb8e62b0ce01faf4f3982",
+  "evolved_version": "b493b56705b3b08dcbf4a3aa2fcf77b0ec83d90f9abbb8e62b0ce01faf4f3982",
+  "candidate_changed": false,
+  "baseline_score": 1.0,
+  "evolved_score": 1.0,
+  "gain": 0.0,
+  "validation_reused": true,
+  "cases": [
+    {
+      "input": {
+        "question": "What share of March revenue came from desk lamps? Show the numerator, denominator and percentage."
+      },
+      "baseline": {
+        "output": {
+          "text": "## Answer\n\n**Desk lamps accounted for 66.67% of March revenue.**\n\n| Item | Value |\n|---|---|\n| Numerator (desk lamp revenue, March) | 1,440 |\n| Denominator (total revenue, March) | 2,160 |\n| Share | **66.67%** |\n\n### SQL used\n```sql\nSELECT SUM(CASE WHEN product = 'Desk lamp' THEN revenue ELSE 0 END) AS desk_lamp_rev,\n       SUM(revenue) AS march_total,\n       ROUND(100.0 * SUM(CASE WHEN product = 'Desk lamp' THEN revenue ELSE 0 END) / SUM(revenue), 2) AS pct\nFROM orders\nWHERE month = '2026-03';\n```\n\n### Notes on the data\n- The `orders` table has one row per order line with `month`, `product`, `quantity`, and `revenue`. Only two products exist in the data: **Desk lamp** and **Notebook**.\n- `month` is stored as text in `YYYY-MM` format (values: 2026-01, 2026-02, 2026-03), so March was filtered as `'2026-03'`. My first attempt using `month = 3` returned no rows — that was a type mismatch, not an absence of March data.\n- March contains only 4 order lines, so this percentage rests on a very small sample and should be read as indicative rather than stable.\n- The `region` column is numeric-coded and was not needed here; no region breakdown was requested.\n\n### Unresolved gaps\n- No gaps in the calculation itself. However, the data cannot tell us *why* desk lamps dominate, nor whether \"revenue\" is net of returns/discounts — no such fields exist. If a different definition of March (e.g., a fiscal calendar) is intended, this answer would not apply."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "release-1-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "## Answer\n\n**Desk lamps accounted for 66.67% of March revenue.**\n\n| Item | Value |\n|---|---|\n| Numerator (desk lamp revenue, March) | 1,440 |\n| Denominator (total revenue, March) | 2,160 |\n| Share | **66.67%** |\n\n### SQL used\n```sql\nSELECT SUM(CASE WHEN product = 'Desk lamp' THEN revenue ELSE 0 END) AS desk_lamp_rev,\n       SUM(revenue) AS march_total,\n       ROUND(100.0 * SUM(CASE WHEN product = 'Desk lamp' THEN revenue ELSE 0 END) / SUM(revenue), 2) AS pct\nFROM orders\nWHERE month = '2026-03';\n```\n\n### Notes on the data\n- The `orders` table has one row per order line with `month`, `product`, `quantity`, and `revenue`. Only two products exist in the data: **Desk lamp** and **Notebook**.\n- `month` is stored as text in `YYYY-MM` format (values: 2026-01, 2026-02, 2026-03), so March was filtered as `'2026-03'`. My first attempt using `month = 3` returned no rows — that was a type mismatch, not an absence of March data.\n- March contains only 4 order lines, so this percentage rests on a very small sample and should be read as indicative rather than stable.\n- The `region` column is numeric-coded and was not needed here; no region breakdown was requested.\n\n### Unresolved gaps\n- No gaps in the calculation itself. However, the data cannot tell us *why* desk lamps dominate, nor whether \"revenue\" is net of returns/discounts — no such fields exist. If a different definition of March (e.g., a fiscal calendar) is intended, this answer would not apply."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "release-1-evolved.md"
+      }
+    },
+    {
+      "input": {
+        "question": "Compare month-over-month total revenue growth in February and March. Which month had the larger percentage increase?"
+      },
+      "baseline": {
+        "output": {
+          "text": "**March had the larger month-over-month percentage increase: +37.06% vs. +29.18% in February.**\n\n| Month | Total revenue | Previous month | MoM growth |\n|---|---|---|---|\n| 2026-01 | 1,220 | — | — |\n| 2026-02 | 1,576 | 1,220 | **+29.18%** |\n| 2026-03 | 2,160 | 1,576 | **+37.06%** |\n\nIn plain terms: revenue rose from 1,220 to 1,576 in February (+356), then from 1,576 to 2,160 in March (+584). March's increase was both larger in absolute terms and larger in percentage terms, so growth accelerated.\n\nSQL used:\n```sql\nWITH m AS (SELECT month, SUM(revenue) AS rev FROM orders GROUP BY month)\nSELECT month, rev,\n       LAG(rev) OVER (ORDER BY month) AS prev_rev,\n       ROUND(100.0 * (rev - LAG(rev) OVER (ORDER BY month)) / LAG(rev) OVER (ORDER BY month), 2) AS mom_growth_pct\nFROM m ORDER BY month;\n```\n\nCaveats: the `orders` table has only 4 orders per month, so these percentages rest on a very small sample and should be treated as indicative rather than statistically robust. The `month` column is stored as a numeric value formatted like `2026-01`; I grouped on it directly, which is valid as long as each value represents a single calendar month."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "release-2-baseline.md"
+      },
+      "evolved": {
+        "output": {
+          "text": "**March had the larger month-over-month percentage increase: +37.06% vs. +29.18% in February.**\n\n| Month | Total revenue | Previous month | MoM growth |\n|---|---|---|---|\n| 2026-01 | 1,220 | — | — |\n| 2026-02 | 1,576 | 1,220 | **+29.18%** |\n| 2026-03 | 2,160 | 1,576 | **+37.06%** |\n\nIn plain terms: revenue rose from 1,220 to 1,576 in February (+356), then from 1,576 to 2,160 in March (+584). March's increase was both larger in absolute terms and larger in percentage terms, so growth accelerated.\n\nSQL used:\n```sql\nWITH m AS (SELECT month, SUM(revenue) AS rev FROM orders GROUP BY month)\nSELECT month, rev,\n       LAG(rev) OVER (ORDER BY month) AS prev_rev,\n       ROUND(100.0 * (rev - LAG(rev) OVER (ORDER BY month)) / LAG(rev) OVER (ORDER BY month), 2) AS mom_growth_pct\nFROM m ORDER BY month;\n```\n\nCaveats: the `orders` table has only 4 orders per month, so these percentages rest on a very small sample and should be treated as indicative rather than statistically robust. The `month` column is stored as a numeric value formatted like `2026-01`; I grouped on it directly, which is valid as long as each value represents a single calendar month."
+        },
+        "score": 1.0,
+        "status": "succeeded",
+        "output_file": "release-2-evolved.md"
+      }
+    }
+  ],
+  "date": "2026-11-02",
+  "purpose": "release",
+  "rubric": {
+    "kind": "llm_judge",
+    "target": "output",
+    "node": null,
+    "rubric": "Grade 0..1: correct numeric answer using actual SQL results (0.5), correct grouping and denominator (0.25), clear units and concise explanation (0.25). Inspect tool receipts; do not reward merely plausible numbers.",
+    "judge_binding": null,
+    "repeats": 1,
+    "scorer": null,
+    "schema_": null,
+    "components": [],
+    "weight": 1.0,
+    "required": false,
+    "threshold": 0.5,
+    "reference_path": "",
+    "output_path": "",
+    "normalize_text": false
+  }
+}

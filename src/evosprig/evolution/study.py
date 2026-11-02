@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Literal
 
 from pydantic import Field, model_validator
 
@@ -14,10 +13,11 @@ from evosprig.evaluation.runner import Evaluator
 
 from .context import EvolutionContext
 from .gate import ReleaseGate
+from .methods import Method
 
 
 class StudyConfig(Contract):
-    method: Literal["opro", "gepa", "evoprompt_ga", "evoprompt_de", "self_refine", "ace"]
+    method: Method
     allowed_resources: list[str] = Field(min_length=1, max_length=32)
     budget: ExperimentBudget = Field(default_factory=ExperimentBudget)
     gate: ReleaseGate = Field(default_factory=ReleaseGate)
@@ -55,10 +55,21 @@ async def execute_study(
     scope,
     job_id,
     tool_bindings=None,
+    evaluation_config=None,
+    mock=False,
+    environment=None,
+    scorers=None,
     on_event=None,
     on_usage=None,
     cancel=None,
 ):
+    from evosprig.evaluation.deployment import evaluation_dependencies
+
+    dependencies = evaluation_dependencies(evaluation_config, mock=mock)
+    if environment is not None:
+        dependencies["environment"] = environment
+    if scorers is not None:
+        dependencies["scorers"] = scorers
     validation_count = 2 * (len(suite.release) + len(suite.test))
     if config.budget.max_evaluations <= validation_count:
         raise ValueError("evaluation budget must cover search plus paired release/test validation")
@@ -85,7 +96,12 @@ async def execute_study(
 
     watcher = asyncio.create_task(monitor_cancel())
     evaluator = Evaluator(
-        workspace, models, search_meter, tool_bindings=tool_bindings, tenant=scope.tenant
+        workspace,
+        models,
+        search_meter,
+        tool_bindings=tool_bindings,
+        tenant=scope.tenant,
+        **dependencies,
     )
     context = EvolutionContext(
         base=base,
@@ -122,12 +138,33 @@ async def execute_study(
                 population_size=config.population_size,
                 seed=config.seed,
             )
-        else:
+        elif config.method in {"ace", "self_refine"}:
             from .search import ace, self_refine
 
             method_result = await {"ace": ace, "self_refine": self_refine}[config.method](
                 context, rounds=config.rounds
             )
+        else:
+            from . import extended
+
+            if config.method in {"bootstrap_fewshot", "fewshot_search"}:
+                method_result = await extended.bootstrap(
+                    context,
+                    rounds=config.rounds,
+                    seed=config.seed,
+                    random_search=config.method == "fewshot_search",
+                )
+            elif config.method == "promptbreeder":
+                method_result = await extended.promptbreeder(
+                    context,
+                    rounds=config.rounds,
+                    seed=config.seed,
+                    population_size=config.population_size,
+                )
+            else:
+                method_result = await getattr(extended, config.method)(
+                    context, rounds=config.rounds, seed=config.seed
+                )
         selected = context.version(method_result["selected"])
         store.put(scope, selected)
         search_usage = search_meter.snapshot()
@@ -152,7 +189,12 @@ async def execute_study(
         if cancel and cancel.is_set():
             validation_meter.canceled.set()
         validation = Evaluator(
-            workspace, models, validation_meter, tool_bindings=tool_bindings, tenant=scope.tenant
+            workspace,
+            models,
+            validation_meter,
+            tool_bindings=tool_bindings,
+            tenant=scope.tenant,
+            **dependencies,
         )
         reports = {}
         status, error = "completed", None
@@ -163,6 +205,14 @@ async def execute_study(
                     continue
                 reports[split] = {}
                 for label, version in [("baseline", base), ("selected", selected)]:
+                    if label == "selected" and selected.version_id == base.version_id:
+                        reports[split][label] = reports[split]["baseline"]
+                        context.emit(
+                            "validation.reused",
+                            split=split,
+                            reason="selected version is the baseline",
+                        )
+                        continue
                     report = await validation.evaluate(
                         version, samples, suite.metric, suite_id=suite.suite_id, split=split
                     )

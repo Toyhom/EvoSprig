@@ -100,9 +100,20 @@ class EvolutionContext:
         return report
 
     async def propose(self, messages, *, json_output=False):
+        from evosprig.evaluation.evidence import model_evidence
+
+        bounded = []
+        for message in messages:
+            content = message["content"]
+            if message["role"] != "system":
+                try:
+                    content = canonical_json(model_evidence(json.loads(content)))
+                except (ValueError, TypeError):
+                    pass
+            bounded.append({**message, "content": content})
         self.meter.check()
         request = ModelRequest(
-            messages,
+            bounded,
             json_output=json_output,
             max_output_tokens=self.meter.limits.proposal_output_tokens,
             temperature=0.7,
