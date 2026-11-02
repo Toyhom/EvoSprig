@@ -91,3 +91,46 @@ def test_core_dependency_boundary():
                 else []
             )
             assert not any(name.startswith(forbidden) for name in names), file
+
+
+def test_memory_tool_export_starts_with_empty_data_and_runs_independently(tmp_path):
+    from evosprig.sdk import Builder
+
+    schema = {
+        "type": "object",
+        "properties": {"content": {"type": "string"}},
+        "required": ["content"],
+    }
+    spec = (
+        Builder("memory-example", schema, schema, spec_version="0.2")
+        .tool("save", "memory.write")
+        .node(
+            "save",
+            "tool",
+            tool="save",
+            inputs={"content": {"ref": "input.content"}, "source": {"value": "user:explicit"}},
+            output_schema={"type": "object"},
+        )
+        .output(content={"ref": "nodes.save.output.content"})
+        .execution(allow_side_effects=True)
+        .build_spec()
+    )
+    target = tmp_path / "export"
+    export_python(compile_agent(spec), target)
+    assert not list(target.rglob("*.sqlite"))
+    result = subprocess.run(
+        [
+            sys.executable,
+            "app.py",
+            "--mock",
+            "--allow-writes",
+            "--input",
+            '{"content":"portable memory"}',
+        ],
+        cwd=target,
+        env={**os.environ, "PYTHONPATH": str(target / "src")},
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    assert json.loads(result.stdout)["output"] == {"content": "portable memory"}

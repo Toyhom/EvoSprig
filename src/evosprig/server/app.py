@@ -17,15 +17,20 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import Field, ValidationError
 
-from evosprig.config import make_models
+from evosprig.config import make_models, make_tools, restore_models
+from evosprig.core.journal import Scope
 from evosprig.core.runtime import Runtime
-from evosprig.core.spec import AgentSpec, Contract, canonical_json
+from evosprig.core.spec import AgentSpec, Contract, canonical_json, digest
 from evosprig.core.version import SECRET, compile_agent
 from evosprig.exporters.python import builder_source, export_python
-from evosprig.plugins.builtin_tools import builtin_registry
+from evosprig.plugins.sqlite_journal import SQLiteJournal
+from evosprig.plugins.sqlite_memory import SQLiteMemory
 from evosprig.plugins.sqlite_projects import ProjectStore, RevisionConflict
 
+from .auth import Principal, current_principal
 from .canvas import to_canvas
+from .memory_api import install_memory_routes
+from .worker import Worker
 
 
 class ProjectBody(Contract):
@@ -41,6 +46,12 @@ class RunBody(Contract):
     input: dict[str, Any]
     revision: int = Field(ge=1)
     mock: bool = True
+    allow_writes: bool = False
+
+
+class InputBody(Contract):
+    path: str = Field(min_length=1, max_length=2048)
+    response: dict[str, Any]
 
 
 def create_app(
@@ -49,42 +60,47 @@ def create_app(
     profile: str | Path | None = None,
     studio_dir: str | Path | None = None,
     token: str | None = None,
+    max_concurrent_runs: int = 4,
+    principals: dict[str, Principal] | None = None,
 ) -> FastAPI:
     workspace = Path(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
     store = ProjectStore(workspace / "projects.sqlite")
-    tasks: dict[str, asyncio.Task] = {}
-    with store.connect() as db:
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, project_id TEXT, status TEXT, result TEXT)"
+    journal = SQLiteJournal(workspace / "runs.sqlite")
+    memory = SQLiteMemory(workspace / "memory.sqlite")
+    if token and principals:
+        raise ValueError("choose either a workspace token or per-user principals")
+    if principals is not None and not principals:
+        raise ValueError("principals cannot be empty")
+
+    def tools_for(scope, bindings=None):
+        return make_tools(workspace, scope, profile=profile, bindings=bindings)
+
+    def restore_runtime(record):
+        models = restore_models(record["metadata"]["models"])
+        return Runtime(
+            models,
+            tools_for(Scope(**record["scope"]), record["metadata"].get("tools", {})),
+            journal=journal,
+            allow_writes=record["metadata"]["allow_writes"],
         )
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS events (run_id TEXT, sequence INTEGER, body TEXT, PRIMARY KEY(run_id, sequence))"
-        )
-        db.execute(
-            "UPDATE runs SET status='failed', result=? WHERE status IN ('queued','running')",
-            (
-                canonical_json(
-                    {
-                        "status": "failed",
-                        "error": {
-                            "code": "worker_interrupted",
-                            "message": "M0 worker stopped; start a new run",
-                        },
-                    }
-                ),
-            ),
-        )
+
+    worker = Worker(journal, restore_runtime, max_concurrent_runs)
 
     @asynccontextmanager
     async def lifespan(app):
-        yield
-        for task in list(tasks.values()):
-            task.cancel()
-        await asyncio.gather(*list(tasks.values()), return_exceptions=True)
+        await worker.start()
+        try:
+            yield
+        finally:
+            await worker.stop()
 
     app = FastAPI(title="EvoSprig", version="0.1.0.dev0", lifespan=lifespan)
     app.state.projects = store
+    app.state.journal = journal
+    app.state.worker = worker
+    app.state.memory = memory
+    install_memory_routes(app, memory, store)
 
     @app.middleware("http")
     async def boundary(request: Request, call_next):
@@ -93,6 +109,19 @@ def create_app(
         origin = request.headers.get("origin")
         if origin and origin.rstrip("/") != str(request.base_url).rstrip("/"):
             return JSONResponse({"detail": "cross-origin requests are disabled"}, status_code=403)
+        principal = Principal()
+        if request.url.path.startswith("/api/") and principals is not None:
+            provided = request.headers.get("authorization", "")
+            principal = next(
+                (
+                    identity
+                    for secret, identity in principals.items()
+                    if secrets.compare_digest(provided, "Bearer " + secret)
+                ),
+                None,
+            )
+            if principal is None:
+                return JSONResponse({"detail": "authentication required"}, status_code=401)
         if request.url.path.startswith("/api/") and token:
             provided = request.headers.get("authorization", "")
             if not secrets.compare_digest(provided, "Bearer " + token):
@@ -103,7 +132,11 @@ def create_app(
             return JSONResponse({"detail": "invalid content length"}, status_code=400)
         if size > 2_000_000:
             return JSONResponse({"detail": "request exceeds 2 MB"}, status_code=413)
-        return await call_next(request)
+        context = current_principal.set(principal)
+        try:
+            return await call_next(request)
+        finally:
+            current_principal.reset(context)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request, exc):
@@ -130,7 +163,13 @@ def create_app(
         return JSONResponse({"detail": "record not found"}, status_code=404)
 
     def project_root(project_id: str):
-        return workspace / "projects" / project_id
+        principal = current_principal.get()
+        root = (
+            workspace
+            if principal == Principal()
+            else workspace / "identities" / digest(principal.key)
+        )
+        return root / "projects" / project_id
 
     def compile_document(document):
         return compile_agent(
@@ -146,7 +185,12 @@ def create_app(
 
     @app.get("/api/health")
     async def health():
-        return {"status": "ok", "stage": "M0", "spec_version": "0.1"}
+        return {
+            "status": "degraded" if worker.last_error else "ok",
+            "stage": "alpha-development",
+            "spec_version": "0.2",
+            "worker_error": worker.last_error,
+        }
 
     @app.get("/api/schema")
     async def schema():
@@ -154,112 +198,162 @@ def create_app(
 
     @app.get("/api/projects")
     async def projects():
-        return store.list()
+        return store.list(identity=current_principal.get().key)
 
     @app.post("/api/projects", status_code=201)
     async def create_project(body: ProjectBody):
         validate_project(body)
-        return store.create(body.spec, body.layout)
+        return store.create(body.spec, body.layout, identity=current_principal.get().key)
 
     @app.get("/api/projects/{project_id}")
     async def project(project_id: str):
-        return store.get(project_id)
+        return store.get(project_id, identity=current_principal.get().key)
 
     @app.put("/api/projects/{project_id}")
     async def update_project(project_id: str, body: UpdateBody):
         if project_id != body.spec.id:
             raise HTTPException(422, "project id cannot change")
         validate_project(body)
-        return store.update(project_id, body.spec, body.layout, body.revision)
+        return store.update(
+            project_id, body.spec, body.layout, body.revision, identity=current_principal.get().key
+        )
 
     @app.get("/api/projects/{project_id}/canvas")
     async def canvas(project_id: str):
-        document = store.get(project_id)
+        document = store.get(project_id, identity=current_principal.get().key)
         return to_canvas(AgentSpec.model_validate(document["spec"]), document["layout"])
 
     @app.get("/api/projects/{project_id}/code")
     async def code(project_id: str):
-        return {"code": builder_source(compile_document(store.get(project_id)))}
+        return {
+            "code": builder_source(
+                compile_document(store.get(project_id, identity=current_principal.get().key))
+            )
+        }
 
     def run_record(run_id: str):
-        with store.connect() as db:
-            row = db.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
-        if not row:
-            raise KeyError(run_id)
+        try:
+            record = journal.get(run_id)
+        except KeyError:
+            # Legacy data belongs exclusively to the original local principal.
+            if current_principal.get() != Principal():
+                raise KeyError("run not found") from None
+            with store.connect() as db:
+                if not db.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='runs'"
+                ).fetchone():
+                    raise KeyError("run not found") from None
+                row = db.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
+            if not row:
+                raise KeyError("run not found")
+            legacy = {
+                "run_id": run_id,
+                "project_id": row["project_id"],
+                **json.loads(row["result"]),
+                "status": row["status"],
+                "legacy": True,
+            }
+            if legacy["status"] in {"queued", "running"}:
+                legacy.update(
+                    status="failed",
+                    error={
+                        "code": "legacy_no_checkpoint",
+                        "message": "M0 run has no recoverable checkpoint",
+                    },
+                )
+            return legacy
+
+        principal = current_principal.get()
+        if record["scope"] != {
+            "project": record["scope"]["project"],
+            "user": principal.user,
+            "tenant": principal.tenant,
+        }:
+            raise KeyError("run not found")
+        checkpoint = record["checkpoint"]
         return {
             "run_id": run_id,
-            "project_id": row["project_id"],
-            **json.loads(row["result"]),
-            "status": row["status"],
+            "project_id": record["scope"]["project"],
+            "agent_version": record["version"]["version_id"],
+            "status": record["status"],
+            "output": checkpoint["output"],
+            "error": checkpoint["error"],
+            "usage": checkpoint["usage"],
+            "waiting": checkpoint["waiting"],
+            "duration_seconds": checkpoint["active_seconds"],
+            "events": journal.events(run_id),
+            "cancel_requested": record["cancel_requested"],
         }
+
+    @app.get("/api/projects/{project_id}/runs")
+    async def project_runs(project_id: str):
+        store.get(project_id, identity=current_principal.get().key)
+        return [
+            run_record(record["run_id"])
+            for record in journal.list(current_principal.get().scope(project_id))
+        ]
 
     @app.post("/api/projects/{project_id}/runs", status_code=202)
     async def start_run(project_id: str, body: RunBody):
-        document = store.get(project_id)
+        document = store.get(project_id, identity=current_principal.get().key)
         if document["revision"] != body.revision:
             raise RevisionConflict("save or reload the current project before running")
-        if len(tasks) >= 4:
-            raise HTTPException(429, "four runs are already active")
         try:
             version = compile_document(document)
-            runtime = Runtime(make_models(version.spec, profile, body.mock), builtin_registry())
+            runtime = Runtime(
+                make_models(version.spec, profile, body.mock),
+                tools_for(current_principal.get().scope(project_id)),
+                journal=journal,
+                allow_writes=body.allow_writes,
+            )
+            run_id = runtime.create_run(
+                version, body.input, scope=current_principal.get().scope(project_id)
+            )
         except (ValueError, OSError):
             raise HTTPException(
                 422, "model configuration or project resources are invalid"
             ) from None
-        run_id = uuid.uuid4().hex
-        with store.connect() as db:
-            db.execute(
-                "INSERT INTO runs VALUES (?, ?, 'queued', ?)",
-                (run_id, project_id, canonical_json({"agent_version": version.version_id})),
-            )
-
-        def record_event(event):
-            with store.connect() as db:
-                db.execute(
-                    "INSERT INTO events VALUES (?, ?, ?)",
-                    (run_id, event["sequence"], canonical_json(event)),
-                )
-
-        async def work():
-            try:
-                with store.connect() as db:
-                    db.execute("UPDATE runs SET status='running' WHERE id=?", (run_id,))
-                result = await runtime.run(
-                    version, body.input, run_id=run_id, on_event=record_event
-                )
-                with store.connect() as db:
-                    db.execute(
-                        "UPDATE runs SET status=?, result=? WHERE id=?",
-                        (result.status, canonical_json(result.to_dict()), run_id),
-                    )
-            finally:
-                with store.connect() as db:
-                    db.execute(
-                        "UPDATE runs SET status='canceled' WHERE id=? AND status IN ('queued','running')",
-                        (run_id,),
-                    )
-
-        task = asyncio.create_task(work())
-        tasks[run_id] = task
-        task.add_done_callback(lambda _: tasks.pop(run_id, None))
+        worker.dispatch(run_id)
         return {"run_id": run_id, "status": "queued", "agent_version": version.version_id}
 
     @app.get("/api/runs/{run_id}")
     async def run(run_id: str):
         return run_record(run_id)
 
-    @app.post("/api/runs/{run_id}/cancel")
+    @app.post("/api/runs/{run_id}/input", status_code=202)
+    async def provide_input(run_id: str, body: InputBody):
+        record = run_record(run_id)
+        try:
+            journal.respond(
+                run_id,
+                body.path,
+                body.response,
+                current_principal.get().scope(record["project_id"]),
+            )
+        except ValueError:
+            raise HTTPException(409, "run is not waiting for this response") from None
+        except Exception as exc:
+            if type(exc).__name__ == "ValidationError":
+                raise HTTPException(
+                    422, "response does not match the waiting node schema"
+                ) from None
+            raise
+        worker.dispatch(run_id)
+        return {"run_id": run_id, "status": "queued"}
+
+    @app.post("/api/runs/{run_id}/resume", status_code=202)
+    async def resume_run(run_id: str):
+        record = run_record(run_id)
+        if record["status"] not in {"queued", "running", "waiting_external"}:
+            raise HTTPException(409, "this run is not ready to resume")
+        worker.dispatch(run_id)
+        return {"run_id": run_id, "status": record["status"]}
+
+    @app.post("/api/runs/{run_id}/cancel", status_code=202)
     async def cancel_run(run_id: str):
-        run_record(run_id)
-        if task := tasks.get(run_id):
-            task.cancel()
-            await asyncio.gather(task, return_exceptions=True)
-            with store.connect() as db:
-                db.execute(
-                    "UPDATE runs SET status='canceled' WHERE id=? AND status IN ('queued','running')",
-                    (run_id,),
-                )
+        record = run_record(run_id)
+        journal.cancel(run_id, current_principal.get().scope(record["project_id"]))
+        worker.dispatch(run_id)
         return run_record(run_id)
 
     @app.get("/api/runs/{run_id}/events")
@@ -273,14 +367,20 @@ def create_app(
         async def stream():
             sequence = after
             while True:
-                with store.connect() as db:
-                    rows = db.execute(
-                        "SELECT sequence,body FROM events WHERE run_id=? AND sequence>? ORDER BY sequence",
-                        (run_id, sequence),
-                    ).fetchall()
-                for row in rows:
-                    sequence = row["sequence"]
-                    yield f"id: {sequence}\ndata: {row['body']}\n\n"
+                if run_record(run_id).get("legacy"):
+                    with store.connect() as db:
+                        items = [
+                            json.loads(row[0])
+                            for row in db.execute(
+                                "SELECT body FROM events WHERE run_id=? AND sequence>? ORDER BY sequence",
+                                (run_id, sequence),
+                            )
+                        ]
+                else:
+                    items = journal.events(run_id, sequence)
+                for event in items:
+                    sequence = event["sequence"]
+                    yield f"id: {sequence}\ndata: {canonical_json(event)}\n\n"
                 if run_record(run_id)["status"] not in {"queued", "running"}:
                     return
                 if await request.is_disconnected():
@@ -293,10 +393,14 @@ def create_app(
 
     @app.post("/api/projects/{project_id}/export")
     async def export(project_id: str):
-        version = compile_document(store.get(project_id))
+        version = compile_document(store.get(project_id, identity=current_principal.get().key))
         path = workspace / "exports" / uuid.uuid4().hex
         try:
-            export_python(version, path)
+            export_python(
+                version,
+                path,
+                tool_bindings=tools_for(current_principal.get().scope(project_id)).bindings,
+            )
             output = io.BytesIO()
             with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
                 for file in sorted(path.rglob("*")):

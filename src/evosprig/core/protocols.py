@@ -81,12 +81,16 @@ class Tool:
     version: str = "1"
     side_effect: str = "read_only"
     timeout_seconds: float = 10.0
+    idempotent: bool = False
+    recover: Callable | None = None
 
     def __post_init__(self):
         check_schema(self.input_schema)
         check_schema(self.output_schema)
         if self.timeout_seconds <= 0:
             raise ValueError("tool timeout must be positive")
+        if self.side_effect not in {"read_only", "write"}:
+            raise ValueError("tool side_effect must be read_only or write")
 
     def descriptor(self, alias: str) -> dict:
         return {
@@ -98,32 +102,83 @@ class Tool:
             },
         }
 
-    async def invoke(self, arguments: dict) -> Any:
-        if self.side_effect != "read_only":
-            raise ExecutionError(
-                "M0 supports read-only tools; durable side effects require a later runtime"
-            )
+    async def invoke(self, arguments: dict, *, operation_id: str | None = None) -> Any:
+        if self.side_effect != "read_only" and operation_id is None:
+            raise ExecutionError("write tools require a journaled operation ID")
         Draft202012Validator(self.input_schema).validate(arguments)
+        kwargs = dict(arguments)
+        if self.idempotent:
+            if operation_id is None:
+                raise ExecutionError("idempotent tools require an operation ID")
+            kwargs["idempotency_key"] = operation_id
         async with asyncio.timeout(self.timeout_seconds):
             if inspect.iscoroutinefunction(self.function):
-                result = await self.function(**arguments)
+                result = await self.function(**kwargs)
             else:
-                result = await asyncio.to_thread(self.function, **arguments)
+                result = await asyncio.to_thread(self.function, **kwargs)
         canonical_json(result)
         Draft202012Validator(self.output_schema).validate(result)
         return result
 
 
+@dataclass(frozen=True)
+class ExternalStatus:
+    status: str
+    output: Any = None
+    error: str | None = None
+
+    def __post_init__(self):
+        if self.status not in {"pending", "succeeded", "failed", "canceled"}:
+            raise ValueError("invalid external job state")
+
+
+@dataclass(frozen=True)
+class ExternalTool:
+    """Asynchronous service job; submit must honor the supplied idempotency key."""
+
+    name: str
+    description: str
+    input_schema: dict
+    output_schema: dict
+    submit: Callable
+    poll: Callable
+    cancel: Callable | None = None
+    version: str = "1"
+    side_effect: str = "write"
+    timeout_seconds: float = 30.0
+    idempotent: bool = True
+    job_timeout_seconds: float = 3600.0
+
+    def __post_init__(self):
+        check_schema(self.input_schema)
+        check_schema(self.output_schema)
+        if not self.idempotent or self.timeout_seconds <= 0 or self.job_timeout_seconds <= 0:
+            raise ValueError("external jobs require idempotent submit and a positive timeout")
+        if self.side_effect not in {"read_only", "write"}:
+            raise ValueError("tool side_effect must be read_only or write")
+
+    def descriptor(self, alias: str) -> dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": alias,
+                "description": self.description,
+                "parameters": self.input_schema,
+            },
+        }
+
+
 class ToolRegistry:
     def __init__(self):
-        self._tools: dict[str, Tool] = {}
+        self._tools: dict[str, Tool | ExternalTool] = {}
+        self.bindings: dict[str, dict] = {}
 
-    def register(self, tool: Tool) -> None:
+    def register(self, tool: Tool | ExternalTool) -> None:
         if tool.name in self._tools:
             raise ValueError(f"tool already registered: {tool.name}")
         self._tools[tool.name] = tool
 
-    def resolve(self, name: str, version: str = "1") -> Tool:
+    def resolve(self, name: str, version: str = "1") -> Tool | ExternalTool:
         if name not in self._tools:
             raise ValueError(f"tool plugin is not installed: {name}")
         tool = self._tools[name]

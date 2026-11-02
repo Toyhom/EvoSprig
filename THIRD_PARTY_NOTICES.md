@@ -20,3 +20,8 @@ EvoSprig M0 uses these separately installed packages. Exact direct and transitiv
 Model HTTP contracts follow the [DeepSeek API documentation](https://api-docs.deepseek.com/) and the compatible chat-completion format. M0 contains original workflow/runtime code and uses the dependencies above through their public APIs.
 
 Project license selection and public distribution are pending the first release decision.
+
+MCP support optionally uses the official `mcp` Python SDK 1.30.0 (MIT) and its
+separately installed dependencies. The base runtime does not import the SDK. The
+pinned development lock and optional export lock record the tested dependency set.
+Protocol scope is documented in `docs/tools.md`.

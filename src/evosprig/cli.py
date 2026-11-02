@@ -7,13 +7,16 @@ import os
 import sys
 from pathlib import Path
 
+from jsonschema.exceptions import ValidationError as JSONValidationError
 from pydantic import ValidationError
 
-from evosprig.config import make_models
+from evosprig.config import load_principals, make_models, make_tools, restore_models
+from evosprig.core.journal import Scope
+from evosprig.core.protocols import ExecutionError
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import load_spec
 from evosprig.core.version import SECRET, compile_agent
-from evosprig.plugins.builtin_tools import builtin_registry
+from evosprig.plugins.sqlite_journal import SQLiteJournal
 
 
 def main():
@@ -26,18 +29,72 @@ def main():
             sub.add_argument("--input", required=True, help="JSON input")
             sub.add_argument("--mock", action="store_true")
             sub.add_argument("--profile", type=Path)
+            sub.add_argument("--workspace", type=Path, default=Path(".evosprig"))
+            sub.add_argument("--run-id")
+            sub.add_argument("--allow-writes", action="store_true")
         if name == "export":
+            sub.add_argument("--profile", type=Path)
             sub.add_argument("--out", required=True, type=Path)
             sub.add_argument("--target", default="python")
+    for name in ("runs", "inspect", "resume", "cancel"):
+        sub = commands.add_parser(name)
+        sub.add_argument("--workspace", type=Path, default=Path(".evosprig"))
+        if name != "runs":
+            sub.add_argument("run_id")
+        if name == "resume":
+            sub.add_argument("--path", help="Waiting node or operation path")
+            sub.add_argument("--response", help="JSON human input or reconciled tool result")
     serve = commands.add_parser("serve")
     serve.add_argument("--workspace", type=Path, default=Path(".evosprig"))
     serve.add_argument("--project", type=Path)
     serve.add_argument("--studio-dir", type=Path)
     serve.add_argument("--profile", type=Path)
     serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument(
+        "--auth-file", type=Path, help="YAML principal and token environment references"
+    )
     serve.add_argument("--token-env", help="Optional API bearer-token environment variable")
+    serve.add_argument("--max-concurrent-runs", type=int, default=4)
     args = parser.parse_args()
     try:
+        if args.command in {"runs", "inspect", "resume", "cancel"}:
+            journal = SQLiteJournal(args.workspace / "runs.sqlite")
+            if args.command == "runs":
+                records = [
+                    {
+                        "run_id": record["run_id"],
+                        "scope": record["scope"],
+                        "status": record["status"],
+                    }
+                    for record in journal.list()
+                ]
+                print(json.dumps(records, indent=2))
+                return
+            record = journal.get(args.run_id)
+            runtime = Runtime(
+                restore_models(record["metadata"]["models"]),
+                make_tools(
+                    args.workspace,
+                    Scope(**record["scope"]),
+                    bindings=record["metadata"].get("tools", {}),
+                ),
+                journal=journal,
+                allow_writes=record["metadata"]["allow_writes"],
+            )
+            if args.command == "resume":
+                if bool(args.path) != bool(args.response):
+                    raise ValueError("--path and --response must be supplied together")
+                if args.response:
+                    journal.respond(args.run_id, args.path, json.loads(args.response))
+                result = asyncio.run(runtime.resume(args.run_id))
+            elif args.command == "cancel":
+                result = asyncio.run(runtime.cancel_run(args.run_id))
+            else:
+                result = runtime.get(args.run_id)
+            print(json.dumps(result.to_dict(), indent=2, ensure_ascii=False))
+            if result.status in {"failed", "canceled"}:
+                raise SystemExit(1)
+            return
         if args.command == "serve":
             import uvicorn
 
@@ -60,7 +117,12 @@ def main():
                 raise ValueError("API token environment variable is empty")
             uvicorn.run(
                 create_app(
-                    args.workspace, profile=args.profile, studio_dir=args.studio_dir, token=token
+                    args.workspace,
+                    profile=args.profile,
+                    studio_dir=args.studio_dir,
+                    token=token,
+                    principals=load_principals(args.auth_file) if args.auth_file else None,
+                    max_concurrent_runs=args.max_concurrent_runs,
                 ),
                 host="127.0.0.1",
                 port=args.port,
@@ -73,17 +135,36 @@ def main():
             print(json.dumps(version.lock, indent=2))
         elif args.command == "run":
             result = asyncio.run(
-                Runtime(make_models(spec, args.profile, args.mock), builtin_registry()).run(
-                    version, json.loads(args.input)
-                )
+                Runtime(
+                    make_models(spec, args.profile, args.mock),
+                    make_tools(args.workspace, Scope(spec.id), profile=args.profile),
+                    journal=SQLiteJournal(args.workspace / "runs.sqlite"),
+                    allow_writes=args.allow_writes,
+                ).run(version, json.loads(args.input), run_id=args.run_id)
             )
             print(json.dumps(result.to_dict(), indent=2, ensure_ascii=False))
-            if result.status != "succeeded":
+            if result.status in {"failed", "canceled"}:
                 raise SystemExit(1)
         elif args.command == "export":
             from evosprig.exporters.python import export_python
 
-            print(json.dumps(export_python(version, args.out, target=args.target), indent=2))
+            bindings = {}
+            if args.profile:
+                import yaml
+
+                bindings = yaml.safe_load(args.profile.read_text()).get("tools", {})
+            print(
+                json.dumps(
+                    export_python(version, args.out, target=args.target, tool_bindings=bindings),
+                    indent=2,
+                )
+            )
+    except JSONValidationError as exc:
+        print(
+            json.dumps({"validation_error": {"location": list(exc.path), "rule": exc.validator}}),
+            file=sys.stderr,
+        )
+        raise SystemExit(2) from None
     except ValidationError as exc:
         issues = [
             {
@@ -94,10 +175,10 @@ def main():
         ]
         print(json.dumps({"validation_errors": issues}, ensure_ascii=False), file=sys.stderr)
         raise SystemExit(2) from None
-    except ValueError as exc:
+    except (ValueError, ExecutionError) as exc:
         print(SECRET.sub("[redacted]", str(exc))[:2000], file=sys.stderr)
         raise SystemExit(2) from None
-    except (OSError, ImportError) as exc:
+    except (OSError, ImportError, KeyError) as exc:
         # Keep potentially sensitive input values out of command error output.
         print(
             f"{type(exc).__name__}: command failed; check project schema, dependencies and paths",

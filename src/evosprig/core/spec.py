@@ -1,4 +1,4 @@
-"""The executable, JSON-only AgentSpec 0.1 DAG subset."""
+"""Versioned JSON-only graphs, control nodes and portable value references."""
 
 from __future__ import annotations
 
@@ -54,6 +54,8 @@ class Contract(BaseModel):
 
 class Ref(Contract):
     ref: str
+    optional: bool = False
+    default: Any = None
 
     @model_validator(mode="after")
     def valid_ref(self):
@@ -87,8 +89,24 @@ class ToolBinding(Contract):
     version: str = "1"
 
 
+class Predicate(Contract):
+    left: Ref | Value
+    op: Literal["eq", "ne", "lt", "le", "gt", "ge", "contains", "truthy"]
+    right: Ref | Value | None = None
+
+    @model_validator(mode="after")
+    def valid_predicate(self):
+        if self.op != "truthy" and self.right is None:
+            raise ValueError("binary predicates require a right operand")
+        if self.op == "truthy" and self.right is not None:
+            raise ValueError("truthy takes one operand")
+        return self
+
+
 class Node(Contract):
-    type: Literal["model", "agent", "tool"]
+    type: Literal[
+        "model", "agent", "tool", "transform", "condition", "join", "loop", "parallel", "human"
+    ]
     inputs: dict[str, Ref | Value] = Field(default_factory=dict)
     output_schema: dict[str, Any]
     model: str | None = None
@@ -96,6 +114,12 @@ class Node(Contract):
     tools: list[str] = Field(default_factory=list)
     tool: str | None = None
     response_format: Literal["text", "json"] = "text"
+    condition: Predicate | None = None
+    body: Graph | None = None
+    branches: dict[str, Graph] = Field(default_factory=dict, max_length=16)
+    max_iterations: int = Field(default=1, ge=1, le=100)
+    until: Predicate | None = None
+    join: Literal["all", "selected"] = "all"
 
     @model_validator(mode="after")
     def valid_node(self):
@@ -109,14 +133,38 @@ class Node(Contract):
                 or self.response_format != "text"
             ):
                 raise ValueError("tool nodes require only tool, inputs and output_schema")
-        elif not self.model or self.tool or (self.type == "model" and self.tools):
-            raise ValueError("model/agent nodes require model; only agent nodes accept tools")
+        elif self.type in {"model", "agent"}:
+            if not self.model or self.tool or (self.type == "model" and self.tools):
+                raise ValueError("model/agent nodes require model; only agent nodes accept tools")
+        elif (
+            self.model
+            or self.tool
+            or self.tools
+            or self.instructions
+            or self.response_format != "text"
+        ):
+            raise ValueError("control nodes use typed inputs and control configuration")
+        if (self.type == "condition") != (self.condition is not None):
+            raise ValueError(
+                "condition nodes require a predicate; other nodes cannot set condition"
+            )
+        if (self.type == "loop") != (self.body is not None):
+            raise ValueError("loop nodes require a body graph")
+        if self.type != "loop" and (self.until is not None or self.max_iterations != 1):
+            raise ValueError("iteration settings belong to loop nodes")
+        if (self.type == "parallel") != bool(self.branches):
+            raise ValueError("parallel nodes require named branch graphs")
+        if self.type not in {"join", "parallel"} and self.join != "all":
+            raise ValueError("join strategy belongs to join/parallel nodes")
+        if self.type == "parallel" and self.join != "all":
+            raise ValueError("parallel branches use the all join strategy")
         return self
 
 
 class Edge(Contract):
     source: str
     target: str
+    when: bool | None = None
 
 
 class Graph(Contract):
@@ -132,10 +180,13 @@ class Execution(Contract):
     max_total_tokens: int = Field(default=8192, ge=1, le=1000000)
     max_output_tokens: int = Field(default=512, ge=1, le=32768)
     timeout_seconds: float = Field(default=60.0, gt=0, le=3600)
+    max_parallel_nodes: int = Field(default=1, ge=1, le=32)
+    max_parallel_tools: int = Field(default=1, ge=1, le=16)
+    allow_side_effects: bool = False
 
 
 class AgentSpec(Contract):
-    spec_version: Literal["0.1"] = "0.1"
+    spec_version: Literal["0.1", "0.2"] = "0.1"
     id: str
     input_schema: dict[str, Any]
     output_schema: dict[str, Any]
@@ -153,9 +204,42 @@ class AgentSpec(Contract):
         for name in [self.id, *self.models, *self.tools, *self.resources, *self.graph.nodes]:
             if not IDENTIFIER.fullmatch(name):
                 raise ValueError(f"invalid identifier: {name}")
-        order, ancestors = self.topology()
+        self._validate_subgraph(self.graph, "graph", 0)
+        if self.spec_version == "0.1":
+            if any(
+                node.type not in {"model", "agent", "tool"} for node in self.graph.nodes.values()
+            ):
+                raise ValueError("control nodes require spec_version 0.2")
+            if any(edge.when is not None for edge in self.graph.edges):
+                raise ValueError("conditional edges require spec_version 0.2")
+            if (
+                self.execution.max_parallel_nodes != 1
+                or self.execution.max_parallel_tools != 1
+                or self.execution.allow_side_effects
+            ):
+                raise ValueError("concurrency and write permissions require spec_version 0.2")
+            values = [
+                value for node in self.graph.nodes.values() for value in node.inputs.values()
+            ] + list(self.graph.output.values())
+            if any(
+                isinstance(value, Ref) and (value.optional or value.default is not None)
+                for value in values
+            ):
+                raise ValueError("optional references require spec_version 0.2")
+        return self
+
+    def _validate_subgraph(self, graph: Graph, location: str, depth: int):
+        if depth > 8:
+            raise ValueError("subgraph nesting exceeds eight levels")
+        order, ancestors = self.topology(graph)
+        for name in graph.nodes:
+            if not IDENTIFIER.fullmatch(name):
+                raise ValueError(f"invalid node identifier in {location}")
+        for edge in graph.edges:
+            if edge.when is not None and graph.nodes[edge.source].type != "condition":
+                raise ValueError("conditional edges must originate from a condition node")
         for node_id in order:
-            node = self.graph.nodes[node_id]
+            node = graph.nodes[node_id]
             if node.model and node.model not in self.models:
                 raise ValueError(f"{node_id}: unknown model {node.model}")
             for tool in [node.tool] if node.tool else node.tools:
@@ -167,8 +251,25 @@ class AgentSpec(Contract):
             ):
                 raise ValueError(f"{node_id}: unknown instruction resource")
             self._check_refs(node.inputs, ancestors[node_id], node_id)
-        self._check_refs(self.graph.output, set(order), "graph.output")
-        return self
+            if node.condition:
+                self._check_refs(
+                    {"left": node.condition.left, "right": node.condition.right},
+                    ancestors[node_id],
+                    node_id,
+                )
+            if node.body:
+                self._validate_subgraph(node.body, location + "." + node_id, depth + 1)
+            if node.until:
+                for operand in (node.until.left, node.until.right):
+                    if isinstance(operand, Ref) and not operand.ref.startswith("input"):
+                        raise ValueError(
+                            "loop until predicates reference input: the latest loop output"
+                        )
+            for name, branch in node.branches.items():
+                if not IDENTIFIER.fullmatch(name):
+                    raise ValueError("invalid parallel branch identifier")
+                self._validate_subgraph(branch, location + "." + node_id + "." + name, depth + 1)
+        self._check_refs(graph.output, set(order), location + ".output")
 
     def _check_refs(self, values: dict, available: set[str], location: str):
         for value in values.values():
@@ -177,8 +278,8 @@ class AgentSpec(Contract):
                 if source not in available:
                     raise ValueError(f"{location}: reference {value.ref} requires an upstream edge")
 
-    def topology(self) -> tuple[list[str], dict[str, set[str]]]:
-        graph = self.graph
+    def topology(self, graph: Graph | None = None) -> tuple[list[str], dict[str, set[str]]]:
+        graph = graph or self.graph
         parents = {key: set() for key in graph.nodes}
         children = {key: set() for key in graph.nodes}
         for edge in graph.edges:
@@ -204,12 +305,38 @@ class AgentSpec(Contract):
                 if not pending[child]:
                     ready.append(child)
         if len(order) != len(graph.nodes):
-            raise ValueError("M0 graphs must be acyclic and reachable from entry")
+            raise ValueError(
+                "graphs must be acyclic and reachable from entry; use a bounded loop node"
+            )
         return order, ancestors
 
     def canonical(self) -> str:
         data = self.model_dump(mode="json")
-        data["graph"]["edges"].sort(key=lambda edge: (edge["source"], edge["target"]))
+
+        def normalize(graph):
+            graph["edges"].sort(key=lambda edge: (edge["source"], edge["target"]))
+            for node in graph["nodes"].values():
+                if node["body"]:
+                    normalize(node["body"])
+                for branch in node["branches"].values():
+                    normalize(branch)
+
+        normalize(data["graph"])
+        if self.spec_version == "0.1":
+            for node in data["graph"]["nodes"].values():
+                for key in ("condition", "body", "branches", "max_iterations", "until", "join"):
+                    node.pop(key)
+            for edge in data["graph"]["edges"]:
+                edge.pop("when")
+            for key in ("max_parallel_nodes", "max_parallel_tools", "allow_side_effects"):
+                data["execution"].pop(key)
+            for values in [node["inputs"] for node in data["graph"]["nodes"].values()] + [
+                data["graph"]["output"]
+            ]:
+                for value in values.values():
+                    if "ref" in value:
+                        value.pop("optional")
+                        value.pop("default")
         return canonical_json(data)
 
     @property

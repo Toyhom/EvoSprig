@@ -13,6 +13,7 @@ from evosprig import __version__
 from evosprig.core.spec import canonical_json, save_spec
 from evosprig.core.version import AgentVersion, check_public_text
 from evosprig.plugins.builtin_tools import BUILTIN_NAMES
+from evosprig.plugins.memory_tools import MEMORY_TOOL_NAMES
 
 MODULES = (
     "__init__.py",
@@ -22,12 +23,22 @@ MODULES = (
     "core/version.py",
     "core/protocols.py",
     "core/runtime.py",
+    "core/engine.py",
+    "core/journal.py",
+    "core/expressions.py",
+    "core/memory.py",
     "sdk/__init__.py",
     "sdk/builder.py",
     "plugins/__init__.py",
     "plugins/mock.py",
     "plugins/builtin_tools.py",
     "plugins/openai_compatible.py",
+    "plugins/sqlite_journal.py",
+    "plugins/sqlite_memory.py",
+    "plugins/memory_tools.py",
+    "plugins/documents.py",
+    "plugins/http_tools.py",
+    "plugins/mcp_tools.py",
 )
 
 APP = """import argparse
@@ -35,16 +46,22 @@ import asyncio
 import json
 from pathlib import Path
 
-from evosprig.config import make_models
+from evosprig.config import make_models, make_tools, restore_models
+from evosprig.core.journal import Scope
 from evosprig.core.spec import load_spec
 from evosprig.core.version import compile_agent
 from evosprig.core.runtime import Runtime
-from evosprig.plugins.builtin_tools import builtin_registry
+from evosprig.plugins.sqlite_journal import SQLiteJournal
 
 parser = argparse.ArgumentParser(description="Run the exported EvoSprig agent")
-parser.add_argument("--input", required=True, help="JSON input object")
+parser.add_argument("--input", help="JSON input object")
 parser.add_argument("--mock", action="store_true")
 parser.add_argument("--profile")
+parser.add_argument("--workspace", type=Path)
+parser.add_argument("--resume", help="Run ID to resume")
+parser.add_argument("--path", help="Waiting input path")
+parser.add_argument("--response", help="JSON human response")
+parser.add_argument("--allow-writes", action="store_true")
 args = parser.parse_args()
 root = Path(__file__).resolve().parent
 spec = load_spec(root / "agent.yaml")
@@ -52,10 +69,28 @@ version = compile_agent(spec, root)
 expected = json.loads((root / "agent.lock.json").read_text())
 if version.lock != expected:
     raise SystemExit("Project changed: rebuild the export to update agent.lock.json")
-runtime = Runtime(make_models(spec, args.profile, args.mock), builtin_registry())
-result = asyncio.run(runtime.run(version, json.loads(args.input)))
+workspace = args.workspace or root / ".evosprig"
+journal = SQLiteJournal(workspace / "runs.sqlite")
+if args.resume:
+    record = journal.get(args.resume)
+    if record["version"]["version_id"] != version.version_id:
+        raise SystemExit("Run belongs to a different exported version")
+    if bool(args.path) != bool(args.response):
+        parser.error("--path and --response must be supplied together")
+    if args.response:
+        journal.respond(args.resume, args.path, json.loads(args.response))
+    runtime = Runtime(restore_models(record["metadata"]["models"]), make_tools(workspace, Scope(spec.id), bindings=record["metadata"].get("tools", {})), journal=journal,
+                      allow_writes=record["metadata"]["allow_writes"])
+    result = asyncio.run(runtime.resume(args.resume))
+else:
+    if args.input is None:
+        parser.error("provide --input for a new run")
+    bindings = None if args.profile else json.loads((root / "tool-bindings.json").read_text())
+    runtime = Runtime(make_models(spec, args.profile, args.mock), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=bindings), journal=journal,
+                      allow_writes=args.allow_writes)
+    result = asyncio.run(runtime.run(version, json.loads(args.input)))
 print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
-raise SystemExit(0 if result.status == "succeeded" else 1)
+raise SystemExit(1 if result.status in {"failed", "canceled"} else 0)
 """
 
 
@@ -68,6 +103,7 @@ def builder_source(version: AgentVersion) -> str:
         f"    {spec.id!r},",
         f"    {pformat(spec.input_schema, sort_dicts=True)},",
         f"    {pformat(spec.output_schema, sort_dicts=True)},",
+        f"    spec_version={spec.spec_version!r},",
         ")",
     ]
     for name, model in spec.models.items():
@@ -82,7 +118,7 @@ def builder_source(version: AgentVersion) -> str:
             f"builder.node({name!r}, {node.type!r}, entry={name == spec.graph.entry!r}, **{pformat(config, sort_dicts=True)})"
         )
     for edge in sorted(spec.graph.edges, key=lambda edge: (edge.source, edge.target)):
-        lines.append(f"builder.edge({edge.source!r}, {edge.target!r})")
+        lines.append(f"builder.edge({edge.source!r}, {edge.target!r}, when={edge.when!r})")
     lines += [
         f"builder.output(**{pformat({key: value.model_dump() for key, value in spec.graph.output.items()}, sort_dicts=True)})",
         f"builder.execution(**{spec.execution.model_dump()!r})",
@@ -92,12 +128,22 @@ def builder_source(version: AgentVersion) -> str:
     return "\n".join(lines)
 
 
-def compatibility_report(version: AgentVersion, target: str = "python") -> dict:
+def compatibility_report(
+    version: AgentVersion, target: str = "python", *, tool_bindings=None
+) -> dict:
     missing = []
     if target != "python":
         missing.append({"target": target, "reason": "target runtime is not implemented"})
+    tool_bindings = tool_bindings or {}
     for name, binding in version.spec.tools.items():
-        if binding.plugin not in BUILTIN_NAMES or binding.version != "1":
+        if binding.plugin in tool_bindings:
+            config = tool_bindings[binding.plugin]
+            if (
+                config.get("kind") in {"http", "mcp"}
+                and config.get("version", "1") == binding.version
+            ):
+                continue
+        if binding.plugin not in BUILTIN_NAMES | MEMORY_TOOL_NAMES or binding.version != "1":
             missing.append(
                 {"tool": name, "plugin": binding.plugin, "reason": "plugin has no bundled exporter"}
             )
@@ -106,15 +152,34 @@ def compatibility_report(version: AgentVersion, target: str = "python") -> dict:
         "compatible": not missing,
         "missing": missing,
         "external_services": sorted({item.binding for item in version.spec.models.values()}),
+        "external_tools": sorted(tool_bindings),
         "runtime": __version__,
         "agent_version": version.version_id,
     }
 
 
 def export_python(
-    version: AgentVersion, destination: str | Path, *, target: str = "python"
+    version: AgentVersion, destination: str | Path, *, target: str = "python", tool_bindings=None
 ) -> dict:
-    report = compatibility_report(version, target)
+    # Validate and include only the declared bindings, never unrelated deployment data.
+    bindings = {}
+    for tool in version.spec.tools.values():
+        if tool.plugin in (tool_bindings or {}):
+            raw = tool_bindings[tool.plugin]
+            if raw.get("kind") == "http":
+                from evosprig.plugins.http_tools import HTTPToolConfig
+
+                config = HTTPToolConfig.model_validate(raw)
+            elif raw.get("kind") == "mcp":
+                from evosprig.plugins.mcp_tools import MCPToolConfig
+
+                config = MCPToolConfig.model_validate(raw)
+            else:
+                raise ValueError("tool plugin has no bundled exporter")
+            if config.name != tool.plugin:
+                raise ValueError("tool binding name mismatch")
+            bindings[tool.plugin] = config.model_dump(mode="json")
+    report = compatibility_report(version, target, tool_bindings=bindings)
     if not report["compatible"]:
         raise ValueError(canonical_json(report))
     destination = Path(destination)
@@ -131,6 +196,7 @@ def export_python(
         save_spec(version.spec, staging / "agent.yaml")
         files = {
             "app.py": APP,
+            "tool-bindings.json": json.dumps(bindings, indent=2) + "\n",
             "build_agent.py": builder_source(version),
             "agent.lock.json": json.dumps(version.lock, indent=2) + "\n",
             "export-report.json": json.dumps(report, indent=2) + "\n",
@@ -145,6 +211,8 @@ def export_python(
             "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, set DEEPSEEK_API_KEY and omit --mock. Use --profile deployment.example.yaml for explicit bindings. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n",
             "THIRD_PARTY_NOTICES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
+        if any(binding["kind"] == "mcp" for binding in bindings.values()):
+            files["requirements.lock"] += (Path(__file__).parent / "mcp.lock").read_text()
         for name, content in files.items():
             (staging / name).write_text(content, encoding="utf-8")
         for name, resource in version.spec.resources.items():

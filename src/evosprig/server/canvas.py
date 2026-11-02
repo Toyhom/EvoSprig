@@ -15,7 +15,7 @@ def to_canvas(spec: AgentSpec, layout: dict | None = None) -> dict:
             for index, (key, node) in enumerate(spec.graph.nodes.items())
         ],
         "edges": [
-            {"id": f"{edge.source}--{edge.target}", "source": edge.source, "target": edge.target}
+            {"id": f"{edge.source}--{edge.target}", **edge.model_dump(exclude_none=True)}
             for edge in spec.graph.edges
         ],
     }
@@ -28,6 +28,7 @@ def from_canvas(spec: AgentSpec, canvas: dict) -> tuple[AgentSpec, dict]:
         raise ValueError("duplicate canvas node IDs")
     data["graph"]["nodes"] = {node["id"]: node["data"]["node"] for node in nodes}
     data["graph"]["edges"] = [
-        {"source": edge["source"], "target": edge["target"]} for edge in canvas["edges"]
+        {key: edge[key] for key in ("source", "target", "when") if key in edge}
+        for edge in canvas["edges"]
     ]
     return AgentSpec.model_validate(data), {node["id"]: node["position"] for node in nodes}

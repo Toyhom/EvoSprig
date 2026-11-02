@@ -6,9 +6,11 @@ from evosprig.core.spec import AgentSpec
 
 
 class Builder:
-    def __init__(self, project_id: str, input_schema: dict, output_schema: dict):
+    def __init__(
+        self, project_id: str, input_schema: dict, output_schema: dict, *, spec_version: str = "0.1"
+    ):
         self.data = {
-            "spec_version": "0.1",
+            "spec_version": spec_version,
             "id": project_id,
             "input_schema": deepcopy(input_schema),
             "output_schema": deepcopy(output_schema),
@@ -38,8 +40,11 @@ class Builder:
             self.data["graph"]["entry"] = node_id
         return self
 
-    def edge(self, source: str, target: str):
-        self.data["graph"]["edges"].append({"source": source, "target": target})
+    def edge(self, source: str, target: str, *, when: bool | None = None):
+        edge = {"source": source, "target": target}
+        if when is not None:
+            edge["when"] = when
+        self.data["graph"]["edges"].append(edge)
         return self
 
     def output(self, **bindings):
