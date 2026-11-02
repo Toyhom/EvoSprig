@@ -12,4 +12,3 @@ Start with the [quickstart](quickstart.md), then open a runnable application fro
 | [Deployment](deployment.md) | Model bindings, authentication and standalone exports |
 | [Support matrix](support-matrix.md) | Available interfaces and deployment targets |
 | [Roadmap](roadmap.md) | Upcoming capabilities |
-| [Dependencies](dependencies.md) | Dependency and method references |
