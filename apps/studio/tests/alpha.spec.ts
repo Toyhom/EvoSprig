@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('evosprig.language', 'zh')); });
 const object=(name:string,type='string')=>({type:'object',properties:{[name]:{type}},required:[name],additionalProperties:false});
 
 test('conditional graph keeps branch flags through canvas and spec editing',async({page,request})=>{

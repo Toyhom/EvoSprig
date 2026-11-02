@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'node:path';
 
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('evosprig.language', 'zh')); });
 async function createProject(page: Page) {
   await page.goto('/');
   const creation = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/projects');

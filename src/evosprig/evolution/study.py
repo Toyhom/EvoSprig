@@ -17,13 +17,14 @@ from .gate import ReleaseGate
 
 
 class StudyConfig(Contract):
-    method: Literal["opro", "gepa"]
+    method: Literal["opro", "gepa", "evoprompt_ga", "evoprompt_de", "self_refine", "ace"]
     allowed_resources: list[str] = Field(min_length=1, max_length=32)
     budget: ExperimentBudget = Field(default_factory=ExperimentBudget)
     gate: ReleaseGate = Field(default_factory=ReleaseGate)
     rounds: int = Field(default=3, ge=1, le=100)
     max_metric_calls: int = Field(default=30, ge=1, le=100000)
     seed: int = Field(default=0, ge=0)
+    population_size: int = Field(default=4, ge=4, le=32)
 
     @model_validator(mode="after")
     def unique_resources(self):
@@ -105,11 +106,27 @@ async def execute_study(
             from .opro import optimize
 
             method_result = await optimize(context, rounds=config.rounds)
-        else:
+        elif config.method == "gepa":
             from .gepa import optimize
 
             method_result = await optimize(
                 context, max_metric_calls=config.max_metric_calls, seed=config.seed
+            )
+        elif config.method.startswith("evoprompt_"):
+            from .search import evoprompt
+
+            method_result = await evoprompt(
+                context,
+                variant=config.method.rsplit("_", 1)[1],
+                rounds=config.rounds,
+                population_size=config.population_size,
+                seed=config.seed,
+            )
+        else:
+            from .search import ace, self_refine
+
+            method_result = await {"ace": ace, "self_refine": self_refine}[config.method](
+                context, rounds=config.rounds
             )
         selected = context.version(method_result["selected"])
         store.put(scope, selected)

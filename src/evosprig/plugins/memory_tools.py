@@ -4,8 +4,11 @@ from evosprig.core.memory import MemoryScope
 from evosprig.core.protocols import Tool
 
 from .documents import DocumentRetriever
+from .structured_memory import StructuredMemory
 
-MEMORY_TOOL_NAMES = frozenset({"memory.search", "memory.write", "documents.search"})
+MEMORY_TOOL_NAMES = frozenset(
+    {"memory.search", "memory.write", "documents.search", "memory.context", "memory.relations"}
+)
 
 
 def register_memory_tools(registry, memory, scope):
@@ -65,6 +68,40 @@ def register_memory_tools(registry, memory, scope):
             write,
             side_effect="write",
             idempotent=True,
+        )
+    )
+    structured = StructuredMemory(memory)
+    registry.register(
+        Tool(
+            "memory.context",
+            "Read this user's named context blocks within a character budget.",
+            {
+                "type": "object",
+                "properties": {"max_chars": {"type": "integer", "minimum": 1, "maximum": 12000}},
+                "additionalProperties": False,
+            },
+            {"type": "object"},
+            lambda max_chars=4000: structured.context(facts, max_chars=max_chars),
+        )
+    )
+    registry.register(
+        Tool(
+            "memory.relations",
+            "Query this user's temporal fact relationships, retaining sources.",
+            {
+                "type": "object",
+                "properties": {
+                    "subject": {"type": "string", "maxLength": 1024},
+                    "at": {"type": "number"},
+                    "hops": {"type": "integer", "minimum": 1, "maximum": 4},
+                },
+                "required": ["subject"],
+                "additionalProperties": False,
+            },
+            {"type": "object"},
+            lambda subject, at=None, hops=1: {
+                "relations": structured.relations(facts, subject, at=at, hops=hops)
+            },
         )
     )
     return registry

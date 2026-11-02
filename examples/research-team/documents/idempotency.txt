@@ -1,0 +1,1 @@
+An idempotent service maps a stable operation key to one result. Repeating the same request with the same key returns that result. The service must reject a changed payload under an existing key. Checkpoints alone do not guarantee an external write executes exactly once: the service must participate in reconciliation after a network failure.

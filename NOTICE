@@ -2,4 +2,4 @@ EvoSprig
 Copyright 2026 EvoSprig contributors
 
 This product includes independently implemented agent runtime and application examples.
-Third-party packages are installed separately; see THIRD_PARTY_NOTICES.md.
+Third-party packages are installed separately; see docs/dependencies.md.

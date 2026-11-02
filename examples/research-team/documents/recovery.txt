@@ -1,0 +1,1 @@
+A durable workflow stores the output of each completed node in a checkpoint. On restart it can reuse completed work and resume the remaining graph. A pending external job should be polled using its original job ID instead of resubmitted. Human approvals belong in the checkpoint so a reviewer can continue from another process.

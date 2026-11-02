@@ -121,9 +121,11 @@ def make_event(record: dict, sequence: int, event: dict) -> dict:
 def validate_response(record, path, response):
     waiting = next((item for item in record["checkpoint"]["waiting"] if item["path"] == path), None)
     if (
-        record["status"] != "waiting_input"
+        record["status"] not in {"waiting_input", "queued"}
+        or record.get("owner") is not None
         or waiting is None
         or waiting["kind"] not in {"human", "operation_unknown"}
+        or path in record["checkpoint"]["responses"]
     ):
         raise ValueError("run is not waiting for this response")
     canonical_json(response)

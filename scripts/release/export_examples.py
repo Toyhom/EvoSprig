@@ -23,7 +23,11 @@ def main():
         ("research-assistant", "python", None),
         ("research-assistant", "python", "opro"),
         ("research-assistant", "python", "gepa"),
-        ("short-film", "http", None),
+        ("motion-graphics", "http", None),
+        ("video-studio", "http", None),
+        ("research-team", "python", None),
+        ("customer-support", "http", None),
+        ("personal-memory", "python", None),
     ]
     for example, target, method in items:
         root = product / "examples" / example

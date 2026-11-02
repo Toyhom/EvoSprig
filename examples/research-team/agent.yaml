@@ -1,0 +1,271 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 3
+  max_output_tokens: 1024
+  max_parallel_nodes: 2
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 10000
+  timeout_seconds: 60.0
+graph:
+  edges:
+  - source: retrieve
+    target: team
+    when: null
+  - source: team
+    target: writer
+    when: null
+  - source: writer
+    target: editor
+    when: null
+  entry: retrieve
+  nodes:
+    editor:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        draft:
+          default: null
+          optional: false
+          ref: nodes.writer.output.text
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: human
+      until: null
+    retrieve:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        query:
+          default: null
+          optional: false
+          ref: input.question
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: search
+      tools: []
+      type: tool
+      until: null
+    team:
+      body: null
+      branches:
+        analyst:
+          edges: []
+          entry: analyst
+          nodes:
+            analyst:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                evidence:
+                  default: null
+                  optional: false
+                  ref: input.evidence
+                question:
+                  default: null
+                  optional: false
+                  ref: input.question
+              instructions:
+                resource: analyst
+              join: all
+              max_iterations: 1
+              model: main
+              output_schema:
+                additionalProperties: false
+                properties:
+                  text:
+                    type: string
+                required:
+                - text
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: model
+              until: null
+          output:
+            text:
+              default: null
+              optional: false
+              ref: nodes.analyst.output.text
+        critic:
+          edges: []
+          entry: critic
+          nodes:
+            critic:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                evidence:
+                  default: null
+                  optional: false
+                  ref: input.evidence
+                question:
+                  default: null
+                  optional: false
+                  ref: input.question
+              instructions:
+                resource: critic
+              join: all
+              max_iterations: 1
+              model: main
+              output_schema:
+                additionalProperties: false
+                properties:
+                  text:
+                    type: string
+                required:
+                - text
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: model
+              until: null
+          output:
+            text:
+              default: null
+              optional: false
+              ref: nodes.critic.output.text
+      condition: null
+      inputs:
+        evidence:
+          default: null
+          optional: false
+          ref: nodes.retrieve.output
+        question:
+          default: null
+          optional: false
+          ref: input.question
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          analyst:
+            additionalProperties: false
+            properties:
+              text:
+                type: string
+            required:
+            - text
+            type: object
+          critic:
+            additionalProperties: false
+            properties:
+              text:
+                type: string
+            required:
+            - text
+            type: object
+        required:
+        - analyst
+        - critic
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: parallel
+      until: null
+    writer:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        evidence:
+          default: null
+          optional: false
+          ref: nodes.retrieve.output
+        question:
+          default: null
+          optional: false
+          ref: input.question
+        reviews:
+          default: null
+          optional: false
+          ref: nodes.team.output
+      instructions:
+        resource: writer
+      join: all
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: model
+      until: null
+  output:
+    text:
+      default: null
+      optional: false
+      ref: nodes.editor.output.text
+id: research-team
+input_schema:
+  additionalProperties: false
+  properties:
+    question:
+      type: string
+  required:
+  - question
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    text:
+      type: string
+  required:
+  - text
+  type: object
+resources:
+  analyst:
+    path: prompts/analyst.md
+    role: prompt
+  critic:
+    path: prompts/critic.md
+    role: prompt
+  writer:
+    path: prompts/writer.md
+    role: prompt
+spec_version: '0.2'
+tools:
+  search:
+    plugin: documents.search
+    version: '1'

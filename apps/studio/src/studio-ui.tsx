@@ -42,7 +42,7 @@ const icons: Record<NodeKind, IconName> = {
 export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang };
 export type WorkflowFlowNode = Node<WorkflowData>;
 export function WorkflowNode({ id, data, selected }: NodeProps<WorkflowFlowNode>) {
-  const { config, lang = 'zh' } = data;
+  const { config, lang = 'en' } = data;
   // Drafts can contain an unsupported kind until server validation on save.
   const type = labels[config.type]?.[lang === 'zh' ? 0 : 1] ?? String(config.type ?? 'Node');
   const binding = typeof config.model === 'string' ? config.model : typeof config.tool === 'string' ? config.tool : undefined;

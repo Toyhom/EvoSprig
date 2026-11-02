@@ -1,0 +1,142 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 8
+  max_output_tokens: 512
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 8192
+  timeout_seconds: 3600.0
+graph:
+  edges: []
+  entry: assemble
+  nodes:
+    assemble:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        audio:
+          default: null
+          optional: false
+          ref: input.audio
+        clips:
+          default: null
+          optional: false
+          ref: input.clips
+        subtitles:
+          default: null
+          optional: false
+          ref: input.subtitles
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: compose
+      tools: []
+      type: tool
+      until: null
+  output:
+    film:
+      default: null
+      optional: false
+      ref: nodes.assemble.output
+id: video-compose
+input_schema:
+  additionalProperties: false
+  properties:
+    audio:
+      items:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      type: array
+    clips:
+      items:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      maxItems: 20
+      minItems: 1
+      type: array
+    subtitles:
+      type: string
+  required:
+  - clips
+  - audio
+  - subtitles
+  type: object
+models: {}
+output_schema:
+  additionalProperties: false
+  properties:
+    film:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+  required:
+  - film
+  type: object
+resources: {}
+spec_version: '0.2'
+tools:
+  compose:
+    plugin: media.compose
+    version: '1'

@@ -28,8 +28,8 @@ resources. The runtime does not automatically promote retrieved text into policy
 
 `DocumentRetriever.ingest` accepts bounded plain text, a title and source identifier.
 It creates deterministic chunks and citation references containing exact offsets.
-Search is a reproducible lexical baseline, including Chinese characters. It does
-not claim embedding or semantic retrieval. Documents use the `documents` namespace.
+Default document search uses BM25, including Chinese characters. Wrap the store in
+`HybridMemory` to add semantic ranking. Documents use the `documents` namespace.
 A citation can be verified by slicing the original text at `[start:end]`.
 
 ## Deletion and restore
@@ -71,3 +71,50 @@ organization sharing, an identity provider or account administration.
 Memory routes are under `/api/projects/{id}/memory`; document upload, listing,
 search and delete are under `/api/projects/{id}/documents`. A memory data export is
 an explicit separate operation from an application export.
+
+## Retrieval strategies
+
+SQLite search uses BM25 term-frequency and length normalization, with English word and CJK character tokenization. Pass `at=<unix timestamp>` for historical validity and `content_type` to filter records.
+
+`HybridMemory(memory, embedder)` combines BM25 and cosine ranks through reciprocal rank fusion. An embedder supplies `model_id` and `embed(list[str]) -> list[list[float]]`. Batches and the vector cache are bounded; every query re-reads the authorized records and deletion ledger before ranking. Configure your embedding provider outside model-controlled arguments.
+
+```python
+from evosprig.plugins.semantic_memory import HybridMemory
+
+# embedding_provider implements the Embeddings protocol.
+semantic = HybridMemory(memory, embedding_provider)
+hits = semantic.search(scope, "preferred communication style", limit=5)
+```
+
+## Context blocks and temporal relations
+
+```python
+from evosprig.plugins.structured_memory import StructuredMemory
+
+structured = StructuredMemory(memory)
+profile = structured.set_context(scope, "profile", "Alice prefers concise replies.",
+                                 source="user:explicit", max_chars=1000)
+structured.set_context(scope, "profile", "Alice prefers concise replies in English.",
+                       source="user:explicit", revision=profile["revision"])
+structured.set_relation(scope, "Alice", "works_on", "Orion", source="user", valid_from=100)
+structured.set_relation(scope, "Alice", "works_on", "Atlas", source="user", valid_from=200)
+assert structured.relations(scope, "Alice", at=150)[0]["metadata"]["relation"][2] == "Orion"
+```
+
+Context blocks use revision-checked updates and a configurable character budget. Temporal relation updates close the previous interval atomically; bounded graph traversal follows relations valid at the query time. All records share the existing scope and deletion ledger.
+
+The API exposes `/api/projects/{id}/context`, `/context/{name}` and `/relations`. The runtime's `memory.context` and `memory.relations` tools provide read access in the deployment-bound user scope. These tools are included in standalone exports. See the [personal assistant](../examples/personal-memory/).
+
+A compatible embedding API can be used directly:
+
+```python
+from evosprig.plugins.embeddings import EmbeddingConnection, OpenAIEmbeddings
+
+provider = OpenAIEmbeddings(EmbeddingConnection(
+    base_url="https://api.openai.com/v1", model="text-embedding-3-small",
+    api_key_env="OPENAI_API_KEY",
+))
+semantic = HybridMemory(memory, provider)
+```
+
+Install the `models` extra for the HTTP client. This synchronous memory adapter should run in a worker/thread when called from an asynchronous application. Its requests have explicit timeouts, bounded response sizes and no automatic retries.

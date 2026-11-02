@@ -87,3 +87,50 @@ async def test_scoped_projects_runs_memory_and_documents(tmp_path):
                 len(response.json()) == (1 if i % 2 == 0 else 0)
                 for i, response in enumerate(results)
             )
+
+
+async def test_context_and_temporal_routes_keep_principal_scope_and_revision(tmp_path):
+    app = create_app(
+        tmp_path,
+        principals={"alice-token": Principal("alice", "lab"), "bob-token": Principal("bob", "lab")},
+    )
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://localhost",
+            headers={"authorization": "Bearer alice-token"},
+        ) as client:
+            assert (
+                await client.post("/api/projects", json={"spec": approval_spec().model_dump()})
+            ).status_code == 201
+            base = "/api/projects/approval"
+            body = {"content": "Concise answers", "source": "user", "revision": 0}
+            created = await client.put(base + "/context/profile", json=body)
+            assert created.status_code == 200
+            assert created.json()["revision"] == 1
+            assert (await client.put(base + "/context/profile", json=body)).status_code == 409
+            assert (
+                await client.put(base + "/context/too-small", json={**body, "max_chars": 2})
+            ).status_code == 422
+            for value, when in [("Orion", 100), ("Atlas", 200)]:
+                response = await client.post(
+                    base + "/relations",
+                    json={
+                        "subject": "Alice",
+                        "predicate": "works_on",
+                        "object_": value,
+                        "source": "user",
+                        "valid_from": when,
+                    },
+                )
+                assert response.status_code == 201
+            assert (
+                await client.get(base + "/relations", params={"subject": "Alice", "at": 150})
+            ).json()[0]["metadata"]["relation"][2] == "Orion"
+            client.headers["authorization"] = "Bearer bob-token"
+            assert (await client.get(base + "/context")).status_code == 404
+            assert (
+                await client.post("/api/projects", json={"spec": approval_spec().model_dump()})
+            ).status_code == 201
+            assert (await client.get(base + "/context")).json()["blocks"] == []
+            assert (await client.get(base + "/relations", params={"subject": "Alice"})).json() == []

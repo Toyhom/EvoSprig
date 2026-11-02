@@ -1,11 +1,18 @@
-# Development roadmap
+# Roadmap
 
-开源 Alpha 已完成构建、持久运行、记忆检索、OPRO/GEPA、评测/候选/发布、独立导出与中性色 Studio。后续按以下顺序推进，支持范围随测试与真实样例更新。
+## Agent capabilities and applications
 
-1. **首次使用与编辑可靠性。** 完善安装、模型/工具连接、加载/错误反馈和复杂工程导航。已补项目搜索、移动键盘导航、未保存修改保护，以及端口覆盖配置。
-2. **部署与并发基准。** 固定硬件上测量交互运行和评测混合负载，记录吞吐、尾延迟、排队时间和 CPU/内存/网络/I/O 使用，区分模型服务与平台控制面的开销。先建立可复现基线，再优化。
-3. **后端扩展。** API/事件服务与 worker 分离，有界队列和背压，连接池、公平调度、PostgreSQL/对象存储，以及多 worker/多节点部署。
-4. **方法与应用覆盖。** FlashRSI 桥接的文本/技能/代码资源映射、更多进化方法、记忆能力和 FilmAgent 环境验证。
-5. **跨语言交付。** 明确 TypeScript 可移植子集、多语言客户端与一致性测试。
+- Expand reusable video-production stages, asset continuity and interactive editing.
+- Add evaluation suites for research teams, customer support and persistent assistants.
+- Extend evolution to tool descriptions, structured skills and workflow topology.
+- Add memory-provider adapters, semantic ingestion and memory consolidation policies.
+- Improve Studio's configuration forms, templates and evaluation visualizations.
 
-前端设计取舍与参考来源见 [Studio interface](studio-design.md)。完整可访问性审计和复杂图自动布局继续深化。性能目标以基准和用户负载决定，不以 worker 数量推断有效吞吐。
+## Deployment and portability
+
+- Native TypeScript execution and cross-language contract tests.
+- Separate API and worker processes, queue backpressure and PostgreSQL storage.
+- Reproducible mixed-workload benchmarks and multi-node scheduling.
+- Container image builds and deployment recipes.
+
+Track implemented interfaces in the [support matrix](support-matrix.md).

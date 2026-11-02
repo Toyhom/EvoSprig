@@ -20,9 +20,10 @@ ROOT_FILES = {
     ".dockerignore",
     "requirements-runtime.lock",
     "requirements-dev.lock",
-    "THIRD_PARTY_NOTICES.md",
+    "README.zh-CN.md",
 }
 ROOT_DIRS = {"src", "docs", "examples", "tests", "spec", "scripts", "apps", ".github"}
+HISTORICAL_ROOT_FILES = {"THIRD_PARTY_NOTICES.md"}
 SKIP = {
     ".git",
     "node_modules",
@@ -97,7 +98,7 @@ def audit_git_history(root: Path):
                 raise ValueError(f"Git link or submodule: {name}")
             if (
                 parts[0] not in ROOT_DIRS
-                and (len(parts) != 1 or name not in ROOT_FILES)
+                and (len(parts) != 1 or name not in ROOT_FILES | HISTORICAL_ROOT_FILES)
             ) or any(part in SKIP or part.endswith(".egg-info") for part in parts):
                 raise ValueError(f"Git file is not allowlisted: {name}")
             if (oid, name) in seen:

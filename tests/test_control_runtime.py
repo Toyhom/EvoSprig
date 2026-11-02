@@ -196,3 +196,40 @@ def test_control_nodes_require_explicit_protocol_upgrade():
     raw["spec_version"] = "0.1"
     with pytest.raises(ValueError, match="0.2"):
         AgentSpec.model_validate(raw)
+
+
+@pytest.mark.parametrize("durable", [False, True])
+async def test_parallel_approvals_accept_distinct_responses_before_resume(tmp_path, durable):
+    from evosprig.core.journal import MemoryJournal
+
+    text = obj(text={"type": "string"})
+    branch = {
+        "entry": "review",
+        "nodes": {"review": {"type": "human", "output_schema": text}},
+        "edges": [],
+        "output": {"text": {"ref": "nodes.review.output.text"}},
+    }
+    spec = (
+        Builder("parallel-review", {}, obj(a=text, b=text), spec_version="0.2")
+        .node(
+            "reviews",
+            "parallel",
+            branches={"a": branch, "b": branch},
+            output_schema=obj(a=text, b=text),
+        )
+        .output(a={"ref": "nodes.reviews.output.a"}, b={"ref": "nodes.reviews.output.b"})
+        .execution(max_parallel_nodes=2)
+        .build_spec()
+    )
+    journal = SQLiteJournal(tmp_path / "runs.sqlite") if durable else MemoryJournal()
+    runtime = Runtime({}, journal=journal)
+    result = await runtime.run(compile_agent(spec), {})
+    assert result.status == "waiting_input"
+    assert len(result.waiting) == 2
+    for wait in result.waiting:
+        journal.respond(result.run_id, wait["path"], {"text": wait["path"]})
+    with pytest.raises(ValueError):
+        journal.respond(result.run_id, result.waiting[0]["path"], {"text": "overwrite"})
+    final = await runtime.resume(result.run_id)
+    assert final.status == "succeeded"
+    assert final.output["a"]["text"] != final.output["b"]["text"]

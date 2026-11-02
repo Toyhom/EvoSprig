@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('evosprig.language', 'zh')); });
 test('edit, save, run, export and preserve edits on conflicts', async ({ page, context }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

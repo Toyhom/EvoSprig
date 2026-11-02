@@ -28,30 +28,8 @@ user's project documents. Evaluation samples start with empty private memory;
 the included suite supplies its evidence explicitly so candidate comparisons are
 reproducible and independent of a user's private document collection.
 
-## Real smoke record
+## Compare methods
 
-On 2026-11-02, `scripts/live_evolution.py` ran OPRO and official GEPA 0.1.4 against
-`deepseek-flash` using the same original version and fixed suite. It also evaluated
-a separately authored manual prompt. The suite has 3 search, 2 selection, 2 release
-validation and 2 sealed test cases; each validation/test split has one evidence
-question and one addition task. Scores require exact normalized strings and, for
-arithmetic, a completed addition-tool receipt.
+Use `--method opro`, `gepa`, `evoprompt_ga`, `evoprompt_de`, `self_refine` or `ace` with the same suite. Keep model settings and budgets fixed when comparing runs. The included nine-case suite exercises integration and output contracts; extend it with representative tasks to measure performance on your application.
 
-| Configuration | Release validation | Sealed test |
-| --- | --- | --- |
-| Original prompt | 1/2 | 2/2 |
-| Manual prompt | 2/2 | 2/2 |
-| OPRO candidate | 2/2 | 2/2 |
-| GEPA candidate | 2/2 | 2/2 |
-
-The methods produced valid candidates and improved the release-validation formatting
-score. The sealed test showed no gain, and the manual prompt matched both optimized
-versions with shorter inputs. Two examples per held-out split cannot establish
-statistical or general effectiveness. These are authored integration cases, not a
-research benchmark claim.
-
-The complete run used 70 model calls, 50,442 input tokens and 2,134 output tokens,
-including search, reflection, paired validation and the manual baseline. All calls
-returned usage; monetary billing is unknown. Per-method budgets and usage are in
-[results/deepseek-smoke.json](results/deepseek-smoke.json), with the selected prompt
-texts beside it. Private databases, credentials and raw operational logs are excluded.
+The `results/` directory includes selected prompt variants you can inspect or reuse. Method mechanics, population settings and playbook updates are documented in [Evolution](../../docs/evolution.md).

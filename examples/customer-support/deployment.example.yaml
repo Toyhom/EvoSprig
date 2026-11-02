@@ -1,0 +1,58 @@
+models:
+  main:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    options:
+      thinking:
+        type: disabled
+tools:
+  support.lookup:
+    kind: http
+    name: support.lookup
+    description: lookup an order
+    endpoint: http://127.0.0.1:18881/lookup
+    method: GET
+    input_schema:
+      type: object
+      properties:
+        order_id: &id001
+          type: string
+      required:
+      - order_id
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: read_only
+    idempotent: false
+    auth_env: SUPPORT_API_TOKEN
+  support.refund:
+    kind: http
+    name: support.refund
+    description: refund an order
+    endpoint: http://127.0.0.1:18881/refund
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        order_id: *id001
+        amount:
+          type: number
+          minimum: 0
+      required:
+      - order_id
+      - amount
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        transaction_id: *id001
+        amount:
+          type: number
+      required:
+      - transaction_id
+      - amount
+      additionalProperties: false
+    side_effect: write
+    idempotent: true
+    auth_env: SUPPORT_API_TOKEN

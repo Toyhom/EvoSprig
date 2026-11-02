@@ -1,0 +1,283 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 8
+  max_output_tokens: 512
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 12
+  max_total_tokens: 8192
+  timeout_seconds: 3600.0
+graph:
+  edges:
+  - source: frame
+    target: frame_review
+    when: null
+  - source: frame_review
+    target: clip
+    when: null
+  entry: frame
+  nodes:
+    clip:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        catalog:
+          default: null
+          optional: false
+          ref: input.catalog
+        first_frame:
+          default: null
+          optional: false
+          ref: nodes.frame_review.output
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: video
+      tools: []
+      type: tool
+      until: null
+    frame:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        catalog:
+          default: null
+          optional: false
+          ref: input.catalog
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+        style:
+          default: null
+          optional: false
+          ref: input.style
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: image
+      tools: []
+      type: tool
+      until: null
+    frame_review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        frame:
+          default: null
+          optional: false
+          ref: nodes.frame.output
+        shot:
+          default: null
+          optional: false
+          ref: input.shot
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: human
+      until: null
+  output:
+    clip:
+      default: null
+      optional: false
+      ref: nodes.clip.output
+    first_frame:
+      default: null
+      optional: false
+      ref: nodes.frame_review.output
+id: video-shot
+input_schema:
+  additionalProperties: false
+  properties:
+    catalog:
+      additionalProperties: false
+      properties:
+        assets:
+          items:
+            additionalProperties: false
+            properties:
+              asset:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              character_id:
+                minLength: 1
+                type: string
+            required:
+            - character_id
+            - asset
+            type: object
+          minItems: 1
+          type: array
+      required:
+      - assets
+      type: object
+    shot:
+      additionalProperties: false
+      properties:
+        camera:
+          minLength: 1
+          type: string
+        characters:
+          items:
+            minLength: 1
+            type: string
+          type: array
+        description:
+          minLength: 1
+          type: string
+        dialogue:
+          type: string
+        duration_seconds:
+          maximum: 20
+          minimum: 1
+          type: integer
+        id:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - description
+      - camera
+      - dialogue
+      - characters
+      - duration_seconds
+      type: object
+    style:
+      minLength: 1
+      type: string
+  required:
+  - shot
+  - catalog
+  - style
+  type: object
+models: {}
+output_schema:
+  additionalProperties: false
+  properties:
+    clip:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+    first_frame:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+  required:
+  - clip
+  - first_frame
+  type: object
+resources: {}
+spec_version: '0.2'
+tools:
+  image:
+    plugin: media.image
+    version: '1'
+  video:
+    plugin: media.video
+    version: '1'

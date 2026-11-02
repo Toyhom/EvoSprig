@@ -1,0 +1,155 @@
+models:
+  main:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    options:
+      thinking:
+        type: disabled
+tools:
+  media.assets:
+    kind: external_http
+    name: media.assets
+    description: Video production assets service
+    endpoint: http://127.0.0.1:18880/assets
+    auth_env: EVOSPRIG_MEDIA_TOKEN
+    input_schema:
+      type: object
+      properties:
+        characters:
+          type: array
+          items:
+            type: object
+            properties:
+              id: &id001
+                type: string
+                minLength: 1
+              description: *id001
+            required:
+            - id
+            - description
+            additionalProperties: false
+        style: *id001
+      required:
+      - characters
+      - style
+      additionalProperties: false
+    output_schema: &id002
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            type: object
+            properties:
+              character_id: *id001
+              asset: &id003
+                type: object
+                properties:
+                  id: *id001
+                  uri: *id001
+                  media_type: *id001
+                required:
+                - id
+                - uri
+                - media_type
+                additionalProperties: false
+            required:
+            - character_id
+            - asset
+            additionalProperties: false
+          minItems: 1
+      required:
+      - assets
+      additionalProperties: false
+    side_effect: write
+    idempotent: true
+  media.image:
+    kind: external_http
+    name: media.image
+    description: Video production image service
+    endpoint: http://127.0.0.1:18880/image
+    auth_env: EVOSPRIG_MEDIA_TOKEN
+    input_schema:
+      type: object
+      properties:
+        shot: &id004
+          type: object
+          properties:
+            id: *id001
+            description: *id001
+            camera: *id001
+            dialogue:
+              type: string
+            characters:
+              type: array
+              items: *id001
+            duration_seconds:
+              type: integer
+              minimum: 1
+              maximum: 20
+          required:
+          - id
+          - description
+          - camera
+          - dialogue
+          - characters
+          - duration_seconds
+          additionalProperties: false
+        catalog: *id002
+        style: *id001
+      required:
+      - shot
+      - catalog
+      - style
+      additionalProperties: false
+    output_schema: *id003
+    side_effect: write
+    idempotent: true
+  media.video:
+    kind: external_http
+    name: media.video
+    description: Video production video service
+    endpoint: http://127.0.0.1:18880/video
+    auth_env: EVOSPRIG_MEDIA_TOKEN
+    input_schema:
+      type: object
+      properties:
+        shot: *id004
+        first_frame: *id003
+        catalog: *id002
+      required:
+      - shot
+      - first_frame
+      - catalog
+      additionalProperties: false
+    output_schema: *id003
+    side_effect: write
+    idempotent: true
+  media.compose:
+    kind: external_http
+    name: media.compose
+    description: Video production compose service
+    endpoint: http://127.0.0.1:18880/compose
+    auth_env: EVOSPRIG_MEDIA_TOKEN
+    input_schema:
+      type: object
+      properties:
+        clips:
+          type: array
+          items: *id003
+          minItems: 1
+          maxItems: 20
+        audio:
+          type: array
+          items: *id003
+        subtitles:
+          type: string
+      required:
+      - clips
+      - audio
+      - subtitles
+      additionalProperties: false
+    output_schema: *id003
+    side_effect: write
+    idempotent: true

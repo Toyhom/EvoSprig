@@ -38,10 +38,11 @@ def add_commands(commands):
                 "--split", choices=["search", "selection", "release", "test"], default="release"
             )
         else:
-            parser.add_argument("--method", choices=["opro", "gepa"], required=True)
+            parser.add_argument("--method", choices=["opro", "gepa", "evoprompt_ga", "evoprompt_de", "self_refine", "ace"], required=True)
             parser.add_argument("--resource", action="append", required=True)
             parser.add_argument("--rounds", type=int, default=3)
-            parser.add_argument("--max-candidates", type=int, default=5)
+            parser.add_argument("--population-size", type=int, default=4)
+            parser.add_argument("--max-candidates", type=int, default=24)
             parser.add_argument("--max-metric-calls", type=int, default=30)
             parser.add_argument("--proposal-output-tokens", type=int, default=1024)
             parser.add_argument("--min-gain", type=float, default=0)
@@ -147,6 +148,7 @@ def run_command(args):
             allowed_resources=args.resource,
             budget=budget,
             rounds=args.rounds,
+            population_size=args.population_size,
             max_metric_calls=args.max_metric_calls,
             seed=args.seed,
             gate=ReleaseGate(min_gain=args.min_gain, min_samples=args.min_samples),

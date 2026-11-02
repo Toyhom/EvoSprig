@@ -33,7 +33,7 @@ structured feedback to the library's reflection mechanism. The official driver
 handles Pareto candidate selection, minibatch acceptance and validation. Alpha uses
 round-robin component selection, seeded sampling, no merge, and reflection even for
 perfect samples so a bounded integration run can exercise the mechanism. The driver
-archive retains candidate lineage and per-example fronts. No FlashRSI code is used.
+archive retains candidate lineage and per-example fronts.
 
 Install optional GEPA with `pip install 'evosprig[evolution]'`. Base execution and
 exported applications do not need an optimization library.
@@ -64,6 +64,29 @@ cannot overwrite each other. Existing runs retain their original frozen versions
 Rollback only targets a compatible previously released version; current user memory
 is preserved. Application export can select any archived compatible version.
 
-The [research assistant](../examples/research-assistant/README.md) includes reproducible
-CLI commands, two real method runs and a manual baseline, including its no-gain test
-result. Studio's Improve and Versions pages expose the same service operations.
+The [research assistant](../examples/research-assistant/README.md) includes a task suite,
+CLI commands and editable instruction resources. Studio's Improve and Versions pages expose the same service operations.
+
+## Native search methods
+
+| CLI method | Search state and update | Selection |
+| --- | --- | --- |
+| `evoprompt_ga` | Seeded population; tournament parents; crossover and mutation; elitist survival | Search scores guide the population; held-out selection chooses the final snapshot |
+| `evoprompt_de` | Distinct donor triples; textual difference mutation and crossover; target replacement | Replace a target only on search improvement |
+| `self_refine` | Separate critic and revision calls grounded in execution feedback | Retain improvements and archive rejected candidates |
+| `ace` | Generator feedback, reflector, curator; stable playbook IDs and atomic add/update/remove deltas | Validate the full rendered resource; reject regressing playbook updates |
+
+EvoPrompt follows [Guo et al.](https://arxiv.org/abs/2309.08532); Self-Refine follows [Madaan et al.](https://arxiv.org/abs/2303.17651); ACE follows [Zhang et al.](https://arxiv.org/abs/2510.04618). These native integrations use EvoSprig's resource snapshots and evaluation contract. They do not reproduce the papers' benchmark harnesses.
+
+Use `--rounds` for the number of search updates and `--population-size` for EvoPrompt (4–32, default 4). Set `--max-candidates` and the evaluation budget to cover initialization and offspring as well as validation. Duplicate proposals are cached; an unfilled population terminates as `insufficient_diversity` after bounded initialization attempts. Method state includes population/lineage, critiques or accepted curator deltas.
+
+```bash
+evosprig improve examples/research-assistant/agent.yaml \
+  --suite examples/research-assistant/suite.yaml \
+  --method evoprompt_ga --resource instructions \
+  --population-size 4 --rounds 2 --max-candidates 24 \
+  --max-evaluations 150 --max-model-calls 300 \
+  --profile examples/deployment.example.yaml
+```
+
+All six methods are selectable in Studio. ACE appends a structured experience playbook to the base resource and evolves entries without rewriting the base instruction. Candidate archives preserve unsuccessful edits as well as the selected version.

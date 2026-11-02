@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="270" viewBox="0 0 960 270" role="img" aria-label="EvoSprig: build agents that grow">
+<rect width="960" height="270" rx="18" fill="#fafafa"/>
+<rect x="1" y="1" width="958" height="268" rx="17" fill="none" stroke="#e4e4e7"/>
+<g transform="translate(60 54)" fill="none" stroke="#292b30" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 66V27M22 48C3 48 1 32 4 20c18 1 23 12 18 28M22 34C44 33 48 16 44 4 27 8 20 20 22 34"/></g>
+<g font-family="Inter,Segoe UI,Arial,sans-serif" fill="#202126"><text x="126" y="108" font-size="48" font-weight="700" letter-spacing="-2">EvoSprig</text><text x="62" y="155" font-size="22" fill="#62646c">A shared foundation for agents that learn from experience.</text></g>
+<path d="M136 214H824" stroke="#d4d4d8" stroke-width="1.5"/>
+<g font-family="Inter,Segoe UI,Arial,sans-serif" text-anchor="middle" font-size="14" font-weight="600">
+<rect x="62" y="194" width="142" height="40" rx="8" fill="white" stroke="#d4d4d8"/><text x="133" y="219" fill="#3f3f46">Build</text>
+<rect x="280" y="194" width="142" height="40" rx="8" fill="white" stroke="#d4d4d8"/><text x="351" y="219" fill="#3f3f46">Evaluate</text>
+<rect x="498" y="194" width="142" height="40" rx="8" fill="#edf5f2" stroke="#c2d8cf"/><text x="569" y="219" fill="#245744">Evolve</text>
+<rect x="716" y="194" width="182" height="40" rx="8" fill="white" stroke="#d4d4d8"/><text x="807" y="219" fill="#3f3f46">Ship independently</text></g>
+<g transform="translate(792 42)"><rect width="106" height="27" rx="13" fill="#f0f0f2"/><text x="53" y="18" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#62646c">OPEN SOURCE</text></g></svg>

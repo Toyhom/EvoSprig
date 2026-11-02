@@ -1,24 +1,19 @@
-# Unreleased · Public Alpha preparation
+# Changelog
 
-- Move the local control plane to port 18766 and support a configurable Vite API target.
-- Protect unsaved project and node JSON drafts across project changes and page navigation.
-- Add publication-scope documentation, private security reporting and Git-history audit checks.
+## Unreleased
 
-# Unreleased · Studio redesign
+- Add VideoClaw-style production workflows with character assets, parallel shots, human reviews, asynchronous tools, take history and single-shot retakes.
+- Add research-team, customer-support and personal-memory applications.
+- Add native EvoPrompt GA/DE, Self-Refine and ACE search methods to SDK, CLI and Studio.
+- Add BM25 retrieval, semantic rank fusion, revisioned context blocks and temporal relationships.
+- Support consecutive responses to distinct parallel human checkpoints before resuming a run.
+- Make English the default language, add a Chinese README and persist Studio language preferences.
+- Organize the documentation around quickstart, capabilities and the example gallery.
 
-- Neutral white/gray surfaces, compact project navigation, consistent controls and data pages.
-- Workflow cards show node type, instruction summary and model/tool binding.
-- Project search, long-name handling and a keyboard-accessible mobile drawer.
-- Browser regression coverage for responsive navigation and existing workflows.
+## 0.1.0a1
 
-# 0.1.0a1 · Alpha
-
-Build, run, improve, release and export a fixed agent version from Python or Studio.
-
-- AgentSpec 0.1 compatibility and 0.2 control nodes, durable checkpoints, human input, leases and external-job recovery.
-- Compatible chat APIs, HTTP/OpenAPI subset, MCP SDK 1.30.0, scoped SQLite memory and cited document retrieval.
-- Fixed evaluation splits, shared budgets, OPRO baseline and official GEPA 0.1.4 adapter, immutable candidates and explicit release/rollback.
-- Studio resource, history, memory, improvement and version pages; Python/HTTP/container export and inspected ZIP import.
-- Real DeepSeek research-assistant comparisons and a reproducible three-shot motion-graphics workflow.
-
-Alpha targets single-machine deployments. Platform throughput, worker/database scaling and multi-node operation follow the performance roadmap. No automatic public publishing or autonomous release of evolved candidates is enabled.
+- AgentSpec 0.1/0.2, Python Builder and Studio canvas.
+- Durable graph execution, tool calls, human checkpoints and external jobs.
+- Compatible model APIs, HTTP/MCP tools and scoped SQLite storage.
+- Evaluation suites, OPRO/GEPA, candidate snapshots, release and rollback.
+- Python, HTTP and container project exports.

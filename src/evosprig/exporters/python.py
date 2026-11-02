@@ -35,6 +35,9 @@ MODULES = (
     "plugins/openai_compatible.py",
     "plugins/sqlite_journal.py",
     "plugins/sqlite_memory.py",
+    "plugins/structured_memory.py",
+    "plugins/semantic_memory.py",
+    "plugins/embeddings.py",
     "plugins/memory_tools.py",
     "plugins/documents.py",
     "plugins/http_tools.py",
@@ -221,7 +224,7 @@ def export_python(
             ),
             "pyproject.toml": '[build-system]\nrequires = ["hatchling==1.27.0"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "evosprig-export-runtime"\nversion = "0.1.0a1"\nrequires-python = ">=3.12"\nlicense = "Apache-2.0"\nlicense-files = ["LICENSE", "NOTICE"]\ndependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3", "httpx==0.28.1"]\n\n[tool.hatch.build.targets.wheel]\npackages = ["src/evosprig"]\n',
             "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, set DEEPSEEK_API_KEY and omit --mock. Use --profile deployment.example.yaml for explicit bindings. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n",
-            "THIRD_PARTY_NOTICES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
+            "DEPENDENCIES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
         if any(binding["kind"] == "mcp" for binding in bindings.values()):
             files["requirements.lock"] += (Path(__file__).parent / "mcp.lock").read_text()

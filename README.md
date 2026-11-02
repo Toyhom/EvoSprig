@@ -1,36 +1,88 @@
-# EvoSprig · 衍芽
+<div align="center">
 
-Build agents that grow.
+<img src="docs/assets/hero.svg" alt="EvoSprig — Build agents that grow" width="880" />
 
-EvoSprig is an Apache-2.0 agent platform for building, running, evaluating and improving workflows, then exporting a selected version as a standalone application.
+**Build agents. Improve them with evidence. Ship them anywhere.**
 
-![EvoSprig Studio](docs/assets/studio.png)
+[![CI](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml/badge.svg)](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.12%2B-3776AB)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-用 Python 或画布构建智能体，在固定数据与预算下比较改进，再将选定版本导出为独立应用。
+**English** · [简体中文](README.zh-CN.md)
 
-开源 Alpha 提供构建、持久运行、记忆检索、OPRO/GEPA、候选对比、版本启用与回滚，以及 Python / HTTP / 容器工程导出。Python 3.12+；Studio 源码构建需要 Node.js 20+。
+[Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md)
+
+</div>
+
+EvoSprig brings visual workflows, persistent memory and evaluation-driven improvement into one agent development platform. Build with Python or Studio, compare candidate versions on your tasks, and export a standalone application.
+
+<img src="docs/assets/studio.png" alt="EvoSprig Studio: workflow canvas, node settings and execution history" width="100%" />
+
+## What you can build
+
+| Application | Explore the workflow |
+| --- | --- |
+| **[Video production studio](examples/video-studio/)** | A VideoClaw-style pipeline: script → character assets → parallel shots → frame approval → video jobs → editing → composition. Retake one shot and keep the rest. |
+| **[Research team](examples/research-team/)** | Retrieve evidence, run analyst and critic roles in parallel, then write and review a cited brief. |
+| **[Customer support](examples/customer-support/)** | Look up an order, propose an action, require human approval and execute an idempotent refund. |
+| **[Personal assistant](examples/personal-memory/)** | Remember preferences across sessions and answer with current facts, named context blocks and relationship history. |
+| **[Evolving research assistant](examples/research-assistant/)** | Run tool-backed tasks, optimize instructions and compare candidates before enabling a new version. |
+
+See the **[example gallery](examples/README.md)** for setup, runnable demos and integration guides. Video tools use a provider-neutral job contract; the included simulator exercises orchestration without generating media.
+
+## Why EvoSprig?
+
+- **Build in code or on a canvas.** Python Builder and Studio share one typed AgentSpec. Branch, loop, run parallel agents and pause for human input.
+- **Make improvement measurable.** OPRO, GEPA, EvoPrompt GA/DE, Self-Refine and ACE produce versioned resource changes with evaluation reports, lineage and budgets.
+- **Give agents useful memory.** BM25 retrieval, pluggable semantic search, named context blocks and temporal relationships preserve sources and user scope.
+- **Resume real work.** Checkpoints, external job IDs and idempotency keys preserve progress across restarts and approvals.
+- **Own the result.** Export Python source, an HTTP application or a container build project. The exported application runs independently of Studio.
+- **Bring your tools and models.** Connect compatible model APIs, Python tools, HTTP services and MCP servers.
+
+## Get started
+
+Requires **Python 3.12+**. Studio also requires **Node.js 20+**.
 
 ```bash
 git clone https://github.com/Toyhom/EvoSprig.git
 cd EvoSprig
 python -m pip install -e '.[server,evolution,mcp]'
+
+# Run your first workflow without an API key.
 evosprig run examples/hello/agent.yaml --input '{"question":"Hello"}' --mock
+
+# Open Studio.
 npm --prefix apps/studio ci
 npm --prefix apps/studio run build
-evosprig serve --project examples/hello/agent.yaml --studio-dir apps/studio/dist --workspace .evosprig
+evosprig serve --project examples/hello/agent.yaml \
+  --studio-dir apps/studio/dist --workspace .evosprig
 ```
 
-打开 `http://127.0.0.1:18766`。真实模型凭据通过环境变量绑定，默认兼容接口使用 `deepseek-flash`。服务与运行状态保存在你指定的工作目录中。
+Open **http://127.0.0.1:18766**. Studio starts in English; switch to **中文** in the sidebar. Your language preference is saved in the browser.
 
-- [快速开始 / Quickstart](docs/quickstart.md)：安装、画布、真实模型和独立导出。
-- [研究助手](examples/research-assistant/README.md)：证据问答与工具调用，真实 OPRO / GEPA 对比。
-- [18 秒短片](examples/short-film/README.md)：模型分镜、人工审核、异步渲染与进程重启恢复。
-- [评测与进化](docs/evolution.md)：数据划分、共享预算、发布门槛和候选快照。
-- [Studio 界面设计](docs/studio-design.md)：中性色布局、项目搜索、节点信息与移动导航。
-- [自托管与导出](docs/deployment.md)、[支持矩阵](docs/support-matrix.md)、[架构](docs/architecture.md)、[验收记录](docs/validation.md)。
+For live models, configure environment-based credentials in a [deployment profile](examples/deployment.example.yaml). Follow the [quickstart](docs/quickstart.md) for model connections and export.
 
-真实进化 smoke 中，两种方法均通过发布验证；保留测试集与人工基线没有分数提升。样本规模较小，结果用于验证工程闭环。短片为程序绘制的原创动态图形，分镜由真实模型生成。
+## Improve an agent
 
-采用 Apache-2.0；依赖和示例来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。开发维护入口为本仓库的测试、CI 与 [贡献指南](CONTRIBUTING.md)。
+Choose a task suite and the resources the optimizer may edit:
 
-[开源范围](docs/open-source-scope.md) · [安全问题](SECURITY.md) · [后续路线](docs/roadmap.md)
+```bash
+evosprig improve examples/research-assistant/agent.yaml \
+  --suite examples/research-assistant/suite.yaml \
+  --method self_refine --resource instructions --rounds 3 \
+  --profile examples/deployment.example.yaml --workspace .evosprig
+```
+
+Each study separates search, selection, release validation and test reporting. Inspect the diff and scores in Studio, then enable or roll back a version. See [method details and configuration](docs/evolution.md).
+
+## Documentation
+
+[Workflows and architecture](docs/architecture.md) · [Memory](docs/memory.md) · [Tools and MCP](docs/tools.md) · [Durable execution](docs/durable-runtime.md) · [Deployment](docs/deployment.md) · [Roadmap](docs/roadmap.md)
+
+## Contributing
+
+Bug reports, example applications and integrations are welcome. Read the [contributing guide](CONTRIBUTING.md) to run checks and submit a change.
+
+## License
+
+[Apache-2.0](LICENSE).

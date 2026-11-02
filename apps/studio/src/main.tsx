@@ -37,7 +37,8 @@ const words = {
 };
 
 function App() {
-  const [lang, setLang] = useState<'zh' | 'en'>('zh'); const t = words[lang];
+  const [lang, setLang] = useState<'zh' | 'en'>(() => { try { return localStorage.getItem('evosprig.language') === 'zh' ? 'zh' : 'en'; } catch { return 'en'; } }); const t = words[lang];
+  useEffect(() => { document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'; try { localStorage.setItem('evosprig.language', lang); } catch { /* Storage can be disabled by the browser. */ } }, [lang]);
   const [token, setToken] = useState('');
   const [projectQuery,setProjectQuery]=useState('');
   const [sidebarOpen,setSidebarOpen]=useState(false);

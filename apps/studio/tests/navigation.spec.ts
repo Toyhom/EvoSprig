@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('evosprig.language', 'zh')); });
 const noOverflow = async (page: import('@playwright/test').Page) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 };

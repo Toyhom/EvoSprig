@@ -1,9 +1,27 @@
 # Contributing
 
-维护范围：EvoSprig contributors。Alpha 当前由项目维护者管理运行协议、导出边界、回归测试和发行候选。
+Welcome! Useful contributions include bug fixes, application examples, model/tool integrations, memory backends and evaluation suites.
 
-使用 Python 3.12+、Node.js 20+；在隔离环境安装 `requirements-dev.lock` 与本包。运行 `ruff check src tests examples scripts`、`pytest -q`，修改 Studio 时增加 `npm --prefix apps/studio run build` 和浏览器测试。
+## Development setup
 
-修改公共行为时同步规格、支持矩阵和相关契约测试。运行器需要保留预算、作用域、操作幂等性、租约与恢复语义。不要把凭据、私人对话、业务数据库、模型权重或未授权素材提交到产品树。真实模型测试需要显式配置自己的凭据，离线 CI 使用 mock。
+Use Python 3.12+ and Node.js 20+:
 
-问题报告应附最小规格、期望行为、版本和脱敏错误；安全问题避免在公开记录中附凭据或私人运行数据。依赖升级记录固定版本、许可证和验证范围。贡献按 Apache-2.0 提供。
+```bash
+python -m pip install -r requirements-dev.lock
+python -m pip install --no-deps -e .
+npm --prefix apps/studio ci
+ruff check src tests examples scripts
+pytest -q
+npm --prefix apps/studio run build
+npm --prefix apps/studio test
+```
+
+The test suite uses deterministic fixtures and does not require paid model APIs. Install Playwright Chromium with `npx playwright install chromium --only-shell` from `apps/studio` before browser testing.
+
+## Changes
+
+Describe the problem, resulting behavior and validation in your pull request. For public API changes, update the relevant schema, guide and contract tests. Runtime changes should preserve scope, budgets, idempotency and checkpoint recovery. Examples should include a runnable command, service dependencies and expected outputs.
+
+English is the primary language for code and documentation. Keep `README.zh-CN.md` and Studio's Chinese interface aligned with user-facing changes.
+
+For bug reports, include a minimal specification, expected behavior, version and sanitized error. Report security issues through the channel described in [SECURITY.md](SECURITY.md). Contributions are provided under Apache-2.0.

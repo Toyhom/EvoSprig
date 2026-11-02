@@ -13,12 +13,17 @@ import re
 import sqlite3
 import time
 import uuid
+from collections import Counter
 from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
 
 from evosprig.core.memory import MemoryConflict, MemoryRecord, MemoryScope
 from evosprig.core.spec import canonical_json, digest
+
+
+def tokens(text):
+    return re.findall(r"[a-z0-9_]+|[\u3400-\u9fff]", text.casefold())
 
 
 def terms(text):
@@ -82,8 +87,8 @@ class SQLiteMemory:
         return row is None or record["created_at"] > row[0]
 
     @staticmethod
-    def _active(record):
-        now = time.time()
+    def _active(record, at=None):
+        now = time.time() if at is None else at
         return (record["valid_from"] is None or record["valid_from"] <= now) and (
             record["valid_until"] is None or record["valid_until"] > now
         )
@@ -182,19 +187,34 @@ class SQLiteMemory:
             ]
             return [record for record in records if self._visible(db, scope, record)]
 
-    def search(self, scope, query, *, limit=5):
+    def search(self, scope, query, *, limit=5, at=None, content_type=None):
         if not isinstance(query, str) or len(query) > 4096 or not 1 <= limit <= 100:
             raise ValueError("invalid search bounds")
         query_terms = terms(query)
+        records = [
+            r
+            for r in self.export(scope)
+            if self._active(r, at) and (content_type is None or r["content_type"] == content_type)
+        ]
+        frequencies = [Counter(tokens(r["content"])) for r in records]
+        average = sum(sum(f.values()) for f in frequencies) / max(1, len(records))
+        document_counts = Counter(term for f in frequencies for term in f)
         hits = []
-        for record in self.export(scope):
-            if not self._active(record):
-                continue
-            document_terms = terms(record["content"])
-            overlap = len(query_terms & document_terms)
+        for record, frequency in zip(records, frequencies, strict=True):
+            overlap = len(query_terms & frequency.keys())
             if query_terms and not overlap:
                 continue
-            score = overlap / math.sqrt(max(1, len(document_terms)))
+            length = sum(frequency.values())
+            score = sum(
+                math.log(
+                    1 + (len(records) - document_counts[term] + 0.5) / (document_counts[term] + 0.5)
+                )
+                * frequency[term]
+                * 2.2
+                / (frequency[term] + 1.2 * (0.25 + 0.75 * length / max(average, 1)))
+                for term in query_terms
+                if frequency[term]
+            )
             hits.append({**record, "score": score})
         return sorted(hits, key=lambda item: (-item["score"], item["id"]))[:limit]
 

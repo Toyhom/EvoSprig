@@ -1,0 +1,1454 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 1
+  max_output_tokens: 2048
+  max_parallel_nodes: 3
+  max_parallel_tools: 1
+  max_steps: 80
+  max_total_tokens: 8192
+  timeout_seconds: 3600.0
+graph:
+  edges:
+  - source: characters
+    target: shots
+    when: null
+  - source: edit_review
+    target: assemble
+    when: null
+  - source: script
+    target: script_review
+    when: null
+  - source: script_review
+    target: characters
+    when: null
+  - source: shots
+    target: edit_review
+    when: null
+  entry: script
+  nodes:
+    assemble:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        audio:
+          default: null
+          optional: false
+          ref: nodes.edit_review.output.audio
+        clips:
+          default: null
+          optional: false
+          ref: nodes.edit_review.output.clips
+        subtitles:
+          default: null
+          optional: false
+          ref: nodes.edit_review.output.subtitles
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: compose
+      tools: []
+      type: tool
+      until: null
+    characters:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        characters:
+          default: null
+          optional: false
+          ref: nodes.script_review.output.characters
+        style:
+          default: null
+          optional: false
+          ref: nodes.script_review.output.style
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          assets:
+            items:
+              additionalProperties: false
+              properties:
+                asset:
+                  additionalProperties: false
+                  properties:
+                    id:
+                      minLength: 1
+                      type: string
+                    media_type:
+                      minLength: 1
+                      type: string
+                    uri:
+                      minLength: 1
+                      type: string
+                  required:
+                  - id
+                  - uri
+                  - media_type
+                  type: object
+                character_id:
+                  minLength: 1
+                  type: string
+              required:
+              - character_id
+              - asset
+              type: object
+            minItems: 1
+            type: array
+        required:
+        - assets
+        type: object
+      response_format: text
+      tool: assets
+      tools: []
+      type: tool
+      until: null
+    edit_review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        plan:
+          default: null
+          optional: false
+          ref: nodes.script_review.output
+        takes:
+          default: null
+          optional: false
+          ref: nodes.shots.output
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          audio:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                media_type:
+                  minLength: 1
+                  type: string
+                uri:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - uri
+              - media_type
+              type: object
+            type: array
+          clips:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                media_type:
+                  minLength: 1
+                  type: string
+                uri:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - uri
+              - media_type
+              type: object
+            maxItems: 20
+            minItems: 1
+            type: array
+          subtitles:
+            type: string
+        required:
+        - clips
+        - audio
+        - subtitles
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: human
+      until: null
+    script:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+      instructions:
+        resource: director
+      join: all
+      max_iterations: 1
+      model: director
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            type: array
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  type: array
+                description:
+                  minLength: 1
+                  type: string
+                dialogue:
+                  type: string
+                duration_seconds:
+                  maximum: 20
+                  minimum: 1
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              - camera
+              - dialogue
+              - characters
+              - duration_seconds
+              type: object
+            maxItems: 3
+            minItems: 3
+            type: array
+          style:
+            minLength: 1
+            type: string
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - style
+        - characters
+        - shots
+        type: object
+      response_format: json
+      tool: null
+      tools: []
+      type: model
+      until: null
+    script_review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        plan:
+          default: null
+          optional: false
+          ref: nodes.script.output
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            type: array
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  type: array
+                description:
+                  minLength: 1
+                  type: string
+                dialogue:
+                  type: string
+                duration_seconds:
+                  maximum: 20
+                  minimum: 1
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              - camera
+              - dialogue
+              - characters
+              - duration_seconds
+              type: object
+            maxItems: 3
+            minItems: 3
+            type: array
+          style:
+            minLength: 1
+            type: string
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - style
+        - characters
+        - shots
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: human
+      until: null
+    shots:
+      body: null
+      branches:
+        shot_1:
+          edges:
+          - source: frame
+            target: frame_review
+            when: null
+          - source: frame_review
+            target: clip
+            when: null
+          - source: input
+            target: frame
+            when: null
+          entry: input
+          nodes:
+            clip:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.catalog
+                first_frame:
+                  default: null
+                  optional: false
+                  ref: nodes.frame_review.output
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: video
+              tools: []
+              type: tool
+              until: null
+            frame:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.catalog
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+                style:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.style
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: image
+              tools: []
+              type: tool
+              until: null
+            frame_review:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                frame:
+                  default: null
+                  optional: false
+                  ref: nodes.frame.output
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: human
+              until: null
+            input:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: input.catalog
+                shot:
+                  default: null
+                  optional: false
+                  ref: input.plan.shots.0
+                style:
+                  default: null
+                  optional: false
+                  ref: input.plan.style
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  catalog:
+                    additionalProperties: false
+                    properties:
+                      assets:
+                        items:
+                          additionalProperties: false
+                          properties:
+                            asset:
+                              additionalProperties: false
+                              properties:
+                                id:
+                                  minLength: 1
+                                  type: string
+                                media_type:
+                                  minLength: 1
+                                  type: string
+                                uri:
+                                  minLength: 1
+                                  type: string
+                              required:
+                              - id
+                              - uri
+                              - media_type
+                              type: object
+                            character_id:
+                              minLength: 1
+                              type: string
+                          required:
+                          - character_id
+                          - asset
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - assets
+                    type: object
+                  shot:
+                    additionalProperties: false
+                    properties:
+                      camera:
+                        minLength: 1
+                        type: string
+                      characters:
+                        items:
+                          minLength: 1
+                          type: string
+                        type: array
+                      description:
+                        minLength: 1
+                        type: string
+                      dialogue:
+                        type: string
+                      duration_seconds:
+                        maximum: 20
+                        minimum: 1
+                        type: integer
+                      id:
+                        minLength: 1
+                        type: string
+                    required:
+                    - id
+                    - description
+                    - camera
+                    - dialogue
+                    - characters
+                    - duration_seconds
+                    type: object
+                  style:
+                    minLength: 1
+                    type: string
+                required:
+                - shot
+                - catalog
+                - style
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: transform
+              until: null
+          output:
+            clip:
+              default: null
+              optional: false
+              ref: nodes.clip.output
+            first_frame:
+              default: null
+              optional: false
+              ref: nodes.frame_review.output
+        shot_2:
+          edges:
+          - source: frame
+            target: frame_review
+            when: null
+          - source: frame_review
+            target: clip
+            when: null
+          - source: input
+            target: frame
+            when: null
+          entry: input
+          nodes:
+            clip:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.catalog
+                first_frame:
+                  default: null
+                  optional: false
+                  ref: nodes.frame_review.output
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: video
+              tools: []
+              type: tool
+              until: null
+            frame:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.catalog
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+                style:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.style
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: image
+              tools: []
+              type: tool
+              until: null
+            frame_review:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                frame:
+                  default: null
+                  optional: false
+                  ref: nodes.frame.output
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: human
+              until: null
+            input:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: input.catalog
+                shot:
+                  default: null
+                  optional: false
+                  ref: input.plan.shots.1
+                style:
+                  default: null
+                  optional: false
+                  ref: input.plan.style
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  catalog:
+                    additionalProperties: false
+                    properties:
+                      assets:
+                        items:
+                          additionalProperties: false
+                          properties:
+                            asset:
+                              additionalProperties: false
+                              properties:
+                                id:
+                                  minLength: 1
+                                  type: string
+                                media_type:
+                                  minLength: 1
+                                  type: string
+                                uri:
+                                  minLength: 1
+                                  type: string
+                              required:
+                              - id
+                              - uri
+                              - media_type
+                              type: object
+                            character_id:
+                              minLength: 1
+                              type: string
+                          required:
+                          - character_id
+                          - asset
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - assets
+                    type: object
+                  shot:
+                    additionalProperties: false
+                    properties:
+                      camera:
+                        minLength: 1
+                        type: string
+                      characters:
+                        items:
+                          minLength: 1
+                          type: string
+                        type: array
+                      description:
+                        minLength: 1
+                        type: string
+                      dialogue:
+                        type: string
+                      duration_seconds:
+                        maximum: 20
+                        minimum: 1
+                        type: integer
+                      id:
+                        minLength: 1
+                        type: string
+                    required:
+                    - id
+                    - description
+                    - camera
+                    - dialogue
+                    - characters
+                    - duration_seconds
+                    type: object
+                  style:
+                    minLength: 1
+                    type: string
+                required:
+                - shot
+                - catalog
+                - style
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: transform
+              until: null
+          output:
+            clip:
+              default: null
+              optional: false
+              ref: nodes.clip.output
+            first_frame:
+              default: null
+              optional: false
+              ref: nodes.frame_review.output
+        shot_3:
+          edges:
+          - source: frame
+            target: frame_review
+            when: null
+          - source: frame_review
+            target: clip
+            when: null
+          - source: input
+            target: frame
+            when: null
+          entry: input
+          nodes:
+            clip:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.catalog
+                first_frame:
+                  default: null
+                  optional: false
+                  ref: nodes.frame_review.output
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: video
+              tools: []
+              type: tool
+              until: null
+            frame:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.catalog
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+                style:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.style
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: image
+              tools: []
+              type: tool
+              until: null
+            frame_review:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                frame:
+                  default: null
+                  optional: false
+                  ref: nodes.frame.output
+                shot:
+                  default: null
+                  optional: false
+                  ref: nodes.input.output.shot
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: human
+              until: null
+            input:
+              body: null
+              branches: {}
+              condition: null
+              inputs:
+                catalog:
+                  default: null
+                  optional: false
+                  ref: input.catalog
+                shot:
+                  default: null
+                  optional: false
+                  ref: input.plan.shots.2
+                style:
+                  default: null
+                  optional: false
+                  ref: input.plan.style
+              instructions: ''
+              join: all
+              max_iterations: 1
+              model: null
+              output_schema:
+                additionalProperties: false
+                properties:
+                  catalog:
+                    additionalProperties: false
+                    properties:
+                      assets:
+                        items:
+                          additionalProperties: false
+                          properties:
+                            asset:
+                              additionalProperties: false
+                              properties:
+                                id:
+                                  minLength: 1
+                                  type: string
+                                media_type:
+                                  minLength: 1
+                                  type: string
+                                uri:
+                                  minLength: 1
+                                  type: string
+                              required:
+                              - id
+                              - uri
+                              - media_type
+                              type: object
+                            character_id:
+                              minLength: 1
+                              type: string
+                          required:
+                          - character_id
+                          - asset
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - assets
+                    type: object
+                  shot:
+                    additionalProperties: false
+                    properties:
+                      camera:
+                        minLength: 1
+                        type: string
+                      characters:
+                        items:
+                          minLength: 1
+                          type: string
+                        type: array
+                      description:
+                        minLength: 1
+                        type: string
+                      dialogue:
+                        type: string
+                      duration_seconds:
+                        maximum: 20
+                        minimum: 1
+                        type: integer
+                      id:
+                        minLength: 1
+                        type: string
+                    required:
+                    - id
+                    - description
+                    - camera
+                    - dialogue
+                    - characters
+                    - duration_seconds
+                    type: object
+                  style:
+                    minLength: 1
+                    type: string
+                required:
+                - shot
+                - catalog
+                - style
+                type: object
+              response_format: text
+              tool: null
+              tools: []
+              type: transform
+              until: null
+          output:
+            clip:
+              default: null
+              optional: false
+              ref: nodes.clip.output
+            first_frame:
+              default: null
+              optional: false
+              ref: nodes.frame_review.output
+      condition: null
+      inputs:
+        catalog:
+          default: null
+          optional: false
+          ref: nodes.characters.output
+        plan:
+          default: null
+          optional: false
+          ref: nodes.script_review.output
+      instructions: ''
+      join: all
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          shot_1:
+            additionalProperties: false
+            properties:
+              clip:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              first_frame:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+            required:
+            - clip
+            - first_frame
+            type: object
+          shot_2:
+            additionalProperties: false
+            properties:
+              clip:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              first_frame:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+            required:
+            - clip
+            - first_frame
+            type: object
+          shot_3:
+            additionalProperties: false
+            properties:
+              clip:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              first_frame:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+            required:
+            - clip
+            - first_frame
+            type: object
+        required:
+        - shot_1
+        - shot_2
+        - shot_3
+        type: object
+      response_format: text
+      tool: null
+      tools: []
+      type: parallel
+      until: null
+  output:
+    catalog:
+      default: null
+      optional: false
+      ref: nodes.characters.output
+    film:
+      default: null
+      optional: false
+      ref: nodes.assemble.output
+    plan:
+      default: null
+      optional: false
+      ref: nodes.script_review.output
+    takes:
+      default: null
+      optional: false
+      ref: nodes.shots.output
+id: video-studio
+input_schema:
+  additionalProperties: false
+  properties:
+    brief:
+      minLength: 1
+      type: string
+  required:
+  - brief
+  type: object
+models:
+  director:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    catalog:
+      additionalProperties: false
+      properties:
+        assets:
+          items:
+            additionalProperties: false
+            properties:
+              asset:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              character_id:
+                minLength: 1
+                type: string
+            required:
+            - character_id
+            - asset
+            type: object
+          minItems: 1
+          type: array
+      required:
+      - assets
+      type: object
+    film:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+    plan:
+      additionalProperties: false
+      properties:
+        characters:
+          items:
+            additionalProperties: false
+            properties:
+              description:
+                minLength: 1
+                type: string
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - description
+            type: object
+          type: array
+        shots:
+          items:
+            additionalProperties: false
+            properties:
+              camera:
+                minLength: 1
+                type: string
+              characters:
+                items:
+                  minLength: 1
+                  type: string
+                type: array
+              description:
+                minLength: 1
+                type: string
+              dialogue:
+                type: string
+              duration_seconds:
+                maximum: 20
+                minimum: 1
+                type: integer
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - description
+            - camera
+            - dialogue
+            - characters
+            - duration_seconds
+            type: object
+          maxItems: 3
+          minItems: 3
+          type: array
+        style:
+          minLength: 1
+          type: string
+        title:
+          minLength: 1
+          type: string
+      required:
+      - title
+      - style
+      - characters
+      - shots
+      type: object
+    takes:
+      type: object
+  required:
+  - film
+  - plan
+  - catalog
+  - takes
+  type: object
+resources:
+  director:
+    path: prompts/director.md
+    role: prompt
+spec_version: '0.2'
+tools:
+  assets:
+    plugin: media.assets
+    version: '1'
+  compose:
+    plugin: media.compose
+    version: '1'
+  image:
+    plugin: media.image
+    version: '1'
+  video:
+    plugin: media.video
+    version: '1'
