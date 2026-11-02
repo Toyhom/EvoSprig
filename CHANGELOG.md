@@ -1,3 +1,10 @@
+# Unreleased · Studio redesign
+
+- Neutral white/gray surfaces, compact project navigation, consistent controls and data pages.
+- Workflow cards show node type, instruction summary and model/tool binding.
+- Project search, long-name handling and a keyboard-accessible mobile drawer.
+- Browser regression coverage for responsive navigation and existing workflows.
+
 # 0.1.0a1 · Alpha
 
 Build, run, improve, release and export a fixed agent version from Python or Studio.

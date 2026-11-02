@@ -37,7 +37,7 @@ test('edit, save, run, export and preserve edits on conflicts', async ({ page, c
 
 test('spec draft survives tab switching, graph roundtrip preserves hash and screenshot', async ({ page, request }) => {
   await page.goto('/');
-  await page.getByRole('button').filter({ hasText: /^◇hello/ }).click();
+  await page.locator('.project[title="hello"]').click();
   const before = await (await request.get('/api/projects/hello')).json();
   await page.getByRole('button', { name: '自动排列' }).click();
   await page.getByRole('button', { name: '保存', exact: true }).click();
@@ -64,6 +64,45 @@ test('spec draft survives tab switching, graph roundtrip preserves hash and scre
   const dir = process.env.EVOSPRIG_EVIDENCE_DIR;
   if (dir) await page.screenshot({ path: path.join(dir, 'studio-desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(async () => {
+    const canvas = await page.locator('.react-flow').boundingBox();
+    const boxes = await page.locator('.react-flow__node').evaluateAll(nodes => nodes.map(node => {
+      const box = node.getBoundingClientRect();
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+    }));
+    return !!canvas && boxes.every(box => box.left >= canvas.x && box.right <= canvas.x + canvas.width &&
+      box.top >= canvas.y + 58 && box.bottom <= canvas.y + canvas.height);
+  }).toBe(true);
   await expect(page.getByRole('button', { name: '▷ 运行', exact: true })).toBeVisible();
   if (dir) await page.screenshot({ path: path.join(dir, 'studio-mobile.png'), fullPage: true });
+});
+
+test('unsupported node kinds remain editable after validation rejects a draft', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  const creation = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/projects');
+  await page.getByRole('button', { name: '＋ 新建项目' }).click();
+  const id = (await (await creation).json()).id;
+  await expect(page.locator('h1')).toHaveText(id);
+  await page.getByRole('button', { name: '规格', exact: true }).click();
+  const editor = page.getByLabel('AgentSpec JSON');
+  const draft = JSON.parse(await editor.inputValue());
+  draft.graph.nodes.assistant.type = 'unsupported-draft-kind';
+  await editor.fill(JSON.stringify(draft, null, 2));
+  await page.getByRole('button', { name: '画布', exact: true }).click();
+  await expect(page.locator('.node-type')).toHaveText('unsupported-draft-kind');
+  const rejected = page.waitForResponse(response => response.request().method() === 'PUT' && new URL(response.url()).pathname === `/api/projects/${id}`);
+  await page.getByRole('button', { name: '保存', exact: true }).click();
+  expect((await rejected).status()).toBe(422);
+  await expect(page.getByRole('status')).toContainText('literal_error');
+  await page.getByRole('button', { name: '规格', exact: true }).click();
+  await expect(editor).toContainText('unsupported-draft-kind');
+  draft.graph.nodes.assistant.type = 'model';
+  await editor.fill(JSON.stringify(draft, null, 2));
+  await page.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  await page.getByRole('button', { name: '画布', exact: true }).click();
+  await expect(page.locator('.node-type')).toHaveText('模型');
+  expect(errors).toEqual([]);
 });

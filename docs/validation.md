@@ -21,3 +21,11 @@ vLLM 验证沿用既有安装；0.10.2 的 NVML 设备查找不支持调度器�
 视频为模型分镜与 CPU 程序渲染，无声音、外部素材或神经视频生成；自动演示审核明确标注。容器 Dockerfile 已生成并验证内容，当前服务器没有 Docker/Podman，未在此处构建或运行 OCI 镜像。外部开发者试用、公开演示上传和包注册表发布由项目负责人另行安排。
 
 复现：`pytest -q`；`npm --prefix apps/studio test`；`python scripts/release/export_examples.py --out <new-directory>`；`python scripts/release/package.py --out <artifacts-directory>`。真实 API 调用需要自己的凭据，普通测试不产生模型费用。
+
+## Studio redesign follow-up · 2026-11-02
+
+DEV-018 introduces the neutral Studio interface, project search, informative workflow cards and a keyboard-accessible mobile drawer. TypeScript/Vite build passes; JS is about 134.88 kB gzip. Existing dependencies and Python runtime are unchanged.
+
+The six-scenario browser regression passed in 121.43 seconds. Visual inspection then confirmed desktop/mobile canvas, mobile navigation and version comparison. A final node-draft fallback was checked with the two workflow regressions and an additional unsupported-kind recovery scenario. That new test initially expected the invalid value in a deliberately sanitized API error; it now checks the validation category and passed in a focused rerun. Seven distinct browser scenarios have passed across these runs. Width checks cover 1440, 1024, 390 and 320 pixels, with a node-visibility check after canvas resize. This is targeted keyboard/responsive validation, not a full accessibility audit.
+
+The earlier Alpha archives retain their original contents. Build the latest Studio from this source revision; the Python validation above remains the unchanged Alpha baseline. Design rationale and official reference links are in [Studio interface](studio-design.md).
