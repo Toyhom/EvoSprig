@@ -74,8 +74,8 @@ def save(b, prompts, skills, sample, groups=None):
 def career_coach():
     b = start("career-coach", obj(resume=TEXT, job=TEXT))
     skills = {
-        "factual_writing": "Use only supplied experience, dates, employers and measurements. Preserve the candidate's scope of responsibility. Mark missing facts as questions. Never invent qualifications, metrics or employment history.",
-        "interview_coaching": "Ask job-specific questions. In feedback, separate what the answer already demonstrates from what needs a concrete example. Suggest a STAR structure using only the candidate's facts; do not supply imaginary achievements.",
+        "factual_writing": "Use only supplied experience, dates, employers and measurements. Preserve the candidate's scope of responsibility. Never invent qualifications, metrics or employment history.\n\nPlacement of missing facts: missing facts go in a separate Questions list, never inside a resume bullet. Every bullet must be a complete, submittable sentence with no placeholders (for example, no \"metrics to be confirmed\" inside a bullet).\n\nRequirement mapping and fit verdict: open the handoff with one sentence stating overall fit. Map every job requirement to supplied resume facts and mark each must-have requirement as Met / Partially / Not shown, separating must-haves from nice-to-haves. For each unmet requirement, state whether a closest-experience reframing is possible or whether it is a hard gap.\n",
+        "interview_coaching": "Ask job-specific questions. In feedback, separate what the answer already demonstrates from what needs a concrete example, and build on facts already stated in the answer before asking for new detail. Suggest a STAR structure using only the candidate's facts; do not supply imaginary achievements. Structural prompts that introduce specifics absent from the source (for example, naming a technique, framework or endpoint the candidate never mentioned) are treated as invented detail; a recall prompt is allowed only when clearly framed as \"fill from memory\" with no invented content.",
     }
     for name in skills:
         b.skill(name, f"skills/{name}.md")
@@ -239,8 +239,8 @@ def content_studio():
 def study_coach():
     b = start("study-coach", obj(topic=TEXT, level=TEXT, material=TEXT))
     skills = {
-        "teaching": "Use the supplied material to teach the topic. Explain with a worked example, then ask questions requiring the learner to apply it. Keep the answer key out of the exercise. Match vocabulary to the learner's level.",
-        "coaching_feedback": "Assess each submitted answer against the question and source. Identify the exact misunderstanding, show one corrected example and give one follow-up practice task. Acknowledge correct reasoning. Do not infer ability from missing answers.",
+        "teaching": "Use the supplied material as the sole source for the lesson and for the exercise. Explain the topic with a worked example that faithfully reproduces the source problem's quantities, entities, and operations, then write questions that require the learner to apply the same method to the same source problem rather than to invented scenarios. Keep the answer key out of the exercise. Match vocabulary to the learner's level.",
+        "coaching_feedback": "Grade each submitted answer strictly against the corresponding question from the generated quiz and the original source problem. Identify the exact misunderstanding shown in that answer, show one corrected example drawn from the source problem, and give one follow-up practice task that uses the same quantities and entities as the source. Acknowledge correct reasoning where present. Do not infer ability from missing answers. Before emitting, verify that every quantity and entity cited in the feedback traces back to the quiz or the source problem, and that the same values are used consistently across all questions and feedback.",
     }
     for name in skills:
         b.skill(name, f"skills/{name}.md")

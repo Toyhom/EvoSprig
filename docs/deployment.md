@@ -76,3 +76,7 @@ A model node inherits `execution.max_output_tokens` (512 by default); set `max_o
 This follows the bounded validation-feedback pattern used by [LangChain structured output](https://docs.langchain.com/oss/python/langchain/structured-output). Set output length to the task and provider limits; a repeated truncation can require a larger node limit, a smaller task or a more capable model.
 
 Independent evaluation cases can run concurrently using `evaluation.environment.max_concurrent_samples` in the deployment profile (default 1, maximum 32). Each receives a fresh identity and environment. Results retain input order, all calls share the experiment budget, and assessment failures cancel remaining cases. Increase concurrency according to provider quotas and environment capacity. Ordinary serving separately exposes `--max-concurrent-runs` (default 4).
+
+## Model HTTP connections
+
+The OpenAI-compatible adapter reuses HTTP connections across nodes and concurrent runs in the same provider session. Evaluation keeps task and judge pools open for a batch; the last session closes the client, including on cancellation. Model bindings accept `max_connections` (default 32) and `max_keepalive_connections` (default 8, no larger than the total). These limit sockets, while workflow and evaluation concurrency settings control scheduled work.

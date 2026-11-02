@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
+from .model_sessions import model_sessions
 from .protocols import ToolRegistry
 
 
@@ -48,20 +49,22 @@ class Runtime:
     async def run(
         self, version, inputs, *, run_id=None, scope=None, cancel=None, on_event=None, shutdown=None
     ):
-        return await self._engine.run(
-            version,
-            inputs,
-            run_id=run_id,
-            scope=scope,
-            cancel=cancel,
-            on_event=on_event,
-            shutdown=shutdown,
-        )
+        async with model_sessions(self.models.values()):
+            return await self._engine.run(
+                version,
+                inputs,
+                run_id=run_id,
+                scope=scope,
+                cancel=cancel,
+                on_event=on_event,
+                shutdown=shutdown,
+            )
 
     async def resume(self, run_id, *, scope=None, cancel=None, on_event=None, shutdown=None):
-        return await self._engine.resume(
-            run_id, scope=scope, cancel=cancel, on_event=on_event, shutdown=shutdown
-        )
+        async with model_sessions(self.models.values()):
+            return await self._engine.resume(
+                run_id, scope=scope, cancel=cancel, on_event=on_event, shutdown=shutdown
+            )
 
     def get(self, run_id, scope=None):
         return self._engine.result(run_id, scope)

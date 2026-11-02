@@ -8,11 +8,7 @@ Explore a decision from both sides. Two agents present arguments, respond to eac
 
 ## A decision with a practical next step
 
-**Proposal:** replace library desks with a makerspace.
-
-The two reviewers examine a $24,000 conversion, a $3,000 temporary-room pilot, 92% peak desk occupancy and a small volunteer survey. The moderator recommends funding the temporary pilot, keeping the desks, and setting usage and accessibility criteria before considering conversion.
-
-The output brings the competing arguments and decision criteria into one brief.
+![Selected application result](assets/result.png)
 
 ## Try it
 

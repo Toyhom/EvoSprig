@@ -1,8 +1,10 @@
-# Controlled evolution
+# Self-evolving agents and controlled RSI
 
 Improve the prompts and skills your agent uses, without training model weights. Choose editable resources, bring your tasks and evaluator, set a budget, then inspect the resulting versions before release.
 
-EvoSprig offers **13 training-free strategies across 11 method families**. They share the same application runtime, evaluator, candidate archive and release gate. GEPA uses its official library; the other strategies are native resource-level adaptations with the mechanisms below.
+The self-improvement loop revises application resources, reruns the same tasks and uses feedback for further candidates. You control which resources can change, the budget and version adoption.
+
+EvoSprig offers **14 training-free strategies across 12 method families**. They share the same application runtime, evaluator, candidate archive and release gate. GEPA uses its official library; the other strategies are native resource-level adaptations with the mechanisms below.
 
 ## Choose a strategy
 
@@ -18,11 +20,12 @@ EvoSprig offers **13 training-free strategies across 11 method families**. They 
 | [ProTeGi](https://arxiv.org/abs/2305.03495) `protesgi` | Instruction beam | Failure minibatches, feedback and scores | Textual gradients and full-score beam search; does not implement the paper's UCB allocation |
 | [Bootstrap few-shot](https://arxiv.org/abs/2310.03714) `bootstrap_fewshot` | Demonstrations appended to resources | Successful search executions accepted by the evaluator | Harvests actual passing input/output pairs; no teacher-model or module-level DSPy optimization |
 | Few-shot random search `fewshot_search` | Demonstration subsets and order | The same successful execution pool | Seeded subset/order search with held-out selection |
+| [MIPRO resource search](https://arxiv.org/abs/2406.11695) `mipro` | Instructions and component demonstrations jointly | Tasks, scalar scores and successful component input/output traces | Grounded proposals, trace bootstrapping and categorical TPE over resource choices |
 | [PromptBreeder](https://arxiv.org/abs/2309.16797) `promptbreeder` | Task and mutation instructions | Population fitness and feedback | Coevolves bounded task/mutator populations; a reduced operator set |
 | [Reflexion](https://arxiv.org/abs/2303.11366) `reflexion` | Episodic reflections | Failure trajectories and environment/judge feedback | Appends bounded reflections while keeping the base instruction fixed |
 | [ExpeL](https://arxiv.org/abs/2308.10144) `expel` | Reusable insight rules | Successful and failed experiences with feedback | Contrasts observations and updates rules citing actual search samples |
 
-GA/DE are one paper family; the two demonstration strategies are another. Native adaptations run on EvoSprig resources rather than reproducing upstream benchmark harnesses. TextGrad/MIPRO-style program optimization and workflow/skill synthesis are separate future integrations, described in the [roadmap](roadmap.md).
+GA/DE are one paper family; the two demonstration strategies are another. Native adaptations run on EvoSprig resources rather than reproducing upstream benchmark harnesses. Full DSPy MIPROv2 program integration, TextGrad, ADAS, AFlow, DGM and executable skill synthesis remain integration targets. The [method requirements guide](method-requirements.md#other-training-free-directions) lists the missing mechanisms and their environment needs.
 
 For the original papers, see [research references](references.md#training-free-evolution).
 
@@ -63,6 +66,19 @@ evosprig improve my-agent/agent.yaml \
 Install `pip install 'evosprig[evolution]'` for GEPA. Native strategies need no extra optimization dependency. Studio lists the same methods from the backend registry and can create input-only suites, inspect paired application outputs and compare resource diffs.
 
 Each candidate is a content-addressed snapshot. The AgentSpec, tools, permissions, evaluator and partition assignment remain fixed. `search` inputs guide proposals; `selection` ranks candidates; `release` validates the selected version; optional `test` inputs stay sealed until reporting. The baseline remains selected if no candidate improves its selection score.
+
+## Joint instruction and demonstration search
+
+```bash
+evosprig improve my-agent/agent.yaml --suite tasks.yaml \
+  --method mipro --resource instructions --rounds 3 \
+  --instruction-candidates 3 --demo-candidates 3 --max-demos 2 \
+  --demo-threshold 0.8 --max-candidates 16 --max-evaluations 100
+```
+
+MIPRO resource search proposes task-grounded instructions and harvests actual input/output pairs from passing **search-split component executions**. A categorical TPE sampler chooses joint instruction/demo combinations. Shared resources can collect demonstrations from each node that uses them. Demonstrations remain empty when no execution reaches the configured threshold.
+
+This native adaptation uses independent categorical densities and full-split evaluation, with up to four joint trials per round. DSPy MIPROv2 provides a different program representation, richer bootstrapping and minibatch allocation. The candidate archive records selected component traces and instruction choices. Tune the pool sizes, threshold and budgets in the CLI or Studio.
 
 ## Budget, inspect and release
 

@@ -32,6 +32,8 @@ class Metric(Contract):
     rubric: str = Field(default="", max_length=12000)
     judge_binding: str | None = None
     repeats: int = Field(default=1, ge=1, le=3)
+    judge_max_output_tokens: int = Field(default=1400, ge=128, le=8192)
+    judge_max_retries: int = Field(default=1, ge=0, le=3)
     scorer: str | None = None
     schema_: dict | None = Field(default=None, alias="schema")
     components: list[Metric] = Field(default_factory=list, max_length=16)

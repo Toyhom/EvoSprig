@@ -2,7 +2,7 @@
 
 <img src="docs/assets/hero.svg" alt="EvoSprig — Build agents that grow" width="880" />
 
-**Build agents. Improve their prompts and skills. Ship your application.**
+**An open-source framework for self-evolving agents.**
 
 [![CI](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml/badge.svg)](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB)](https://www.python.org/)
@@ -14,7 +14,7 @@
 
 </div>
 
-EvoSprig brings visual workflows, persistent memory and evaluation-driven improvement into one agent development platform. Build with Python or Studio, compare candidate versions on your tasks, and export a standalone application.
+Build agents with Python or a visual canvas, then improve their prompts and skills automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate resources, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
 <img src="docs/assets/studio.png" alt="EvoSprig Studio: workflow canvas, node settings and execution history" width="100%" />
 
@@ -39,7 +39,7 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 
 ## Why EvoSprig?
 
-- **Controlled evolution.** 13 training-free strategies across 11 method families: prompt search, population search, demonstrations, reflections and experience playbooks. Choose the resources, budget and release criteria.
+- **Self-evolving agents, under your control.** 14 training-free strategies across 12 method families: prompt search, joint instruction/demo search, populations, reflections and experience playbooks. Choose the resources, budget and release criteria.
 - **Evaluation that fits your application.** Start with task inputs and an LLM judge, or bring reference answers, business checks and a sandbox. Score outputs, steps, tools and environment outcomes.
 - **Code and canvas, one application.** Build typed workflows with parallel agents, dynamic map, loops and human approvals. Organize large teams with nested groups and edit executable subflows.
 - **Industry environments.** Connect business sandboxes for finance, government and manufacturing; evaluate real action outcomes and improve against the same environment. [Get started](docs/industry-environments.md).
@@ -76,9 +76,13 @@ Open **http://127.0.0.1:18766**. Studio starts in English; switch to **中文** 
 
 For live models, configure environment-based credentials in a [deployment profile](examples/deployment.example.yaml). Follow the [quickstart](docs/quickstart.md) for model connections and export.
 
-## Improve prompts and skills automatically
+## Self-improvement you can see
 
 Build your agent, add task inputs, select the resources to change and choose an algorithm. EvoSprig writes candidates and runs your application to compare them. Review the prompt or skill changes alongside the outputs, then enable your chosen version. [Configure your first improvement](docs/agent-resources.md#improve-selected-resources).
+
+<img src="examples/study-coach/assets/evolution.png" alt="Study coach: original answer, automatically edited skills and improved answer on the same task" width="100%" />
+
+In the **[study coach](examples/study-coach/)**, one Self-Refine round changed two shared skills so exercises and feedback stay tied to the supplied lesson. The page shows the actual edits and answers, using tasks adapted from GSM8K.
 
 Explore the **[book-writing comparison](examples/book-studio/)** and **[document-answering comparison](examples/document-chat/)** to see prompt changes and selected outputs. Each page shows what changed and how it affected the answer.
 

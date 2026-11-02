@@ -10,6 +10,7 @@ from pathlib import Path
 
 from evosprig.config import make_tools
 from evosprig.core.journal import Scope
+from evosprig.core.model_sessions import model_sessions
 from evosprig.core.protocols import BudgetExceeded
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import digest
@@ -104,6 +105,16 @@ class Evaluator:
                 record = result.to_dict()
                 state = self.journal.get(run_id, scope)["checkpoint"]
                 observations = {
+                    "interactions": [
+                        {"node": path, "input": state["nodes"].get(path, {}).get("inputs", {}),
+                         "response": response}
+                        for path, response in state.get("responses", {}).items()
+                    ],
+                    "node_inputs": {
+                        path: node["inputs"]
+                        for path, node in state["nodes"].items()
+                        if "inputs" in node
+                    },
                     "nodes": {
                         path: node["output"]
                         for path, node in state["nodes"].items()
@@ -150,14 +161,15 @@ class Evaluator:
                 return await self.sample(version, sample, metric, suite_id=suite_id, split=split)
 
         # Preserve sample order and cancel siblings on a failed assessment.
-        tasks = [asyncio.create_task(bounded(sample)) for sample in samples]
-        try:
-            results = await asyncio.gather(*tasks)
-        except BaseException:
-            for task in tasks:
-                task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
-            raise
+        async with model_sessions([*self.models.values(), *self.scoring.models.values()]):
+            tasks = [asyncio.create_task(bounded(sample)) for sample in samples]
+            try:
+                results = await asyncio.gather(*tasks)
+            except BaseException:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
         return aggregate(version.version_id, suite_id, split, results)
 
 
@@ -167,9 +179,8 @@ def aggregate(version_id, suite_id, split, samples):
         for child in assessment.get("components", []):
             yield from receipts(child)
 
-    judge_usage = [
-        item["usage"] for sample in samples for item in receipts(sample.get("assessment", {}))
-    ]
+    judge_receipts = [item for sample in samples for item in receipts(sample.get("assessment", {}))]
+    judge_usage = [item["usage"] for item in judge_receipts]
     scores = [sample["score"] for sample in samples]
     tags = {tag for sample in samples for tag in sample["tags"]}
     return {
@@ -196,6 +207,7 @@ def aggregate(version_id, suite_id, split, samples):
             "model_calls": len(judge_usage),
             "input_tokens": sum(item["input_tokens"] for item in judge_usage),
             "output_tokens": sum(item["output_tokens"] for item in judge_usage),
+            "unreported_model_calls": sum(item.get("usage_reported") is False for item in judge_receipts),
         },
         "samples": samples,
     }

@@ -8,14 +8,7 @@ Build an itinerary around your time, preferences and budget. Plan days in parall
 
 ## A day out within the budget
 
-**Two adults, a Monday visit, $100 total.** The planner leaves out the museum because it closes on Mondays and offers two options:
-
-| Option | Attractions | Meals | Transport | Total |
-| --- | ---: | ---: | ---: | ---: |
-| Garden and ferry; walk between stops | $34 | $64 | $0 | **$98** |
-| Garden and lakefront; day bus passes | $10 | $64 | $12 | **$86** |
-
-The first leaves $2 for any extra fares. The second includes transport and leaves $14. The assistant flags ferry accessibility and reservations to confirm.
+![Selected application result](assets/result.png)
 
 ## Try it
 

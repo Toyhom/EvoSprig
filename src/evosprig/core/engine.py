@@ -375,6 +375,7 @@ class ExecutionSession:
                 slot["status"] = "running"
             context = self.context(graph, inputs, prefix)
             arguments = resolve_inputs(node.inputs, context)
+            slot["inputs"] = arguments
             if node.type in {"transform", "join"}:
                 output = arguments
             elif node.type == "condition":

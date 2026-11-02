@@ -50,7 +50,7 @@ async def test_malformed_judgment_cannot_become_a_passing_score():
         BudgetMeter(ExperimentBudget()),
     )
     with pytest.raises(ValueError):
-        await engine.assess(Metric(kind="llm_judge"), sample, result(), {})
+        await engine.assess(Metric(kind="llm_judge", judge_max_retries=0), sample, result(), {})
 
 
 async def test_composition_supports_node_and_environment_assertions_and_required_failures():

@@ -5,7 +5,8 @@ import random
 from .suite import EvalSuite
 
 
-def suite_from_inputs(inputs, *, name="my-tasks", rubric="", seed=0):
+def suite_from_inputs(inputs, *, name="my-tasks", rubric="", seed=0,
+                      judge_max_output_tokens=1400, judge_max_retries=1):
     if not 4 <= len(inputs) <= 10000 or any(not isinstance(item, dict) for item in inputs):
         raise ValueError("provide 4..10000 distinct JSON task inputs")
     samples = [{"id": f"task-{i + 1:04d}", "input": item} for i, item in enumerate(inputs)]
@@ -18,7 +19,9 @@ def suite_from_inputs(inputs, *, name="my-tasks", rubric="", seed=0):
     return EvalSuite.model_validate(
         {
             "id": name,
-            "metric": {"kind": "llm_judge", "output_path": "", "rubric": rubric},
+            "metric": {"kind": "llm_judge", "output_path": "", "rubric": rubric,
+                       "judge_max_output_tokens": judge_max_output_tokens,
+                       "judge_max_retries": judge_max_retries},
             "search": samples[:search_count],
             "selection": samples[search_count : search_count + selection_count],
             "release": samples[

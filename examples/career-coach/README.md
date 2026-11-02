@@ -4,16 +4,11 @@
 
 Turn a resume and a job description into a tailored application and an interview practice session. Role-fit analysis feeds two parallel writers; the candidate answers a question before receiving feedback.
 
-## An application built from actual experience
+## From experience to application materials
 
-For an operations analyst applying to a SQL/Python role, the application produced these resume bullets:
+![Tailored resume summary and interview coaching from the selected version](assets/result.png)
 
-> - Build SQL reports on shipment delays (operations analyst, 2023–present).
-> - Cut weekly reporting time from 3 hours to 45 minutes.
-> - Wrote a Python script to clean CSV data.
-> - Coordinate with four warehouse coordinators on report definitions.
-
-Its interview questions ask how the candidate explained delays, what changed in the reporting process and how the Python script was used. After the candidate responds, the coach identifies the missing example and gives a short practice plan.
+The coach prepares a PHP/Laravel summary, specific resume bullets and a practice plan. It asks about missing qualifications before adding them to the application. This output uses a public job description from [lang-uk’s recruitment dataset](https://huggingface.co/datasets/lang-uk/recruitment-dataset-job-descriptions-english) (MIT) and a fictional applicant profile, with DeepSeek Flash.
 
 ## Run it
 

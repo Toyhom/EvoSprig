@@ -117,6 +117,11 @@ class BudgetedProvider:
         if hasattr(provider, "connection"):
             self.connection = provider.connection
 
+    def session(self):
+        from evosprig.core.model_sessions import model_sessions
+
+        return model_sessions([self.provider])
+
     async def complete(self, request):
         requested = request.max_output_tokens
         request, reservation = self.meter.reserve(request)

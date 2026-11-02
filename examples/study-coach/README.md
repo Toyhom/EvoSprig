@@ -4,23 +4,15 @@
 
 Learn a topic, try three application questions, then get feedback on your answers. The lesson can use saved learning preferences; a human node keeps the exercise interactive.
 
-## Practice the idea, then review your answer
+## Keep the lesson and feedback on the same problem
 
-The agent asks about Python shallow copies:
+![Original answer, automatic skill edits and selected feedback](assets/evolution.png)
 
-```python
-a = [[1], [2]]
-b = a.copy()
-b.append([7])
-b[0].append(8)
-# What is a now?
-```
+One Self-Refine round rewrote the `teaching` and `coaching_feedback` skills shared by the lesson, quiz and feedback nodes. The original exercise drifted away from the supplied problem; the selected version keeps its quantities and explains the learner’s mistakes against the source.
 
-The learner answers `[[1, 8], [2], [7]]`. The feedback explains the distinction:
+On two held-out teaching tasks, the paired output score was **0.55 → 0.86**, with DeepSeek Flash generating and judging. The judge receives the actual quiz and learner replies. The six input tasks were adapted from [GSM8K](https://huggingface.co/datasets/openai/gsm8k) (MIT), with incomplete learner responses. This folder contains the selected skills.
 
-> A shallow copy does *not* share the outer list; it creates a new outer list. What's shared is the *inner* lists. So `b.append([7])` changes only `b` (new outer list), while `b[0].append(8)` mutates the shared inner list `[1]`, which `a` also references.
-
-It gives the corrected value, `[[1, 8], [2]]`, and a follow-up exercise: does `b[1] = [99]` change `a`? The learner can apply the same distinction to a new case.
+To improve your own tutor, add representative lessons and learner answers, select these skills in **Improve**, and choose Self-Refine. Inspect the edits and feedback before enabling the version.
 
 ## Run it
 

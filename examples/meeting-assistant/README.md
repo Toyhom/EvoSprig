@@ -6,17 +6,11 @@ Turn a meeting transcript into shareable notes and an action list. Keep decision
 
 **Transcript → structured record → review → notes + action items**
 
-## A meeting becomes an action list
+## A statement becomes a useful meeting note
 
-From a discussion about duplicate invoices:
+![Decisions and conditional guidance from a historical meeting statement](assets/result.png)
 
-| Owner | Action | Due |
-| --- | --- | --- |
-| Lina | Pause the nightly import and inspect the April batch | November 5 |
-| Omar | Keep an audit copy; request finance approval | To be agreed |
-| Chen | Draft a deduplication proposal after receiving examples | To be agreed |
-
-The meeting notes keep the correction pending approval and leave missing dates open.
+The assistant separates decisions, future conditions and missing deadlines. This historical example uses the July 31, 2024 statement from [FOMC Meeting Statements and Minutes](https://huggingface.co/datasets/KrossKinetic/FOMC_Meeting_Statements_Minutes) (CC0), with DeepSeek Flash.
 
 ## Try it
 

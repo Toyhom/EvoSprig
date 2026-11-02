@@ -8,17 +8,7 @@ Turn a receipt photo into structured expenses. Read the image, extract the print
 
 ## From receipt to expense review
 
-For the CITY BOOKS receipt, OCR and extraction produce:
-
-| Field | Value |
-| --- | --- |
-| Date | 2026-11-02 |
-| Items | Notebook $12.00; pen $3.50 |
-| Subtotal / tax / total | **$15.50 / $1.55 / $17.05** |
-| Arithmetic | Matches the printed total |
-| Next step | Manager approval for office supplies |
-
-The policy review identifies the missing approval and business purpose before reimbursement.
+![Selected application result](assets/result.png)
 
 ## Try it
 

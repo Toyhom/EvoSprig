@@ -15,8 +15,8 @@ examples/my-application/
   deployment.example.yaml    # Optional model and tool connections
 ```
 
-Start the README with its title and `![Workflow in EvoSprig Studio](canvas.png)`. Show a useful result on the same page: a screenshot, short excerpt or compact table. Follow with how to run the application and what the reader can customize. A builder script is useful when it explains graph construction.
+Start the README with its title and `![Workflow in EvoSprig Studio](canvas.png)`. Show a useful result on the same page: a result image with a short caption. Follow with how to run the application and what the reader can customize. A builder script is useful when it explains graph construction.
 
-When evolution produces a useful change, show the actual prompt or skill edit alongside selected output excerpts. Give the method and task context; accompany numeric comparisons with the task count and evaluator. Otherwise, show one final application result. Keep each application page self-contained and concise.
+When evolution produces a useful change, show the original output, actual prompt or skill edit, and selected output in one image. Give the method and task context; accompany numeric comparisons with the task count and evaluator. Otherwise, show one final application result. Keep each application page self-contained and concise.
 
 Cite the source of an application pattern and the papers behind named methods. Connect real tool contracts. Test shared capabilities in the framework's test suite.

@@ -4,8 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evosprig"
-version = "0.1.1"
-description = "Build, inspect and export agent workflows."
+version = "0.1.2"
+description = "Build self-evolving agents with workflows, memory, tools and controlled prompt and skill optimization."
+keywords = ["agents", "self-evolving", "self-improvement", "rsi", "multi-agent", "prompt-optimization"]
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]

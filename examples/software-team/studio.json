@@ -16,14 +16,11 @@
           "id": "group:build",
           "label": "Build and verify",
           "members": [
-            "build",
-            "checks",
-            "preview",
-            "refine",
-            "verify"
+            "group:writing",
+            "group:validation"
           ],
           "collapsed": false,
-          "direction": "DOWN"
+          "direction": "RIGHT"
         },
         {
           "id": "group:delivery",
@@ -33,42 +30,63 @@
           ],
           "collapsed": false,
           "direction": "DOWN"
+        },
+        {
+          "id": "group:writing",
+          "label": "Implementation",
+          "members": [
+            "build",
+            "checks"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
+        },
+        {
+          "id": "group:validation",
+          "label": "Browser checks",
+          "members": [
+            "preview",
+            "refine",
+            "verify"
+          ],
+          "collapsed": false,
+          "direction": "DOWN"
         }
       ]
     }
   },
   "layout": {
     "build": {
-      "x": 454.0,
-      "y": 116.0
+      "x": 496.0,
+      "y": 296.0
     },
     "checks": {
-      "x": 454.0,
-      "y": 290.0
+      "x": 496.0,
+      "y": 500.0
     },
     "design": {
       "x": 64.0,
-      "y": 553.0
+      "y": 476.0
     },
     "handoff": {
-      "x": 844.0,
-      "y": 466.0
+      "x": 1358.0,
+      "y": 374.0
     },
     "preview": {
-      "x": 459.0,
-      "y": 464.0
+      "x": 927.0,
+      "y": 204.0
     },
     "refine": {
-      "x": 436.0,
-      "y": 610.0
+      "x": 904.0,
+      "y": 366.0
     },
     "requirements": {
       "x": 64.0,
-      "y": 379.0
+      "y": 272.0
     },
     "verify": {
-      "x": 459.0,
-      "y": 844.0
+      "x": 927.0,
+      "y": 634.0
     }
   }
 }

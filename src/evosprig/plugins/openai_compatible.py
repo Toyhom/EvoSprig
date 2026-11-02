@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
 import httpx
@@ -19,6 +20,8 @@ class Connection(Contract):
     model: str
     api_key_env: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
     timeout_seconds: float = Field(default=45.0, gt=0, le=600)
+    max_connections: int = Field(default=32, ge=1, le=1024)
+    max_keepalive_connections: int = Field(default=8, ge=0, le=1024)
     capabilities: list[str] = Field(
         default_factory=lambda: ["text", "tool_calling", "structured_output"]
     )
@@ -26,6 +29,8 @@ class Connection(Contract):
 
     @model_validator(mode="after")
     def validate_endpoint(self):
+        if self.max_keepalive_connections > self.max_connections:
+            raise ValueError("keepalive connections cannot exceed the connection limit")
         url = urlsplit(self.base_url)
         if url.username or url.password or url.query or url.fragment or not url.hostname:
             raise ValueError("base_url must be an endpoint without credentials, query or fragment")
@@ -53,6 +58,8 @@ class OpenAICompatibleProvider:
         self.model_id = connection.model
         self.capabilities = frozenset(connection.capabilities)
         self.transport = transport
+        self._shared_client = None
+        self._sessions = 0
 
     def _key(self) -> str:
         key = os.environ.get(self.connection.api_key_env)
@@ -87,7 +94,26 @@ class OpenAICompatibleProvider:
             transport=self.transport,
             follow_redirects=False,
             trust_env=False,
+            limits=httpx.Limits(
+                max_connections=self.connection.max_connections,
+                max_keepalive_connections=self.connection.max_keepalive_connections,
+            ),
         )
+
+    @asynccontextmanager
+    async def session(self):
+        """Nested and concurrent runs share the pool until the last user exits."""
+        if self._shared_client is None:
+            self._shared_client = self._client()
+        client = self._shared_client
+        self._sessions += 1
+        try:
+            yield client
+        finally:
+            self._sessions -= 1
+            if self._sessions == 0:
+                self._shared_client = None
+                await client.aclose()
 
     @property
     def endpoint(self) -> str:
@@ -135,7 +161,7 @@ class OpenAICompatibleProvider:
 
     async def complete(self, request: ModelRequest) -> ModelResponse:
         try:
-            async with self._client() as client:
+            async with self.session() as client:
                 response = await client.post(
                     self.endpoint,
                     json=self._payload(request),
@@ -153,7 +179,7 @@ class OpenAICompatibleProvider:
     async def stream(self, request: ModelRequest) -> AsyncIterator[dict]:
         """Yield public text/tool deltas and usage, excluding private reasoning fields."""
         try:
-            async with self._client() as client:
+            async with self.session() as client:
                 async with client.stream(
                     "POST",
                     self.endpoint,

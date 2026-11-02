@@ -1,6 +1,7 @@
 import type { ElkNode } from 'elkjs/lib/elk-api';
 import { MarkerType, type Edge, type Node } from '@xyflow/react';
 import type { Graph, NodeSpec, Spec, Lang } from './types';
+import {routeAround} from './routing';
 
 export type Group = {id:string;label:string;members:string[];collapsed:boolean;direction?:'RIGHT'|'DOWN'};
 export type CanvasState = {groups:Record<string,Group[]>};
@@ -31,14 +32,14 @@ export function graphEdges(graph:Graph):Edge[] {return graph.edges.map((edge,ind
   label:typeof edge.when==='boolean'?String(edge.when):undefined,data:{when:edge.when},markerEnd:{type:MarkerType.ArrowClosed,width:15,height:15},pathOptions:{borderRadius:12},
 }));}
 export function nodeSize(config:NodeSpec) {
-  if(config.type==='join')return {width:124,height:66};
-  if(config.type==='transform')return {width:190,height:76};
-  if(config.type==='condition')return {width:206,height:100};
-  if(config.type==='tool')return {width:234,height:96};
-  if(config.type==='model'&&config.skills?.length)return {width:264,height:160};
-  if(config.type==='agent')return {width:280,height:184};
-  if(config.body||Object.keys(config.branches??{}).length)return {width:264,height:146};
-  return {width:244,height:124};
+  if(config.type==='join')return {width:148,height:64};
+  if(config.type==='transform')return {width:224,height:98};
+  if(config.type==='condition')return {width:244,height:128};
+  if(config.type==='tool')return {width:256,height:112};
+  if(config.type==='agent')return {width:302,height:218};
+  if(config.body||Object.keys(config.branches??{}).length)return {width:280,height:170};
+  if(config.type==='human')return {width:260,height:140};
+  return {width:280,height:config.skills?.length?190:154};
 }
 export function leaves(id:string,groups:Group[]):string[] {
   const group=groups.find(x=>x.id===id);return group?group.members.flatMap(m=>leaves(m,groups)):[id];
@@ -59,7 +60,7 @@ export function canvasView(nodes:FlowNode[],edges:Edge[],groups:Group[],lang:Lan
   const box=(id:string):{x:number;y:number;width:number;height:number}=>{
     if(boxes.has(id))return boxes.get(id)!;
     const group=groups.find(g=>g.id===id)!;const items=group.members.map(box);
-    const x=Math.min(...items.map(p=>p.x))-24,y=Math.min(...items.map(p=>p.y))-56;
+    const x=Math.min(...items.map(p=>p.x))-24,y=Math.min(...items.map(p=>p.y))-72;
     const width=Math.max(...items.map(p=>p.x+p.width))-x+24,height=Math.max(...items.map(p=>p.y+p.height))-y+24;
     const result={x,y,width:group.collapsed?280:Math.max(280,width),height:group.collapsed?112:height};boxes.set(id,result);return result;
   };
@@ -74,7 +75,20 @@ export function canvasView(nodes:FlowNode[],edges:Edge[],groups:Group[],lang:Lan
     if(grouped&&links.has(signature))continue;links.add(signature);
     visibleEdges.push({...edge,source,target,sourceHandle:source===edge.source?edge.sourceHandle:undefined,deletable:!grouped,selectable:!grouped});
   }
-  return {nodes:[...groupNodes,...visibleNodes],edges:visibleEdges,boxes};
+  const visible=[...groupNodes,...visibleNodes];
+  const obstacles=visible.filter(n=>n.type!=='groupCard'||(n.data.group as Group).collapsed).map(n=>boxes.get(n.id)!);
+  // Expanded group headers remain readable when edges cross their boundary.
+  obstacles.push(...groupNodes.filter(n=>!(n.data.group as Group).collapsed).map(n=>{const b=boxes.get(n.id)!;return {...b,height:34};}));
+  const routed=visibleEdges.map(edge=>{
+    const source=visible.find(n=>n.id===edge.source)!,target=visible.find(n=>n.id===edge.target)!;
+    const s=boxes.get(source.id)!,t=boxes.get(target.id)!;
+    const downS=source.data.direction==='DOWN',downT=target.data.direction==='DOWN';
+    const ratio=edge.sourceHandle&&typeof edge.data?.when==='boolean'?(edge.data.when?0.35:0.75):0.5;
+    const start=downS?{x:s.x+s.width*ratio,y:s.y+s.height}:{x:s.x+s.width,y:s.y+s.height*ratio};
+    const end=downT?{x:t.x+t.width/2,y:t.y}:{x:t.x,y:t.y+t.height/2};
+    return {...edge,type:'workflow',data:{...edge.data,points:routeAround(start,end,downS,downT,obstacles)}};
+  });
+  return {nodes:visible,edges:routed,boxes};
 }
 
 export async function arrange(nodes:FlowNode[],edges:Edge[],groups:Group[]):Promise<FlowNode[]> {
@@ -97,7 +111,7 @@ export async function arrange(nodes:FlowNode[],edges:Edge[],groups:Group[]):Prom
     const links=new Map<string,{id:string;sources:string[];targets:string[]}>();
     for(const edge of edges){const source=lift(edge.source),target=lift(edge.target);if(source&&target&&source!==target)links.set(source+'|'+target,{id:source+'|'+target,sources:[source],targets:[target]});}
     const layout=await elk.layout<ElkNode>({id:groupId??'root',layoutOptions:{'elk.algorithm':'layered','elk.direction':direction,
-      'elk.edgeRouting':'ORTHOGONAL','elk.padding':groupId?'[top=56,left=24,bottom=24,right=24]':'[top=60,left=40,bottom=40,right=40]',
+      'elk.edgeRouting':'ORTHOGONAL','elk.padding':groupId?'[top=72,left=24,bottom=24,right=24]':'[top=60,left=40,bottom=40,right=40]',
       'elk.spacing.nodeNode':'44','elk.layered.spacing.nodeNodeBetweenLayers':direction==='DOWN'?'50':'80'},
       children:children.map(c=>({id:c.id,width:c.width,height:c.height})),edges:[...links.values()]});
     const positions=new Map<string,{x:number;y:number}>();

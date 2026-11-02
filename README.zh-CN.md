@@ -2,7 +2,7 @@
 
 <img src="docs/assets/hero.svg" alt="EvoSprig — 构建持续成长的智能体" width="880" />
 
-**开发智能体，用实际任务改进它，再独立部署。**
+**面向自进化智能体的开源开发框架。**
 
 [![CI](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml/badge.svg)](https://github.com/Toyhom/EvoSprig/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB)](https://www.python.org/)
@@ -14,7 +14,7 @@
 
 </div>
 
-EvoSprig 将可视化工作流、持久记忆、工具调用和可控自进化整合在同一个智能体开发平台。使用 Python 或 Studio 开发，用自己的任务比较版本，再导出独立应用。
+使用 Python 或可视化画布开发智能体，再用自己的任务自动改进 prompt 与 skill。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
 <img src="docs/assets/studio.png" alt="EvoSprig Studio 软件开发团队画布" width="100%" />
 
@@ -39,7 +39,7 @@ EvoSprig 将可视化工作流、持久记忆、工具调用和可控自进化�
 
 ## 平台特色
 
-- **可控自进化**：13 种无需模型训练的策略，覆盖 11 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
+- **可控自进化**：14 种无需模型训练的策略，覆盖 12 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
 - **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
 - **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核，以及多层分组、折叠展开和子流程编辑。
 - **行业环境接入**：金融、政务与制造业沙箱，用真实业务状态检查评估操作结果，再接入自进化；也可构建带人工审核的行业环境设计流程。[使用方法](docs/industry-environments.md)。
@@ -70,9 +70,13 @@ evosprig serve --project examples/hello/agent.yaml \
 
 打开 http://127.0.0.1:18766，在侧栏切换 **中文**，语言选择会保留。实际模型连接通过[部署配置](examples/deployment.example.yaml)设置，凭据使用环境变量。
 
-## 配置任务，自动改进提示词与技能
+## 看得见的自进化：从任务到更好的提示词与技能
 
 搭好智能体后，添加任务输入，选中可修改的 prompt／skill，选择算法并设置预算。平台自动生成候选、运行应用和评分；你可以同时查看资源改动与输出，再启用选定版本。节点面板支持技能组合、工具选择、项目共享记忆、Temperature、Top P 和输出上限。
+
+<img src="examples/study-coach/assets/evolution.png" alt="学习教练：原始答复、自动修改的技能与进化后的答复" width="100%" />
+
+[学习教练](examples/study-coach/)使用 GSM8K 改编的教学任务，一轮 Self-Refine 自动修改两个共享技能，让出题和反馈围绕给定教材；页面直接展示实际改动和答案。
 
 [书籍创作](examples/book-studio/)与[文档问答](examples/document-chat/)直接展示实际提示词修改和精选输出对照。使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[配置指南](docs/agent-resources.md)说明如何完成首次改进。
 

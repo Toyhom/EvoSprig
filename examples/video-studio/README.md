@@ -6,6 +6,12 @@ Build a [VideoClaw](https://github.com/HITsz-TMG/VideoClaw)-style production age
 
 <img src="../../docs/assets/video-workflow.svg" alt="Script, assets, parallel shots, review and composition" width="100%" />
 
+## A generated production plan
+
+![Three-shot director output for a silent film](assets/result.png)
+
+The director produces this plan before media generation. Connect your own image and video tools to render the approved shots.
+
 ## From idea to film
 
 1. A director turns your brief into a script, characters and 1–12 shots.

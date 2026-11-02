@@ -6,26 +6,9 @@ Turn one source into an email, a social post and a product article. A shared fac
 
 ## One announcement, several channels
 
-**Source:** North Museum opens until 8pm on April 2, 2027. Tickets are $12, or $7 for students with ID. The archive stays closed and the cafe closes at 6pm. Tickets are sold at the front desk.
+![Email and social copy produced from the same maintenance announcement](assets/result.png)
 
-The selected workflow produces a social post and an email. Both carry the date, prices and exceptions into the channel copy.
-
-> **Subject:** North Museum open late on April 2, 2027
-
-| Detail carried into the copy | Value |
-| --- | --- |
-| Late opening | Until 8pm on April 2, 2027 |
-| Tickets | $12 standard; $7 students with ID |
-| Purchase | Front desk only |
-| Exceptions | Archive closed; cafe closes at 6pm |
-
-### Shared skills across the writing team
-
-`brand_voice` guides the channel writers and editor:
-
-> Lead with the most useful information, such as what is happening, when, and who it affects. Use concrete verbs and specific nouns instead of vague or promotional wording.
-
-`source_fidelity` keeps qualifiers, limits and dates attached to the claims they modify. Select either skill in **Improve** to search for a version suited to your own announcements.
+The selected version turns a hosting-maintenance notice into email and social copy while preserving the date, UTC window and service impact. Its writing team shares `brand_voice` and `source_fidelity` skills, which can evolve independently of the workflow.
 
 ## Run it
 

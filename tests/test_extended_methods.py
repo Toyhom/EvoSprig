@@ -43,6 +43,7 @@ class ExtendedProposer(MockProvider):
         "expel",
         "bootstrap_fewshot",
         "fewshot_search",
+        "mipro",
     ],
 )
 async def test_distinct_methods_use_framework_evaluation_and_protect_held_out_data(

@@ -8,13 +8,7 @@
 
 ## A launch question becomes a sourced brief
 
-**“Should we launch the Team plan at $19 per seat?”**
-
-The team reads the launch plan, pricing proposal and customer interviews. Its recommendation:
-
-> Do not launch $19 as a committed public price yet. Run it as a live pricing test inside the June 15 beta, then decide.
-
-The brief connects the decision to the proposed three-seat minimum, the 14-day trial and the need to test willingness to pay. An editor reviews the assembled brief before handoff.
+![Selected application result](assets/result.png)
 
 ## Try it
 

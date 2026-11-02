@@ -8,15 +8,7 @@
 
 ## Ask a business question
 
-**“What share of March revenue came from desk lamps?”**
-
-| March sales | Revenue |
-| --- | ---: |
-| Desk lamps | 1,440 |
-| All products | 2,160 |
-| Desk lamp share | **66.67%** |
-
-The assistant reads the database schema, runs the aggregation and returns the calculation with its SQL.
+![Selected application result](assets/result.png)
 
 ## Try it
 

@@ -30,6 +30,8 @@ class InputsBody(Contract):
     name: str = "my-tasks"
     rubric: str = Field(default="", max_length=12000)
     seed: int = Field(default=0, ge=0)
+    judge_max_output_tokens: int = Field(default=1400, ge=128, le=8192)
+    judge_max_retries: int = Field(default=1, ge=0, le=3)
 
 
 class PublishBody(Contract):

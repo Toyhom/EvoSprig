@@ -10,21 +10,9 @@ Turn an idea into a short guide. Plan a shared outline, write chapters in parall
 
 ## What evolution changed
 
-The task: write a guide to a **30-person community event with a $600 budget**. APE searched the outline and chapter instructions.
+APE revised the outline and chapter prompts to preserve shared constraints and separate chapter responsibilities. In the original community-event guide, different chapters assign different amounts to the same budget items. The selected chapter follows the shared allocation and keeps coordination free.
 
-| Resource | Before | After |
-| --- | --- | --- |
-| Outline prompt | “Respect the target audience and requested length.” | “Respect the specified audience, constraints, and length limits, and ensure chapters do not overlap in the advice they will cover.” |
-| Chapter prompt | “Follow the shared outline, avoid repeating other chapters” | “Follow the shared outline, keep its content distinct from the other chapters” |
-
-Selected output excerpts:
-
-| Before | After |
-| --- | --- |
-| Chapter 1 allocates $200 to supplies and $175 to refreshments. Chapter 2 changes them to $180 and $150. | Chapter 1 allocates the $600 budget. Chapter 2 says: “Keep all coordination free—no spend from the $600 budget.” |
-| The editor requests reconciliation of the conflicting amounts. | The editor asks for more precise wording about the remaining allocation and reserve. |
-
-The average judge score was **0.740 → 0.895** across two separate writing tasks, using DeepSeek Flash for generation and judging. The prompts in this folder are the selected version.
+The mean judge score was **0.740 → 0.895** across two held-out writing tasks, with DeepSeek Flash generating and judging. This folder contains the selected prompts.
 
 ### Improve your own writing team
 

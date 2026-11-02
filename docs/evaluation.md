@@ -32,9 +32,21 @@ evaluation:
       api_key_env: JUDGE_API_KEY
 ```
 
-Set `metric.judge_binding: critic` when several judges are configured. Judge calls share the experiment's token, time and call budget; reports show their separate usage. The judge sees the task, optional references/context, actual output and tool/environment observations. Fields ending in `_base64` are represented by size and content hash in text-only judging/reflection; media must be assessed through tool observations or a custom multimodal scorer. Execution still receives the original payload. It does not see the candidate name, optimization method or evolving instruction text. `repeats: 2` or `3` records repeated judgments and their spread.
+Set `metric.judge_binding: critic` when several judges are configured. Judge calls share the experiment's token, time and call budget; reports show their separate usage. The judge sees the task, optional references/context, actual output, the questions and resolved responses at human nodes, and tool/environment observations. Fields ending in `_base64` are represented by size and content hash in text-only judging/reflection; media must be assessed through tool observations or a custom multimodal scorer. Execution still receives the original payload. It does not see the candidate name, optimization method or evolving instruction text. `repeats: 2` or `3` records repeated judgments and their spread.
 
 A model judgment is useful feedback, not a substitute for an observable business outcome. For bookings, repository changes, SQL correctness or code execution, add environment assertions or your own scorer. Judge confidence is self-reported, not a calibrated probability. Using the same model for tasks and judging can introduce shared blind spots; an independent judge and hard checks help.
+
+### Judge response limits
+
+```yaml
+metric:
+  kind: llm_judge
+  output_path: ""
+  judge_max_output_tokens: 1400
+  judge_max_retries: 1
+```
+
+The defaults allow one repair for truncated or malformed assessments. Set the output cap from 128 to 8192 tokens and retries from 0 to 3; Studio exposes the output cap when creating input-only tasks. Authentication and network errors propagate directly. Repairs keep the original task and rubric, consume the same shared budget and appear in judge receipts. Calls without provider usage retain their token reservations.
 
 ## Bring your own task suite
 
@@ -86,7 +98,7 @@ metric:
       rubric: "Assess completeness and usefulness against the task."
 ```
 
-Required failures force the composite score to zero. Execution failure or missing required tool receipts also scores zero. Invalid judge JSON or unavailable scorer bindings raise an evaluation error rather than produce a passing grade.
+Required failures force the composite score to zero. Execution failure or missing required tool receipts also scores zero. Invalid judge JSON after the configured repair attempts or unavailable scorer bindings raise an evaluation error rather than produce a passing grade.
 
 ## Connect a scorer or environment
 

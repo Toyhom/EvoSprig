@@ -6,27 +6,11 @@
 
 “How much can I spend on a course?” Add a handbook, meeting notes or product documentation. The assistant searches the collection and answers with source references.
 
-## What evolution changed
+## A prompt change you can see in the answer
 
-ProTeGi added two instructions to the document-answering prompt:
+![Prompt changes and the selected handbook answer](assets/result.png)
 
-```diff
-- Cite the exact citation labels returned by the search tool alongside the claims they support.
-+ Cite the exact citation labels returned by the search tool alongside every claim they support, including claims that a document is silent on a topic.
-+ Attach each rule to the specific section it appears under, and do not transfer a rule from one section to another.
-```
-
-For a question about professional learning and parental leave, the selected answer separates the handbook sections:
-
-| Topic | Answer |
-| --- | --- |
-| Learning budget | $600 per team member per year; books, courses and conference tickets qualify. |
-| Approval | Ask the team lead before spending more than $200 on one item. |
-| Receipts | Submit within 30 days. |
-| Equipment | A separate $350 first-year allowance. |
-| Parental leave | Absent from this collection; confirm with the team lead or HR. |
-
-The original grouped several learning rules under one citation. The selected answer places citations next to individual rules. The average judge score was **0.965 → 0.975** on two separate handbook questions, with DeepSeek Flash generating and judging both versions. This folder uses the selected prompt.
+ProTeGi added instructions to cite individual claims and keep rules attached to their handbook section. The selected response distinguishes the learning allowance, equipment allowance and absent parental-leave policy. The prompts in this folder are the selected version.
 
 ## Try it
 

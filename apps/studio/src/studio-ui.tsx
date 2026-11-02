@@ -3,8 +3,18 @@ import { Handle, Position, useNodesInitialized, useReactFlow, useStore, type Nod
 import { childGraphs, nodeSize, type Group } from './canvas';
 import type { Lang, NodeKind, NodeSpec } from './types';
 
-export type IconName = 'grid' | 'folder' | 'search' | 'plus' | 'upload' | 'download' | 'code' | 'file' | 'history' | 'database' | 'chart' | 'layers' | 'settings' | 'arrow' | 'play' | 'branch' | 'tool' | 'model' | 'human' | 'menu' | 'close' | 'refresh' | 'robot' | 'scan' | 'globe' | 'terminal' | 'mail' | 'film' | 'check' | 'merge' | 'expand' | 'collapse' | 'network';
+export type IconName = 'grid' | 'folder' | 'search' | 'plus' | 'upload' | 'download' | 'code' | 'file' | 'history' | 'database' | 'chart' | 'layers' | 'settings' | 'arrow' | 'play' | 'branch' | 'tool' | 'model' | 'human' | 'menu' | 'close' | 'refresh' | 'robot' | 'scan' | 'globe' | 'terminal' | 'mail' | 'film' | 'check' | 'merge' | 'expand' | 'collapse' | 'network' | 'briefcase' | 'graduate' | 'pen' | 'calendar' | 'book' | 'headset' | 'compass' | 'receipt' | 'clock' | 'spark';
 const paths: Record<IconName, string> = {
+  briefcase:'M3 7h18v14H3zM8 7V3h8v4M3 12c5 4 13 4 18 0M10 13h4v3h-4z',
+  graduate:'m2 9 10-5 10 5-10 5L2 9m4 3v6c4 3 8 3 12 0v-6m4-3v10',
+  pen:'m4 16 12-12 4 4-12 12H4v-4zm9-9 4 4M3 22h18',
+  calendar:'M3 5h18v16H3zM7 2v6m10-6v6M3 11h18M7 15h3m4 0h3m-10 3h3',
+  book:'M12 5c-3-3-7-3-10-2v16c4-1 7 0 10 2 3-2 6-3 10-2V3c-3-1-7-1-10 2v16',
+  headset:'M3 12a9 9 0 0 1 18 0M3 11h4v8H3zm14 0h4v8h-4zM21 19c0 3-5 3-9 3',
+  compass:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0m-5-5-2 7-7 3 3-7 6-3',
+  receipt:'M5 2l3 2 4-2 4 2 3-2v20l-3-2-4 2-4-2-3 2V2m4 6h6m-6 4h6m-6 4h4',
+  clock:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M12 6v6l4 2',
+  spark:'m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3',
   robot: 'M8 4h8M12 2v2M4 7h16v13H4zM8 11v2m8-2v2M9 17h6M1 10v6m22-6v6',
   scan: 'M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5M6 12h12M8 7h8M8 17h8',
   globe: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18',
@@ -51,38 +61,50 @@ const icons: Record<NodeKind, IconName> = {
   model: 'model', agent: 'robot', tool: 'tool', condition: 'branch', transform: 'code',
   join: 'merge', loop: 'refresh', parallel: 'network', map: 'layers', human: 'human',
 };
-export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang; direction?:'RIGHT'|'DOWN'; busy?:boolean; promptPreview?:string; onOpen?:(path:string[])=>void };
+export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang; direction?:'RIGHT'|'DOWN'; busy?:boolean; promptPreview?:string; toolPlugins?:Record<string,{plugin:string}>; onOpen?:(path:string[])=>void };
 export type WorkflowFlowNode = Node<WorkflowData>;
+const readable=(name:string)=>name.replaceAll('_',' ').replaceAll('-',' ').replace(/^./,c=>c.toUpperCase());
+function capabilityIcon(name:string):IconName{
+  return /ocr|scan/.test(name)?'scan':/receipt|invoice|expense/.test(name)?'receipt':/python|code|build|execute/.test(name)?'terminal':/sql|database|memory|recall/.test(name)?'database':/search|browse|fetch|research/.test(name)?'globe':/video|image|render|shot/.test(name)?'film':/mail|message/.test(name)?'mail':/resume|interview|career|fit_review/.test(name)?'briefcase':/quiz|learn|lesson|teach/.test(name)?'graduate':/chapter|outline|book/.test(name)?'book':/review|check|verify/.test(name)?'check':/write|draft|editor|content/.test(name)?'pen':/travel|trip|plan|day/.test(name)?'compass':/meeting|calendar/.test(name)?'calendar':/support|customer/.test(name)?'headset':'tool';
+}
 export function WorkflowNode({ id, data, selected }: NodeProps<WorkflowFlowNode>) {
-  const { config, lang = 'en' } = data;
-  // Drafts can contain an unsupported kind until server validation on save.
-  const type = labels[config.type]?.[lang === 'zh' ? 0 : 1] ?? String(config.type ?? 'Node');
-  const binding = typeof config.model === 'string' ? config.model : typeof config.tool === 'string' ? config.tool : undefined;
-  const summary = data.promptPreview || (typeof config.instructions === 'string' && config.instructions.trim() ? config.instructions
-    : typeof config.instructions === 'object' && config.instructions?.resource ? `${lang === 'zh' ? '提示资源' : 'Prompt'} · ${config.instructions.resource}`
-    : binding ?? (config.type === 'human' ? (lang === 'zh' ? '暂停并等待审核' : 'Pause for review') : type));
-  const capability=(config.tool??'').toLowerCase();
-  const toolIcon:IconName=/ocr|scan|receipt/.test(capability)?'scan':/python|code|execute/.test(capability)?'terminal':/search|browse|fetch|web/.test(capability)?'globe':/video|image|render/.test(capability)?'film':/mail|message/.test(capability)?'mail':/memory|sql|database/.test(capability)?'database':'tool';
-  const vertical=data.direction==='DOWN';
-  const compact=['tool','transform','join'].includes(config.type);
-  const children=childGraphs(config);
-  return <div style={nodeSize(config)} className={`workflow-node kind-${config.type}${vertical?' vertical-node':''}${selected ? ' is-selected' : ''}`}>
-    <Handle type="target" position={vertical?Position.Top:Position.Left} />
-    <div className="workflow-node-heading"><span className="node-symbol"><Icon name={config.type==='tool'?toolIcon:icons[config.type] ?? 'settings'} size={18} /></span><strong title={id}>{id.replaceAll('_',' ')}</strong>{!compact&&<span className="node-type">{type}</span>}</div>
-    {config.type!=='join'&&<p className="node-summary" title={summary}>{compact?(binding??summary):summary}</p>}
-    {config.type==='tool'&&<span className="tool-mode">{lang==='zh'?'确定性任务':'Deterministic task'}</span>}
-    {config.type==='agent'&&<div className="agent-tools"><Icon name="tool" size={12}/><span>{(config.tools??[]).slice(0,2).join(' · ') || (lang==='zh'?'自主选择工具':'Agent-selected tools')}{(config.tools??[]).length>2?` +${config.tools!.length-2}`:''}</span></div>}
-    {(config.type==='agent'||(config.type==='model'&&!!config.skills?.length))&&<div className="agent-resources"><span><Icon name="file" size={10}/>{lang==='zh'?'提示词':'Prompt'}</span><span><Icon name="layers" size={10}/>{config.skills?.length??0} {lang==='zh'?'技能':'skills'}</span><span><Icon name="settings" size={10}/>{config.temperature??0} T</span></div>}
-    {children.length>0&&<div className="subflow-links">{children.map(child=><button className="nodrag nopan" disabled={data.busy} key={child.label} onClick={()=>data.onOpen?.(child.path)}><Icon name="layers" size={12}/>{child.label} · {Object.keys((child.path[0]==='body'?config.body:config.branches?.[child.label])?.nodes??{}).length}<Icon name="arrow" size={11}/></button>)}</div>}
-    {!compact&&config.type!=='condition'&&children.length===0&&<div className="node-meta"><span>{binding ?? `${Object.keys(config.inputs ?? {}).length} ${lang === 'zh' ? '项输入' : 'inputs'}`}</span><span>{config.response_format==='json'?'JSON':config.type==='human'?(lang==='zh'?'需审核':'Review'):'Output'}</span></div>}
-    {config.type==='condition'?<><Handle id="true" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'35%'}}/><Handle id="false" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'75%'}}/><span className="branch-label branch-true">true</span><span className="branch-label branch-false">false</span></>:<Handle type="source" position={vertical?Position.Bottom:Position.Right} />}
+  const {config,lang='en'}=data;
+  const say=(zh:string,en:string)=>lang==='zh'?zh:en;
+  const type=labels[config.type]?.[lang==='zh'?0:1]??String(config.type??'Node');
+  const isAgent=config.type==='agent',isModel=config.type==='model',isText=isAgent||isModel;
+  const children=childGraphs(config),vertical=data.direction==='DOWN';
+  const prompt=data.promptPreview||(typeof config.instructions==='string'?config.instructions:'');
+  const inputNames=Object.keys(config.inputs??{});
+  const summary=isText?(prompt||say('设置角色、任务与输出要求','Define the role, task and expected output')):
+    config.type==='human'?say('在这里收集用户回答或审批意见','Collect a response before continuing'):
+    config.type==='map'?say('为每个输入启动一个子流程','Run a subflow for each input item'):
+    config.type==='parallel'?say('分派独立任务，等待各分支完成','Run branches together, then collect results'):
+    config.type==='loop'?say('重复执行，直到满足结束条件','Repeat until the exit condition is met'):
+    config.type==='condition'?say('按规则选择下一条路径','Choose a path from the rule result'):
+    config.type==='tool'?(config.tool??say('选择一个工具','Select a tool')):
+    inputNames.join(' · ')||say('连接数据','Connect data');
+  const tools=(config.tools??[]).map(name=>({name,plugin:data.toolPlugins?.[name]?.plugin??name}));
+  const skillNames=config.skills??[];
+  const roleIcon=capabilityIcon(id.toLowerCase());
+  const icon=config.type==='tool'?capabilityIcon(config.tool??id):isText?(roleIcon==='tool'?icons[config.type]:roleIcon):icons[config.type]??'settings';
+  return <div style={nodeSize(config)} className={`workflow-node kind-${config.type}${vertical?' vertical-node':''}${selected?' is-selected':''}`}>
+    <Handle type="target" position={vertical?Position.Top:Position.Left}/>
+    <div className="workflow-node-heading"><span className="node-symbol"><Icon name={icon} size={18}/></span><div className="node-heading-text"><span className="node-type">{type}</span><strong title={id}>{readable(id)}</strong></div>{isAgent&&<span className="node-autonomy" title={say('智能体决定工具调用顺序','The agent chooses its next tool')}><Icon name="spark" size={13}/></span>}</div>
+    {config.type!=='join'&&<p className="node-summary" title={summary}>{summary}</p>}
+    {isText&&!!skillNames.length&&<div className="node-skills" title={skillNames.join(', ')}><Icon name="layers" size={12}/>{skillNames.slice(0,2).map(name=><span key={name}>{readable(name)}</span>)}{skillNames.length>2&&<small>+{skillNames.length-2}</small>}</div>}
+    {isAgent&&<div className="node-tool-row">{tools.length?tools.slice(0,3).map(tool=><span key={tool.name} title={tool.plugin}><Icon name={capabilityIcon(tool.plugin)} size={12}/>{readable(tool.name)}</span>):<span>{say('尚未选择工具','No tools selected')}</span>}{tools.length>3&&<small>+{tools.length-3}</small>}</div>}
+    {children.length>0&&<div className="subflow-links">{children.map(child=>{const graph=child.path[0]==='body'?config.body:config.branches?.[child.label];return <button className="nodrag nopan" disabled={data.busy} key={child.label} onClick={()=>data.onOpen?.(child.path)}><span className="mini-flow"><i/><i/><i/></span><span><strong>{child.label==='body'?say('子流程','Subflow'):readable(child.label)}</strong><small>{Object.keys(graph?.nodes??{}).length} {say('个步骤','steps')}</small></span><Icon name="arrow" size={14}/></button>})}</div>}
+    {isText&&<div className="node-meta"><span><Icon name="model" size={12}/>{config.model??'Model'}</span><span>{config.response_format==='json'?'JSON':say('文本','Text')}{config.max_output_tokens?` · ${config.max_output_tokens.toLocaleString()} ${say('token','tokens')}`:''}</span></div>}
+    {config.type==='tool'&&<div className="tool-mode"><span className="always-dot"/>{say('流程到此自动执行','Always runs at this step')}</div>}
+    {config.type==='human'&&<div className="human-mode"><Icon name="clock" size={12}/>{say('等待回答后继续','Pause → respond → resume')}</div>}
+    {config.type==='condition'?<><Handle id="true" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'35%'}}/><Handle id="false" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'75%'}}/><span className="branch-label branch-true">true</span><span className="branch-label branch-false">false</span></>:<Handle type="source" position={vertical?Position.Bottom:Position.Right}/>}
   </div>;
 }
 function GroupCard({data,selected}:NodeProps<Node<{group:Group;count:number;lang:Lang;onToggle:()=>void;busy?:boolean}>>) {
   const {group,count,lang}=data;
   return <div className={`canvas-group ${group.collapsed?'is-collapsed':'is-expanded'}${selected?' is-selected':''}`}>
     {group.collapsed&&<Handle type="target" position={Position.Left}/>}
-    <div className="group-heading"><Icon name="layers"/><strong>{group.label}</strong><button aria-label={(group.collapsed?'Expand ':'Collapse ')+group.label} className="nodrag nopan" disabled={data.busy} onClick={data.onToggle}><Icon name={group.collapsed?'expand':'collapse'} size={14}/></button></div>
+    <div className="group-heading"><Icon name="layers"/><strong>{group.label}</strong><span className="group-count">{count}</span><button aria-label={(group.collapsed?'Expand ':'Collapse ')+group.label} className="nodrag nopan" disabled={data.busy} onClick={data.onToggle}><Icon name={group.collapsed?'expand':'collapse'} size={14}/></button></div>
     {group.collapsed&&<p>{count} {lang==='zh'?'个节点':'nodes'} · {lang==='zh'?'展开查看流程':'Expand to explore'}</p>}
     {group.collapsed&&<Handle type="source" position={Position.Right}/>}
   </div>;

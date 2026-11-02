@@ -14,6 +14,7 @@ The same application task can support several optimization methods. What differs
 | APE | Input/output demonstrations for instruction induction; likelihood or task accuracy for selection | Paired references when available; input-only induction plus judge scoring is the native adaptation |
 | ProTeGi | Minibatches of examples, predictions and reference/error feedback | References or concrete judge/environment feedback; textual gradients retain their source tasks |
 | Bootstrap few-shot / random search | Training examples, optional teacher traces and a metric that accepts demonstrations | Search tasks with at least one scored successful execution; native variants use input/output demonstrations |
+| MIPRO resource search | Task-grounded instructions, successful module traces and scalar program scores | Passing search traces with resolved node inputs/outputs; instruction/demo pool sizes and a joint-search budget |
 | PromptBreeder | Task examples and fitness for task/mutation-prompt populations | Inputs plus stable scalar scoring, enough budget for population evaluation |
 | Reflexion | Interactive task attempts, observations and success/failure signals | Failure trajectories and environment or judge feedback; bounded reflections become versioned resources |
 | ExpeL | Successful and failed experiences, often multiple attempts per task | Runtime experiences with a score and reason; rules reference actual search sample IDs |
@@ -27,9 +28,11 @@ These are integration targets, not additional implemented algorithms:
 | Direction | Required inputs/environment | Why a generic answer-only dataset is insufficient |
 | --- | --- | --- |
 | [TextGrad](https://github.com/zou-group/textgrad) | Task inputs, a textual loss/evaluator and a graph of editable variables | Feedback must reach the responsible component, not merely a final prompt |
-| [MIPROv2](https://github.com/stanfordnlp/dspy/blob/main/dspy/teleprompt/mipro_optimizer_v2.py) | Train/validation tasks, a callable metric, instruction and demonstration candidates | Joint program optimization needs component traces and search allocation |
+| Full [DSPy MIPROv2](https://github.com/stanfordnlp/dspy/blob/main/dspy/teleprompt/mipro_optimizer_v2.py) | Train/validation tasks, a callable metric, instruction and demonstration candidates | Native resource search is available; upstream DSPy program bindings, teacher bootstrapping and minibatch allocation remain to integrate |
 | [ADAS](https://github.com/ShengranHu/ADAS) | Task data, an execution environment for generated agent code, a task fitness function | Generated architectures require bounded execution and behavioral checks |
-| AFlow-style workflow search | Executable workflow operators, task inputs and an evaluation environment | Search changes orchestration, so topology and resource costs must be validated |
+| [AFlow](https://github.com/geekan/MetaGPT/tree/main/examples/aflow) | Executable workflow operators, task inputs and an evaluation environment | Search changes orchestration, so topology and resource costs must be validated |
+| [Darwin Gödel Machine](https://github.com/jennyzzt/dgm) | Repository tasks, an isolated execution environment, tests and an archive of agent variants | Modifying the agent implementation requires code-level validation and recoverable candidate execution |
+| [AlphaEvolve](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/) | Executable programs, a verifiable objective and inexpensive candidate evaluation | Program evolution needs sandboxed execution and domain-specific correctness checks |
 | [Voyager](https://github.com/MineDojo/Voyager) | An interactive world, observations, task/curriculum feedback and reusable skills | Skill success depends on environment state and action effects |
 | [SkillWeaver](https://github.com/OSU-NLP-Group/SkillWeaver) | Browser tasks, page observations, executable skills and verification | A reusable browser procedure needs more than a plausible text response |
 

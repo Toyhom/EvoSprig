@@ -16,9 +16,16 @@ Method = Literal[
     "promptbreeder",
     "reflexion",
     "expel",
+    "mipro",
 ]
 
 METHODS = {
+    "mipro": {
+        "name": "MIPRO resource search",
+        "family": "joint instruction and demonstration search",
+        "feedback": "component traces and scalar scores",
+        "source": "https://arxiv.org/abs/2406.11695",
+    },
     "opro": {
         "name": "OPRO",
         "family": "score history",

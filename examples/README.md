@@ -29,17 +29,21 @@ Start with a working application pattern, connect your model and tools, then mak
 
 The catalog includes the five application categories highlighted by [MetaGPT](https://github.com/FoundationAgents/MetaGPT), writing/planning patterns from [CrewAI](https://github.com/crewAIInc/crewAI-examples), retrieval and stateful assistant patterns used with [LangGraph](https://docs.langchain.com/oss/python/langgraph/workflows-agents), and [VideoClaw](https://github.com/HITsz-TMG/VideoClaw)-style production. These are EvoSprig implementations of the application patterns. Their guides describe the connected tools and scope.
 
-## Before and after
+## Self-evolution in action
+
+<img src="study-coach/assets/evolution.png" alt="Study coach: original output, actual skill edits and selected feedback" width="100%" />
+
+**Study coach:** one Self-Refine round updates two shared skills so exercises and feedback stay tied to the supplied problem. [View the edits and answers](study-coach/).
 
 <img src="book-studio/assets/comparison.png" alt="Book studio: original and evolved chapters on the same task" width="100%" />
 
 **Book studio:** APE search improved the average score from **0.740 to 0.895** on two held-out writing tasks. Read the [prompt changes and output excerpts](book-studio/README.md): the original community-event guide changes budget amounts across chapters; the selected outline emphasizes the constraints and distinct chapter responsibilities.
 
-**Document chat:** textual-gradient search scored **0.965 → 0.975** on two held-out handbook questions. [Compare the answers and citations](document-chat/README.md).
+**Document chat:** textual-gradient search improves the placement of citations and separates rules from different handbook sections. [Read the selected answer](document-chat/).
 
-These comparisons use DeepSeek Flash as task model and judge on two held-out tasks with fixed criteria. Each application README shows its result and how to run it.
+The comparisons use DeepSeek Flash as task model and judge. Each application page gives its task context and shows the result directly.
 
-Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../docs/evaluation.md), then choose one of the [13 training-free strategies](../docs/evolution.md). The same evaluator checks the original and candidate; you decide whether to adopt the result.
+Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../docs/evaluation.md), then choose one of the [14 training-free strategies](../docs/evolution.md). The same evaluator checks the original and candidate; you decide whether to adopt the result.
 
 ## Start running
 

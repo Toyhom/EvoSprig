@@ -25,6 +25,10 @@ class StudyConfig(Contract):
     max_metric_calls: int = Field(default=30, ge=1, le=100000)
     seed: int = Field(default=0, ge=0)
     population_size: int = Field(default=4, ge=4, le=32)
+    instruction_candidates: int = Field(default=3, ge=2, le=16)
+    demo_candidates: int = Field(default=3, ge=1, le=16)
+    max_demos: int = Field(default=2, ge=0, le=8)
+    demo_threshold: float = Field(default=0.8, ge=0, le=1, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def unique_resources(self):
@@ -127,6 +131,15 @@ async def execute_study(
 
             method_result = await optimize(
                 context, max_metric_calls=config.max_metric_calls, seed=config.seed
+            )
+        elif config.method == "mipro":
+            from .mipro import optimize
+
+            method_result = await optimize(
+                context, rounds=config.rounds, seed=config.seed,
+                instruction_candidates=config.instruction_candidates,
+                demo_candidates=config.demo_candidates,
+                max_demos=config.max_demos, demo_threshold=config.demo_threshold,
             )
         elif config.method.startswith("evoprompt_"):
             from .search import evoprompt

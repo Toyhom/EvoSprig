@@ -9,7 +9,7 @@
 | Agent resources | Main prompts and ordered reusable skills; independent resource search and shared-resource editing |
 | Tools | Python, JSON HTTP, asynchronous HTTP jobs, MCP Streamable HTTP, read-only SQLite; optional Python/WASM, browser and OCR tools |
 | Memory | BM25, pluggable embeddings with rank fusion, context blocks, temporal relations, episodic/linked recall, source-aware summaries, multi-query retrieval, scoped deletion |
-| Evolution | 13 training-free strategies across 11 families; [method matrix](evolution.md) |
+| Evolution | 14 training-free strategies across 12 families; [method matrix](evolution.md) |
 | Evaluation | Search/selection/release/test partitions; rules, JSON schema, LLM-as-judge, external/composite scorers; output/node/trajectory/environment targets, concurrent isolated samples, IndustryBench replay |
 | Versions | Candidate diffs, lineage, manual release, rollback and snapshot export |
 | Studio | English by default, persistent Chinese language option, workflow/resources/history/memory/improvement/releases |

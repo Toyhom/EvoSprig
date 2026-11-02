@@ -8,13 +8,7 @@ Save a preference today and use it in a later session. The agent chooses when to
 
 ## Preferences carry into the next task
 
-With vegetarian meals and morning meetings saved in memory, the assistant suggests:
-
-> **Lunch:** A vegetarian option — e.g., a veggie bowl, a Mediterranean mezze plate, or a plant-based sandwich/salad.
->
-> **Meeting time:** Morning, before noon — e.g., **10:00–10:45** or **11:00–11:45**, which leaves a clean gap before lunch.
-
-It asks for the date and timezone before turning those suggestions into a schedule.
+![Selected application result](assets/result.png)
 
 ## Try it
 

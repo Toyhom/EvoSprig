@@ -17,6 +17,9 @@ test('conditional graph keeps branch flags through canvas and spec editing',asyn
   await page.getByRole('button',{name:'规格',exact:true}).click();await page.getByRole('button',{name:'画布',exact:true}).click();
   await page.getByRole('button',{name:'自动排列'}).click();await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('status')).toContainText('已保存');
+  await expect(page.locator('.react-flow__edge-text')).toHaveCount(2);
+  await expect(page.locator('.react-flow__edge-text').filter({hasText:/^true$/})).toHaveCount(1);
+  await expect(page.locator('.react-flow__edge-text').filter({hasText:/^false$/})).toHaveCount(1);
   const after=await(await request.get('/api/projects/'+id)).json();expect(after.spec_hash).toBe(before.spec_hash);
   expect(after.spec.graph.edges.filter((edge:{when?:boolean})=>typeof edge.when==='boolean').map((edge:{when:boolean})=>edge.when).sort()).toEqual([false,true]);
   await page.getByLabel('运行输入',{exact:true}).fill('{"flag":false}');await page.getByRole('button',{name:'▷ 运行',exact:true}).click();

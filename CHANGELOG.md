@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+- Add MIPRO resource search: task-grounded instructions, component demonstrations and categorical TPE; 14 training-free strategies across 12 families.
+- Reuse model HTTP connections across workflow nodes and concurrent evaluation samples, with configurable pool limits.
+- Add configurable judge output limits and bounded assessment repair; include actual human-node questions and replies in judging.
+- Redesign canvas cards by node type, expand role/tool icons, and route connectors around cards and group headings.
+- Keep node selection when reopening the active project.
+- Add image-based prompt/skill comparisons and inline application results using public task sources.
+- Simplify the architecture diagram and editable slide; refresh English/Chinese self-evolution guides and method coverage.
+
 ## 0.1.1
 
 - Attach reusable skills to model and agent nodes; optimize selected skills independently of the main prompt.

@@ -14,6 +14,7 @@ EvoSprig implements the mechanisms described in the [evolution](evolution.md), [
 | APE | Zhou et al. (2022), [Large Language Models Are Human-Level Prompt Engineers](https://arxiv.org/abs/2211.01910) | Instruction induction and neighborhood search |
 | ProTeGi | Pryzant et al. (2023), [Automatic Prompt Optimization with “Gradient Descent” and Beam Search](https://arxiv.org/abs/2305.03495) | Textual gradients and beam search |
 | Bootstrap demonstrations | Khattab et al. (2023), [DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines](https://arxiv.org/abs/2310.03714) | Passing input/output demonstrations and subset search |
+| MIPRO | Opsahl-Ong et al. (2024), [Optimizing Instructions and Demonstrations for Multi-Stage Language Model Programs](https://arxiv.org/abs/2406.11695) | Native joint instruction/demo search with passing component traces and categorical TPE |
 | PromptBreeder | Fernando et al. (2023), [Promptbreeder: Self-Referential Self-Improvement Via Prompt Evolution](https://arxiv.org/abs/2309.16797) | Task/mutation instruction coevolution |
 | Reflexion | Shinn et al. (2023), [Reflexion: Language Agents with Verbal Reinforcement Learning](https://arxiv.org/abs/2303.11366) | Bounded reflections from failed trajectories |
 | ExpeL | Zhao et al. (2023), [ExpeL: LLM Agents Are Experiential Learners](https://arxiv.org/abs/2308.10144) | Rules derived from successful and failed experiences |

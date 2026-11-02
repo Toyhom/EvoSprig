@@ -63,6 +63,10 @@ def add_commands(commands):
             parser.add_argument("--resource", action="append", required=True)
             parser.add_argument("--rounds", type=int, default=3)
             parser.add_argument("--population-size", type=int, default=4)
+            parser.add_argument("--instruction-candidates", type=int, default=3)
+            parser.add_argument("--demo-candidates", type=int, default=3)
+            parser.add_argument("--max-demos", type=int, default=2)
+            parser.add_argument("--demo-threshold", type=float, default=0.8)
             parser.add_argument("--max-candidates", type=int, default=24)
             parser.add_argument("--max-metric-calls", type=int, default=30)
             parser.add_argument("--proposal-output-tokens", type=int, default=1024)
@@ -227,6 +231,10 @@ def run_command(args):
             budget=budget,
             rounds=args.rounds,
             population_size=args.population_size,
+            instruction_candidates=args.instruction_candidates,
+            demo_candidates=args.demo_candidates,
+            max_demos=args.max_demos,
+            demo_threshold=args.demo_threshold,
             max_metric_calls=args.max_metric_calls,
             seed=args.seed,
             gate=ReleaseGate(min_gain=args.min_gain, min_samples=args.min_samples),
