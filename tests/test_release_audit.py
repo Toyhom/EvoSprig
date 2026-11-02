@@ -36,13 +36,14 @@ def test_accepts_public_templates():
     AUDIT["check"]("docs/setup.md", b"http://127.0.0.1:18766 https://api.deepseek.com")
 
 
-def test_reviewed_synthetic_fixture_does_not_allow_other_credential_urls():
+@pytest.mark.parametrize("prefix", ["", "evosprig-0.1.0a1/"])
+def test_reviewed_synthetic_fixture_does_not_allow_other_credential_urls(prefix):
     fixture = b"https://" + b"user:secret@example.org"
-    AUDIT["check"]("tests/test_http_tools.py", fixture)
+    AUDIT["check"](prefix + "tests/test_http_tools.py", fixture)
     with pytest.raises(ValueError):
         AUDIT["check"]("docs/config.md", fixture)
     with pytest.raises(ValueError):
-        AUDIT["check"]("tests/test_http_tools.py", fixture.replace(b"secret", b"other-password"))
+        AUDIT["check"](prefix + "tests/test_http_tools.py", fixture.replace(b"secret", b"other-password"))
 
 
 def test_history_scan_rejects_secret_removed_from_current_tree(tmp_path):

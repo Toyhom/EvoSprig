@@ -62,9 +62,12 @@ def check(name: str, data: bytes):
         raise ValueError(f"runtime artifact: {name}")
     # Reviewed synthetic rejection fixtures exist in the original public history.
     # Keep the exception exact and file-scoped; never exempt an entire test directory.
-    if name == "tests/test_http_tools.py":
+    fixture_name = name
+    if len(parts) > 1 and re.fullmatch(r"evosprig-[0-9][A-Za-z0-9_.+-]*", parts[0]):
+        fixture_name = Path(*parts[1:]).as_posix()
+    if fixture_name == "tests/test_http_tools.py":
         data = data.replace(b"https://" + b"user:secret@example.org", b"https://example.org")
-    if name == "tests/test_models.py":
+    if fixture_name == "tests/test_models.py":
         data = data.replace(b"https://" + b"secret:pass@example.com", b"https://example.com")
     if SECRET.search(data):
         raise ValueError(f"credential-like content: {name}")
