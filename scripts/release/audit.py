@@ -85,26 +85,41 @@ def audit_git_history(root: Path):
 
     commits = read("rev-list", "--all").decode().splitlines()
     seen = set()
-    for commit in commits:
-        check("commit metadata", read("show", "-s", "--format=fuller", commit))
-        for row in read("ls-tree", "-rz", commit).split(b"\0"):
-            if not row:
-                continue
-            meta, raw_name = row.split(b"\t", 1)
-            mode, kind, oid = meta.split()
-            name = raw_name.decode()
-            parts = Path(name).parts
-            if kind != b"blob" or mode == b"120000":
-                raise ValueError(f"Git link or submodule: {name}")
-            if (
-                parts[0] not in ROOT_DIRS
-                and (len(parts) != 1 or name not in ROOT_FILES | HISTORICAL_ROOT_FILES)
-            ) or any(part in SKIP or part.endswith(".egg-info") for part in parts):
-                raise ValueError(f"Git file is not allowlisted: {name}")
-            if (oid, name) in seen:
-                continue
-            seen.add((oid, name))
-            check(name, read("cat-file", "blob", oid.decode()))
+    # One Git reader avoids spawning a process for every historical file.
+    with subprocess.Popen([*git, "cat-file", "--batch"], stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE) as objects:
+        def blob(oid):
+            objects.stdin.write(oid + b"\n")
+            objects.stdin.flush()
+            header = objects.stdout.readline().split()
+            if len(header) != 3 or header[0] != oid or header[1] != b"blob":
+                raise ValueError("Git returned an invalid historical object")
+            size = int(header[2])
+            data = objects.stdout.read(size)
+            if len(data) != size or objects.stdout.read(1) != b"\n":
+                raise ValueError("Git returned an incomplete historical object")
+            return data
+
+        for commit in commits:
+            check("commit metadata", read("show", "-s", "--format=fuller", commit))
+            for row in read("ls-tree", "-rz", commit).split(b"\0"):
+                if not row:
+                    continue
+                meta, raw_name = row.split(b"\t", 1)
+                mode, kind, oid = meta.split()
+                name = raw_name.decode()
+                parts = Path(name).parts
+                if kind != b"blob" or mode == b"120000":
+                    raise ValueError(f"Git link or submodule: {name}")
+                if (
+                    parts[0] not in ROOT_DIRS
+                    and (len(parts) != 1 or name not in ROOT_FILES | HISTORICAL_ROOT_FILES)
+                ) or any(part in SKIP or part.endswith(".egg-info") for part in parts):
+                    raise ValueError(f"Git file is not allowlisted: {name}")
+                if (oid, name) in seen:
+                    continue
+                seen.add((oid, name))
+                check(name, blob(oid))
     for tag in read("for-each-ref", "--format=%(objectname)", "refs/tags").decode().splitlines():
         if read("cat-file", "-t", tag).strip() == b"tag":
             check("tag metadata", read("cat-file", "-p", tag))

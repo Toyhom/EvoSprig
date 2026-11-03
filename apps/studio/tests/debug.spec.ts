@@ -1,5 +1,28 @@
 import {test,expect} from '@playwright/test';
 
+test('debug inputs submit visible defaults and keep optional fields absent',async({page,request})=>{
+  const id='debug-defaults-'+Date.now();
+  const settings={type:'object',properties:{mode:{type:'string',enum:['draft','final']},steps:{type:'integer',default:12,minimum:1},audio:{type:'boolean'},notes:{type:'string',minLength:1}},required:['mode','steps','audio'],additionalProperties:false};
+  const spec={id,spec_version:'0.3',input_schema:{type:'object',properties:{settings},required:['settings']},output_schema:{},models:{},tools:{},resources:{},graph:{entry:'render',nodes:{render:{type:'transform',inputs:{settings:{ref:'input.settings'}},output_schema:{}}},edges:[],output:{settings:{ref:'nodes.render.output.settings'}}}};
+  expect((await request.post('/api/projects',{data:{spec}})).status()).toBe(201);
+  await page.goto('/');await page.locator(`.project[title="${id}"]`).click();
+  await page.locator('.react-flow__node[data-id="render"]').click();
+  await page.getByRole('button',{name:'Debug selection',exact:true}).click();
+  const panel=page.getByRole('region',{name:'Node debug'});
+  await expect(panel.getByLabel('mode',{exact:true})).toHaveValue('"draft"');
+  await expect(panel.getByLabel('steps',{exact:true})).toHaveValue('12');
+  await panel.getByRole('button',{name:'Add optional notes',exact:true}).click();
+  await panel.getByLabel('notes',{exact:true}).fill('One test frame');
+  await panel.getByRole('button',{name:'Remove optional notes',exact:true}).click();
+  const started=page.waitForResponse(r=>r.url().endsWith('/debug/runs')&&r.request().method()==='POST');
+  await panel.getByRole('button',{name:'Run selected nodes',exact:true}).click();
+  const response=await started;expect(response.status()).toBe(202);
+  const run=await response.json();
+  await expect(page.getByRole('status')).toContainText('succeeded');
+  const result=await(await request.get('/api/runs/'+run.run_id)).json();
+  expect(result.output.render.settings).toEqual({mode:'draft',steps:12,audio:false});
+});
+
 test('debug a node with guided upstream input and leave its source idle',async({page,request})=>{
   const id='debug-'+Date.now();
   const output_schema={type:'object',properties:{text:{type:'string'}},required:['text']};

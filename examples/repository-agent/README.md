@@ -6,6 +6,17 @@ A repository maintenance team based on [DeepSeek's Super-agent prototype](https:
 
 The coordinator plans the change. An engineer edits an independent Git worktree, and a reviewer checks the patch against the request and actual test output. Failed checks return to the engineer for another pass. The final patch opens in a human review step.
 
+## Fix an invoice importer
+
+The team replaced a comma-splitting parser with CSV parsing, preserving Decimal arithmetic and the existing API. The returned patch handles quoted names, BOM and whitespace, optional VAT, duplicate IDs, invalid amounts and rounding.
+
+```text
+Input:   I-1,"Studio, Ltd",10.00,0.20
+Result:  customer = "Studio, Ltd" · total = Decimal("12.00")
+
+8 checks passed · 1 file changed · ready for review
+```
+
 ## Run
 
 Point `AGENT_REPOSITORY` at a local checkout and configure the test command:

@@ -28,7 +28,7 @@ Choose **Focus canvas** for more room to inspect a large graph. **Exit focus** o
 
 ## Try a node or a group
 
-Select a node, several nodes or a collapsed group, then choose **Debug selection**. Fill the input fields or choose **Use outputs from the last run**. The selected nodes execute with their current prompts and settings, and the panel supplies saved outputs for the surrounding graph.
+Select a node, several nodes or a collapsed group, then choose **Debug selection**. Fill the input fields or choose **Use outputs from the last run**. Required fields start with their displayed defaults; add optional fields only when you need them. The selected nodes execute with their current prompts and settings, and the panel supplies saved outputs for the surrounding graph.
 
 Inside a map or loop, choose a saved item or take. Studio restores that execution's inputs, including the previous shot's state. You can also select separated nodes: live outputs flow between the selected nodes while intermediate outputs come from the saved run. Repeating a debug run retains the inputs you last used.
 

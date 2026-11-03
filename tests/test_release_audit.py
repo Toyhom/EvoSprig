@@ -64,3 +64,24 @@ def test_history_scan_rejects_secret_removed_from_current_tree(tmp_path):
     AUDIT["check"]("README.md", readme.read_bytes())
     with pytest.raises(ValueError, match="credential-like content"):
         AUDIT["audit_git_history"](tmp_path)
+
+
+def test_history_scan_reads_binary_assets_and_each_revision(tmp_path):
+    git = ["git", "-c", f"safe.directory={tmp_path}", "-C", str(tmp_path),
+           "-c", "user.name=Test", "-c", "user.email=test@example.invalid"]
+
+    def run(*args):
+        subprocess.run([*git, *args], check=True, capture_output=True)
+
+    run("init")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/frame.png").write_bytes(b"\x89PNG\x00\xff\n" * 10000)
+    readme = tmp_path / "README.md"
+    readme.write_text("An animated scene.\n")
+    run("add", ".")
+    run("commit", "-m", "add scene")
+    readme.write_text("An animated scene with dialogue.\n")
+    run("add", ".")
+    run("commit", "-m", "describe dialogue")
+    run("tag", "-a", "preview", "-m", "Scene preview")
+    assert AUDIT["audit_git_history"](tmp_path) == {"commits": 2, "blob_paths": 3}
