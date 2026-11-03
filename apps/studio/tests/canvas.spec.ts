@@ -53,3 +53,26 @@ test('selected nodes form nested groups without changing the execution graph',as
   expect(saved.canvas.groups.graph).toHaveLength(2);
   expect(saved.canvas.groups.graph.find((g:{label:string})=>g.label==='Specialists').members.sort()).toEqual(['a','b']);
 });
+
+test('focus and resize keep the arranged graph centered in the visible canvas',async({page,request})=>{
+  const id='focus-'+Date.now().toString(36);
+  const node={type:'transform',inputs:{},output_schema:{}};
+  const spec={spec_version:'0.3',id,input_schema:{type:'object'},output_schema:{},models:{},tools:{},resources:{},graph:{entry:'a',nodes:{a:node,b:node,c:node},edges:[{source:'a',target:'b'},{source:'b',target:'c'}],output:{}}};
+  const canvas={groups:{graph:[{id:'group:team',label:'Task team',members:['a','b','c'],collapsed:false,direction:'DOWN'}]}};
+  expect((await request.post('/api/projects',{data:{spec,canvas}})).status()).toBe(201);
+  await page.goto('/');await page.locator('.project[title="'+id+'"]').click();
+  await page.getByRole('button',{name:'Arrange',exact:true}).click();
+  await page.getByRole('button',{name:'Focus canvas',exact:true}).click();
+  const centered=async()=>{
+    await expect.poll(async()=>{
+      const frame=await page.locator('.react-flow').boundingBox();
+      const group=await page.locator('.react-flow__node[data-id="group:team"]').boundingBox();
+      return frame&&group?Math.abs(group.x+group.width/2-frame.x-frame.width/2):10000;
+    }).toBeLessThan(35);
+  };
+  await centered();
+  await page.setViewportSize({width:1100,height:850});await centered();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button',{name:'Focus canvas',exact:true})).toBeVisible();
+  await centered();
+});

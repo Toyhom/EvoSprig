@@ -24,6 +24,12 @@ Build agents with Python or a visual canvas, then improve their behavior automat
 
 ## What will you build?
 
+### Episode Studio — a story, a cast, a film
+
+[![Episode Studio: an animated scene with dialogue](examples/episode-studio/assets/hillside.jpg)](examples/episode-studio/)
+
+Eight roles turn a story into shots with shared characters, voices and continuity. Agents direct the scenes, adjust render tools and review each take. **[Watch the scene and build your own](examples/episode-studio/)**.
+
 <table>
 <tr>
 <td width="50%" valign="top"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>A story idea becomes a short film.<br><sub>Original: <a href="https://github.com/HITsz-TMG/VideoClaw">VideoClaw</a></sub></td>
@@ -37,6 +43,8 @@ Build agents with Python or a visual canvas, then improve their behavior automat
 
 | Build an agent that… | Start here |
 | --- | --- |
+| Directs an animated story with dialogue | **[Episode Studio](examples/episode-studio/)** — a shared cast, connected shots and automatic retakes |
+| Repairs code and returns a tested patch | **[Super-agent (EvoSprig)](examples/repository-agent/)** — a repository team based on [DeepSeek's Super-agent](https://github.com/deepseek-ai/dsh-superagent-prototype) |
 | Turns a story into a film | **[VideoClaw (EvoSprig)](examples/video-studio/)** — characters, scenes and a finished cut ([original VideoClaw](https://github.com/HITsz-TMG/VideoClaw)) |
 | Works with you on a project | **[CoworkOS (EvoSprig)](examples/cowork/)** — specialist teams and shared documents ([original CoworkOS](https://github.com/RUC-NLPIR/CoworkOS)) |
 | Sees a scene and controls a robot arm | **[RAI manipulation (EvoSprig)](examples/rai-manipulation/)** — visual planning, pick-and-place and task checks ([original RAI](https://github.com/RobotecAI/rai)) |

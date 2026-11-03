@@ -63,6 +63,8 @@ class FilmModel(MockProvider):
             result = {"prompt": inputs["shot"]["id"], "action": False, "steps": 12, "highres_tiling": True}
             if self.engineer_calls == 1:
                 result["unknown_sampler"] = "guess"
+            if self.engineer_calls != 2:
+                result["prompt"] += ' Visitor says "Hello".'
         elif "first-frame editor" in prompt:
             self.frame_reviews += 1
             result = {"accepted": self.frame_reviews != 1, "feedback": "Move the hand to the closed door handle." if self.frame_reviews == 1 else ""}
@@ -137,7 +139,8 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
     assert renders[0]["seed"] != renders[1]["seed"]
     assert renders[0]["highres_tiling"] is True
     assert all("unknown_sampler" not in render for render in renders)
-    assert model.engineer_calls == len(renders) + 1
+    assert model.engineer_calls == len(renders) + 2
+    assert all('Visitor says "Hello".' in render["prompt"] for render in renders)
     assert model.second_context["previous"]["last_frame"]["id"] == "clip-2-tail"
     assert images[4]["references"][0]["id"] == ("image-1" if director_cut else "clip-2-tail")
     assert recipes[0]["reference_audio"] == recipes[0]["reference_videos"] == []
@@ -254,3 +257,28 @@ def test_shot_director_changes_reference_conditioning_with_the_edit():
     context["shot"]["location"] = "garden"
     moved = execute(code, {"context": context, "prompt": "A visitor at the door.", "attempt": 0, "transition": "continue"})["context"]
     assert moved["shot"]["transition"] == "cut" and moved["video_references"] == []
+
+
+@pytest.mark.parametrize("dialogue,narration", [
+    ([{"speaker": "visitor", "text": "你好，我们出发吧。"}], ""),
+    ([], "这扇门通向远方。"),
+    ([{"speaker": "visitor", "text": "Hello"}], "The journey begins."),
+])
+def test_render_validation_catches_missing_speech_before_generation(dialogue, narration):
+    from evosprig.core.json_program import execute
+
+    source = (Path(__file__).parents[1] / "examples/episode-studio/code/render_valid.py").read_text()
+    inputs = {"input": {"shot": {"dialogue": dialogue, "narration": narration},
+                        "render_profile": {"controls": {"type": "object"}}},
+              "output": {"prompt": "Wind through the grass. No dialogue.", "action": False}}
+    rejected = execute(source, inputs)
+    assert not rejected["valid"]
+    for line in dialogue:
+        assert line["text"] in rejected["feedback"]
+    if narration:
+        assert narration in rejected["feedback"]
+    inputs["output"]["prompt"] = "Dialogue: " + " ".join(line["text"] for line in dialogue) + " Voiceover: " + narration
+    assert execute(source, inputs)["valid"]
+    inputs["input"]["shot"] = {"dialogue": [], "narration": ""}
+    inputs["output"]["prompt"] = "Only wind through the grass."
+    assert execute(source, inputs)["valid"]

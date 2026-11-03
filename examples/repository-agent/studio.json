@@ -1,0 +1,10 @@
+{
+  "canvas": {
+    "groups": {
+      "graph": [
+        {"id": "group:prepare", "label": "Read the task & repository", "members": ["worktree", "triage", "baseline"], "collapsed": false, "direction": "DOWN"},
+        {"id": "group:implement", "label": "Implement · test · review", "members": ["repair", "approval"], "collapsed": false, "direction": "DOWN"}
+      ]
+    }
+  }
+}

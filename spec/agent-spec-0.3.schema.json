@@ -72,7 +72,7 @@
         "timeout_seconds": {
           "default": 60.0,
           "exclusiveMinimum": 0,
-          "maximum": 3600,
+          "maximum": 86400,
           "title": "Timeout Seconds",
           "type": "number"
         },

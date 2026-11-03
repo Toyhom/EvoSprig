@@ -3,7 +3,7 @@
 import json
 import time
 
-from evosprig.core.protocols import ExternalStatus, ExternalTool, Tool
+from evosprig.core.protocols import ExternalStatus, ExternalTool, Tool, ToolRejectedError
 from evosprig.core.spec import IDENTIFIER, canonical_json, digest
 from evosprig.core.tool_context import caller
 
@@ -159,9 +159,17 @@ class MessageStore(WorkspaceStore):
 
 
 def register_message_tools(registry, store, scope):
+    def validated(function, *args, **kwargs):
+        # Store validation happens before writes or inside a rolled-back
+        # transaction. Let an agent correct its call without reconciliation.
+        try:
+            return function(*args, **kwargs)
+        except ValueError as exc:
+            raise ToolRejectedError("invalid_message", str(exc)) from None
+
     def send(recipient, content, idempotency_key, reply_to=None):
-        identity = caller()
-        return store.send(
+        identity = validated(caller)
+        return validated(store.send,
             scope,
             identity.run_id,
             identity.mailbox,
@@ -172,16 +180,16 @@ def register_message_tools(registry, store, scope):
         )
 
     def receive(after=0, limit=20):
-        identity = caller()
-        return store.receive(scope, identity.run_id, identity.mailbox, after=after, limit=limit)
+        identity = validated(caller)
+        return validated(store.receive, scope, identity.run_id, identity.mailbox, after=after, limit=limit)
 
     def ack(ids, idempotency_key):
-        identity = caller()
-        return store.ack(scope, identity.run_id, identity.mailbox, ids)
+        identity = validated(caller)
+        return validated(store.ack, scope, identity.run_id, identity.mailbox, ids)
 
     def wait(after=0, timeout_seconds=60, *, idempotency_key):
-        identity = caller()
-        return store.wait(
+        identity = validated(caller)
+        return validated(store.wait,
             scope,
             identity.run_id,
             identity.mailbox,
@@ -207,7 +215,7 @@ def register_message_tools(registry, store, scope):
     registry.register(
         Tool(
             "messages.send",
-            "Send a non-blocking message to a peer mailbox in this run. Sender identity is supplied by the runtime.",
+            "Send a non-blocking message, delivered when the peer next runs. Sender identity is supplied by the runtime.",
             send_schema,
             {"type": "object"},
             send,
@@ -235,7 +243,7 @@ def register_message_tools(registry, store, scope):
     registry.register(
         Tool(
             "messages.ack",
-            "Mark messages in this agent's inbox as handled.",
+            "Mark received messages as handled. Pass IDs from this agent's inbox or injected peer messages.",
             obj(ids={"type": "array", "items": {"type": "string"}, "maxItems": 100}),
             {"type": "object"},
             ack,

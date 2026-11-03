@@ -1,5 +1,51 @@
 import { test, expect } from '@playwright/test';
 
+test('Run waits for project selection and prevents switching while a run starts', async ({ page, request }) => {
+  const id = 'selection-' + Date.now().toString(36);
+  const spec = {
+    spec_version: '0.3', id, input_schema: { type: 'object' }, output_schema: {},
+    models: {}, tools: {}, resources: {},
+    graph: { entry: 'review', nodes: { review: { type: 'human', output_schema: { type: 'object' }, inputs: {} } },
+      edges: [], output: { answer: { ref: 'nodes.review.output' } } },
+  };
+  expect((await request.post('/api/projects', { data: { spec } })).status()).toBe(201);
+  await page.goto('/');
+  await page.locator('.project[title="hello"]').click();
+  await expect(page.locator('h1')).toHaveText('hello');
+  let releaseProject!: () => void;
+  let releaseRun!: () => void;
+  const projectGate = new Promise<void>(resolve => { releaseProject = resolve; });
+  const runGate = new Promise<void>(resolve => { releaseRun = resolve; });
+  await page.route(`**/api/projects/${id}`, async route => {
+    await projectGate;
+    await route.continue();
+  });
+  const starts: string[] = [];
+  await page.route('**/api/projects/*/runs', async route => {
+    starts.push(new URL(route.request().url()).pathname);
+    await runGate;
+    await route.continue();
+  });
+  const run = page.getByRole('button', { name: '▷ Run', exact: true });
+  try {
+    await page.locator(`.project[title="${id}"]`).click();
+    await expect(run).toBeDisabled();
+    expect(starts).toEqual([]);
+    releaseProject();
+    await expect(page.locator('h1')).toHaveText(id);
+    await run.click();
+    await expect.poll(() => starts).toEqual([`/api/projects/${id}/runs`]);
+    await expect(run).toBeDisabled();
+    await expect(page.locator('.project[title="hello"]')).toBeDisabled();
+    releaseRun();
+    await expect(page.getByRole('button', { name: 'Submit and continue', exact: true })).toBeVisible();
+    await expect(page.locator('h1')).toHaveText(id);
+  } finally {
+    releaseProject();
+    releaseRun();
+  }
+});
+
 test('a late startup response preserves the newly created project and its task suite', async ({ page, request }) => {
   let releaseStartup!: () => void;
   let startupCaptured!: () => void;

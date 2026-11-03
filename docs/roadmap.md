@@ -2,13 +2,13 @@
 
 ## Agent capabilities and applications
 
-- Expand application coverage with repository maintenance, web navigation, sales operations and long-running personal assistants.
+- Connect repository teams to issue threads and reviewed pull-request delivery; expand web navigation, sales operations and long-running personal assistants.
 - Expand the task coverage of the [skill and harness optimizers](harness-search.md), add durable search continuation, and support parallel branch workers.
 - Add TextGrad component feedback, full DSPy MIPROv2 program integration, and AFlow workflow synthesis behind explicit execution environments.
 - Add DGM-style agent-code evolution and AlphaEvolve-style program search with isolated execution, correctness checks and version archives.
 - Grow verified procedural skill libraries, following the reusable-skill direction of Voyager and SkillWeaver, without model-weight training.
 - Add memory-provider bindings, automatic note linking, consolidation scheduling and conflict-resolution policies.
-- Extend video production with temporal visual review, automatic shot revision and more media providers.
+- Extend episode production with scene-level consistency scoring, alternate edits and more media providers.
 - Add richer artifact previews, evaluation forms, collaborative canvas editing and reusable subflow templates.
 
 ## Server deployment and portability

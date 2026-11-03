@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Handle, Position, useNodesInitialized, useReactFlow, useStore, type Node, type NodeProps } from '@xyflow/react';
+import { Handle, Position, getViewportForBounds, useReactFlow, useStore, type Node, type NodeProps } from '@xyflow/react';
 import { childGraphs, nodeSize, type Group } from './canvas';
 import type { Lang, NodeKind, NodeSpec } from './types';
 
@@ -90,10 +90,10 @@ export function WorkflowNode({ id, data, selected }: NodeProps<WorkflowFlowNode>
   const icon=config.type==='tool'?capabilityIcon(config.tool??id):isText?(roleIcon==='tool'?icons[config.type]:roleIcon):icons[config.type]??'settings';
   return <div style={nodeSize(config)} className={`workflow-node kind-${config.type}${vertical?' vertical-node':''}${selected?' is-selected':''}`}>
     <Handle type="target" position={vertical?Position.Top:Position.Left}/>
-    <div className="workflow-node-heading"><span className="node-symbol"><Icon name={icon} size={18}/></span><div className="node-heading-text"><span className="node-type">{type}</span><strong title={id}>{readable(id)}</strong></div>{isAgent&&<span className="node-autonomy" title={say('智能体决定工具调用顺序','The agent chooses its next tool')}><Icon name="spark" size={13}/></span>}</div>
+    <div className="workflow-node-heading"><span className="node-symbol"><Icon name={icon} size={18}/></span><div className="node-heading-text"><span className="node-type">{type}</span><strong title={id}>{readable(id)}</strong></div>{isAgent&&tools.length>0&&<span className="node-autonomy" title={say('智能体决定工具调用顺序','The agent chooses its next tool')}><Icon name="spark" size={13}/></span>}</div>
     {config.type!=='join'&&<p className="node-summary" title={summary}>{summary}</p>}
     {isText&&!!skillNames.length&&<div className="node-skills" title={skillNames.join(', ')}><Icon name="layers" size={12}/>{skillNames.slice(0,2).map(name=><span key={name}>{readable(name)}</span>)}{skillNames.length>2&&<small>+{skillNames.length-2}</small>}</div>}
-    {isAgent&&<div className="node-tool-row">{tools.length?tools.slice(0,3).map(tool=><span key={tool.name} title={tool.plugin}><Icon name={capabilityIcon(tool.plugin)} size={12}/>{readable(tool.name)}</span>):<span>{say('尚未选择工具','No tools selected')}</span>}{tools.length>3&&<small>+{tools.length-3}</small>}</div>}
+    {isAgent&&tools.length>0&&<div className="node-tool-row">{tools.slice(0,3).map(tool=><span key={tool.name} title={tool.plugin}><Icon name={capabilityIcon(tool.plugin)} size={12}/>{readable(tool.name)}</span>)}{tools.length>3&&<small>+{tools.length-3}</small>}</div>}
     {children.length>0&&<div className="subflow-links">{children.map(child=>{const graph=child.path[0]==='body'?config.body:config.branches?.[child.label];return <button className="nodrag nopan" disabled={data.busy} key={child.label} onClick={()=>data.onOpen?.(child.path)}><span className="mini-flow"><i/><i/><i/></span><span><strong>{child.label==='body'?say('子流程','Subflow'):readable(child.label)}</strong><small>{Object.keys(graph?.nodes??{}).length} {say('个步骤','steps')}</small></span><Icon name="arrow" size={14}/></button>})}</div>}
     {isText&&<div className="node-meta"><span><Icon name="model" size={12}/>{config.model??'Model'}</span><span>{config.response_format==='json'?'JSON':say('文本','Text')}{config.max_output_tokens?` · ${config.max_output_tokens.toLocaleString()} ${say('token','tokens')}`:''}</span></div>}
     {config.type==='tool'&&<div className="tool-mode"><span className="always-dot"/>{say('流程到此自动执行','Always runs at this step')}</div>}
@@ -115,19 +115,30 @@ export const tabIcons: Record<string, IconName> = { canvas: 'grid', spec: 'file'
 
 // Reframe after a container resize, while preserving user pan/zoom during editing.
 export function FitWorkflowView({revision=""}:{revision?:string}) {
-  const { fitView } = useReactFlow();
-  const initialized = useNodesInitialized();
+  const { getNodes, getNodesBounds, setViewport } = useReactFlow();
+  // Group cards are derived visual nodes with explicit dimensions. They do not
+  // retain React Flow's measured field between controlled-node updates.
+  const initialized = useStore(state => state.nodes.length > 0 && state.nodes.every(node =>
+    node.hidden || Boolean((node.width || node.measured?.width) && (node.height || node.measured?.height))));
   const width = useStore(state => state.width);
   const height = useStore(state => state.height);
+  const container = useStore(state => state.domNode);
   useEffect(() => {
     if (!initialized || !width || !height) return;
     // React Flow measures resized containers after React's layout effects.
     // Fit after those measurements, including when side panels are hidden.
     let second = 0;
     const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => { void fitView({ padding: .16, maxZoom: 1 }); });
+      second = requestAnimationFrame(() => {
+        const rect = container?.getBoundingClientRect();
+        const visible = getNodes().filter(node => !node.hidden);
+        if (!rect?.width || !rect.height || !visible.length) return;
+        // The observer's stored size can still describe the previous panel
+        // layout. Use the actual container for this explicitly requested fit.
+        void setViewport(getViewportForBounds(getNodesBounds(visible), rect.width, rect.height, .08, 1, .16));
+      });
     });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
-  }, [initialized, width, height, fitView,revision]);
+  }, [initialized, width, height, container, getNodes, getNodesBounds, setViewport, revision]);
   return null;
 }

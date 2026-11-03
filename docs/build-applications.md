@@ -4,7 +4,7 @@ An EvoSprig application combines a graph, editable resources and deployment bind
 
 ## Start from a working application
 
-Choose [VideoClaw](../examples/video-studio/) for media production, [CoworkOS](../examples/cowork/) for a collaborative team, or a smaller [example](../examples/). Install EvoSprig using the [quickstart](quickstart.md).
+Choose [Episode Studio](../examples/episode-studio/) for animated stories, [Super-agent](../examples/repository-agent/) for repository work, [CoworkOS](../examples/cowork/) for a collaborative team, or a smaller [example](../examples/). Install EvoSprig using the [quickstart](quickstart.md).
 
 ```bash
 evosprig serve --project examples/cowork/agent.yaml \

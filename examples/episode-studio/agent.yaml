@@ -6,7 +6,7 @@ execution:
   max_parallel_tools: 2
   max_steps: 5000
   max_total_tokens: 1000000
-  timeout_seconds: 3600.0
+  timeout_seconds: 21600.0
 graph:
   edges:
   - source: art_director

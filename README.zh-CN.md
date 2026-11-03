@@ -24,6 +24,12 @@
 
 ## 你可以开发什么？
 
+### Episode Studio：把故事拍成动画
+
+[![Episode Studio：带对白的动画片段](examples/episode-studio/assets/hillside.jpg)](examples/episode-studio/)
+
+八个角色协作完成读原文、改剧本、分镜与制作，跨镜头复用角色、声音和连续性信息。智能体控制渲染工具，检查画面与对白，并自动重做。**[观看片段，开发自己的动画智能体](examples/episode-studio/)**。
+
 <table>
 <tr>
 <td width="50%" valign="top"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>从一句故事到一部短片。<br><sub>原项目：<a href="https://github.com/HITsz-TMG/VideoClaw">VideoClaw</a></sub></td>
@@ -37,6 +43,8 @@
 
 | 想做什么 | 从这里开始 |
 | --- | --- |
+| 把故事拍成带对白的动画 | **[Episode Studio](examples/episode-studio/)**：固定角色、镜头衔接和自动重做 |
+| 修改代码并交付通过测试的补丁 | **[Super-agent (EvoSprig)](examples/repository-agent/)**：基于 [DeepSeek Super-agent](https://github.com/deepseek-ai/dsh-superagent-prototype) 的代码维护团队 |
 | 把故事拍成短片 | [VideoClaw (EvoSprig)](examples/video-studio/)：角色、分镜和成片（[VideoClaw 原项目](https://github.com/HITsz-TMG/VideoClaw)） |
 | 与智能体团队一起完成项目 | [CoworkOS (EvoSprig)](examples/cowork/)：任务分工、共享文档和后续跟进（[CoworkOS 原项目](https://github.com/RUC-NLPIR/CoworkOS)） |
 | 看懂场景并操纵机械臂 | [RAI manipulation (EvoSprig)](examples/rai-manipulation/)：视觉规划、抓取放置和任务检查（[RAI 原项目](https://github.com/RobotecAI/rai)） |

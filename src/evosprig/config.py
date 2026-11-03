@@ -98,6 +98,11 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
 
             config = MCPToolConfig.model_validate(raw)
             tool = mcp_tool(config)
+        elif raw.get("kind") == "repository":
+            from evosprig.plugins.repository_tools import RepositoryToolConfig, repository_tool
+
+            config = RepositoryToolConfig.model_validate(raw)
+            tool = repository_tool(config, Path(workspace) / "repositories", scope)
         elif raw.get("kind") == "sqlite":
             from evosprig.plugins.sqlite_tools import SQLiteToolConfig, sqlite_tool
 

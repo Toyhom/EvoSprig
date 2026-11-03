@@ -263,7 +263,7 @@ def build(max_takes=2, max_frame_takes=2):
                                     "shots": ref("nodes.shots.output")})
     return b.execution(max_steps=5000, max_model_calls=240, max_total_tokens=1000000,
                        max_output_tokens=4096, max_parallel_nodes=2, max_parallel_tools=2,
-                       allow_side_effects=True, timeout_seconds=3600)
+                       allow_side_effects=True, timeout_seconds=21600)
 
 
 if __name__ == "__main__":

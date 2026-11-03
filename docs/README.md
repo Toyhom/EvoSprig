@@ -7,11 +7,11 @@ Start with the [application developer guide](build-applications.md), covering Py
 | Step | Guide |
 | --- | --- |
 | Install and run | [Quickstart](quickstart.md) |
-| Choose a starting point | [VideoClaw](../examples/video-studio/) · [CoworkOS](../examples/cowork/) · [All examples](../examples/) |
+| Choose a starting point | [Episode Studio](../examples/episode-studio/) · [Super-agent](../examples/repository-agent/) · [CoworkOS](../examples/cowork/) · [All examples](../examples/) |
 | Design the agent | [Prompts, skills and model settings](agent-resources.md) · [Studio](studio.md) · [SDK and graphs](architecture.md) |
-| Connect capabilities | [Tools and MCP](tools.md) · [ComfyUI](comfyui.md) · [Vision](vision.md) · [Memory](memory.md) · [Shared documents and peer messages](shared-workspaces.md) |
+| Connect capabilities | [Tools and MCP](tools.md) · [ComfyUI](comfyui.md) · [Repository tools](repository-tools.md) · [Vision](vision.md) · [Memory](memory.md) · [Shared documents and peer messages](shared-workspaces.md) |
 | Improve the application | [Evaluation](evaluation.md) · [Self-evolution](evolution.md) · [Harness and code search](harness-search.md) · [Industry environments](industry-environments.md) |
-| Run in production | [Recovery](durable-runtime.md) · [Deployment and export](deployment.md) |
+| Run in production | [Event triggers](triggers.md) · [Recovery](durable-runtime.md) · [Deployment and export](deployment.md) |
 
 ## Extend EvoSprig
 

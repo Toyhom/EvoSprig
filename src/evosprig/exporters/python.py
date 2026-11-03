@@ -28,6 +28,7 @@ MODULES = (
     "core/version.py",
     "core/protocols.py",
     "core/runtime.py",
+    "core/triggers.py",
     "core/model_sessions.py",
     "core/multimodal.py",
     "core/engine.py",
@@ -47,6 +48,7 @@ MODULES = (
     "plugins/sqlite_journal.py",
     "plugins/sqlite_memory.py",
     "plugins/sqlite_tools.py",
+    "plugins/repository_tools.py",
     "plugins/structured_memory.py",
     "plugins/episodic_memory.py",
     "plugins/semantic_memory.py",
@@ -173,7 +175,7 @@ def compatibility_report(
         if binding.plugin in tool_bindings:
             config = tool_bindings[binding.plugin]
             if (
-                config.get("kind") in {"http", "mcp", "external_http", "sqlite", "comfy_node", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
+                config.get("kind") in {"http", "mcp", "external_http", "sqlite", "repository", "comfy_node", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
                 and config.get("version", "1") == binding.version
             ):
                 continue
@@ -220,6 +222,10 @@ def export_python(
                 from evosprig.plugins.mcp_tools import MCPToolConfig
 
                 config = MCPToolConfig.model_validate(raw)
+            elif raw.get("kind") == "repository":
+                from evosprig.plugins.repository_tools import RepositoryToolConfig
+
+                config = RepositoryToolConfig.model_validate(raw)
             elif raw.get("kind") == "sqlite":
                 from evosprig.plugins.sqlite_tools import SQLiteToolConfig
 

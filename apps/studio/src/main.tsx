@@ -55,6 +55,8 @@ function App() {
   const [doc, setDoc] = useState<Document | null>(null);
   const projectLoaded = useRef(false);
   const projectListRequest = useRef(0);
+  const runWatch = useRef(0);
+  const runStarting = useRef(false);
   const [nodes, setNodes] = useState<FlowNode[]>([]); const [edges, setEdges] = useState<Edge[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('canvas');
@@ -150,6 +152,9 @@ function App() {
   const error = (e: unknown) => setStatus(e instanceof Error ? e.message : String(e));
   const load = (next: Document, path:string[] = []) => {
     projectLoaded.current = true;
+    runWatch.current++;
+    if (poll.current) clearTimeout(poll.current);
+    setRunId(null);
     setSidebarOpen(false); setDoc(next);setCanvas({groups:next.canvas?.groups??{}});
     try{graphAt(next.spec,path);}catch{path=[];}
     loadGraph(next.spec,path,next.layout);
@@ -169,7 +174,7 @@ function App() {
     }).catch(e => { if (active) error(e); });
     return () => { active = false; };
   }, []);
-  useEffect(() => () => { if (poll.current) clearTimeout(poll.current); }, []);
+  useEffect(() => () => { runWatch.current++; if (poll.current) clearTimeout(poll.current); }, []);
   const currentSpec = (): Spec => {
     if (!doc) throw new Error('Select a project');
     return withGraph(doc.spec,graphPath,{ ...graphAt(doc.spec,graphPath),
@@ -278,21 +283,26 @@ function App() {
     data: { label: `${item.id} · ${config.type}`, config } } : item)); setNodeText(JSON.stringify(config, null, 2)); setNodeDraftDirty(false); mutate(); };
   const active = nodes.find(node => node.id === selected);
   const watchRun = async (id:string) => {
+    const request = ++runWatch.current;
     if(poll.current) clearTimeout(poll.current);
     setRunId(id);
-    const tick=async()=>{try{const next:Run=await(await api(`/runs/${id}`)).json();setResult(next);
+    const tick=async()=>{try{const next:Run=await(await api(`/runs/${id}`)).json();
+      if(request!==runWatch.current)return;
+      setResult(next);
       if(['queued','running','waiting_external'].includes(next.status)) poll.current=setTimeout(tick,600);
       else {setRunId(null);setStatus(next.status);}
-    }catch(e){setRunId(null);error(e);}};
+    }catch(e){if(request===runWatch.current){setRunId(null);error(e);}}};
     await tick();
   };
   const run = async (versionId?:string) => {
-    if (!doc) return;
+    if (!doc || busy || runId || runStarting.current) return;
+    runStarting.current = true;
+    setBusy(true);
     try {
       setResult(null); const started = await (await api(`/projects/${doc.id}/runs`, { method: 'POST',
         body: JSON.stringify({ input: JSON.parse(input), revision: doc.revision, mock, allow_writes:allowWrites, ...(versionId?{version_id:versionId}:{use_release:useRelease}) }) })).json();
       setStatus('running');await watchRun(started.run_id);
-    } catch (e) { error(e); }
+    } catch (e) { error(e); } finally { runStarting.current = false; setBusy(false); }
   };
   const exportProject = async (versionId?:string) => {
     if (!doc) return;
@@ -360,7 +370,7 @@ function App() {
             <select aria-label="Run mode" value={mock ? 'mock' : 'live'} onChange={e => setMock(e.target.value === 'mock')}><option value="mock">{t.offline}</option><option value="live">{t.live}</option></select>
             <label className="check"><input type="checkbox" checked={allowWrites} onChange={e=>setAllowWrites(e.target.checked)}/>{lang==='zh'?'允许已配置的写入工具':'Allow configured write tools'}</label>
             <label className="check"><input type="checkbox" checked={useRelease} onChange={e=>setUseRelease(e.target.checked)}/>{lang==='zh'?'运行发布版本':'Run active release'}</label>
-            <button className="primary run" aria-label={'▷ '+t.run} onClick={()=>run()} disabled={dirty || nodeDraftDirty || !!runId}><Icon name="play" size={14}/>{t.run}</button>
+            <button className="primary run" aria-label={'▷ '+t.run} onClick={()=>run()} disabled={busy || dirty || nodeDraftDirty || !!runId}><Icon name="play" size={14}/>{t.run}</button>
             {runId && <button onClick={() => api(`/runs/${runId}/cancel`, { method: 'POST' }).catch(error)}>{t.cancel}</button>}
             <p className="hint">{t.runHint}</p>
           </aside>

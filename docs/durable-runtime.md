@@ -13,6 +13,11 @@ monotonic generation to reject stale commits. Completed work is reused after
 restarts. Multiple local workers may share the journal. SQLite files and locks need
 a filesystem with supported locking; object storage is unsuitable.
 
+`execution.timeout_seconds` bounds active worker time across resumes. The default
+is 60 seconds; AgentSpec 0.3 allows up to 86,400 seconds for long applications.
+Time spent suspended for human input or an external job is excluded. Configure an
+external tool's `job_timeout_seconds` separately for its rendering or execution deadline.
+
 ```bash
 evosprig run agent.yaml --input '{"text":"draft"}' --mock --workspace ./workspace
 evosprig runs --workspace ./workspace

@@ -9,6 +9,14 @@ Turn a story into an animated episode. A source reader identifies the cast and d
 - **Longer stories.** Shots share final frames, ending motion and saved character voices, then assemble into a film with audio.
 - **Editable decisions.** Agents read the render recipe's switches, parameter limits and saved defaults. Prompts, skills, LoRA strengths, sampling and upscaling settings can change together.
 
+## On the hillside
+
+[![Watch the opening scene](assets/hillside.webp)](assets/hillside.mp4)
+
+Two friends, a quiet town, and a world beyond the hills. **25 seconds · Chinese dialogue and narration · [Watch with sound](assets/hillside.mp4)**.
+
+Adapted from [Vera's Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉的忧郁), an in-game book in *Genshin Impact*.
+
 ## Run
 
 Connect a vision-capable model server, the [media service](../../apps/media-service/) and a [ComfyUI render recipe](../../docs/comfyui.md). The recipe exposes `prompt`, `action`, `steps`, `scheduler`, `shift_video`, `shift_audio`, `duration` and `seed`, with six image slots, three audio slots and a video slot.

@@ -75,5 +75,9 @@ Messages are scoped to tenant, user, project and run. Message IDs, cursors, orig
 deadlines and acknowledgements survive worker restarts. Replies link to a message actually
 received by the replying agent.
 
+With `tool_errors="feedback"`, an invalid reply or acknowledgement returns a correction
+to the agent. Acknowledgement IDs come from received messages; the receipt from sending
+a message belongs to the recipient's inbox.
+
 [CoworkOS (EvoSprig)](../examples/cowork/) combines direct peer messages with shared documents,
 lead-agent review and targeted follow-up waves.

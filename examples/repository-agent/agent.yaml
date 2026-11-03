@@ -1,0 +1,571 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 96
+  max_output_tokens: 4096
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 200
+  max_total_tokens: 240000
+  timeout_seconds: 3600.0
+graph:
+  edges:
+  - source: baseline
+    target: repair
+    when: null
+  - source: repair
+    target: approval
+    when: null
+  - source: triage
+    target: baseline
+    when: null
+  - source: worktree
+    target: triage
+    when: null
+  entry: worktree
+  nodes:
+    approval:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        proposal:
+          default: null
+          optional: false
+          ref: nodes.repair.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          comment:
+            type: string
+          decision:
+            enum:
+            - approve
+            - reject
+        required:
+        - decision
+        - comment
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    baseline:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        check:
+          default: null
+          optional: false
+          ref: input.check
+        workspace:
+          default: null
+          optional: false
+          ref: nodes.worktree.output.workspace
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: check
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    repair:
+      body:
+        edges:
+        - source: checks
+          target: patch
+          when: null
+        - source: engineer
+          target: checks
+          when: null
+        - source: patch
+          target: reviewer
+          when: null
+        - source: reviewer
+          target: verdict
+          when: null
+        entry: engineer
+        nodes:
+          checks:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              check:
+                default: null
+                optional: false
+                ref: input.check
+              workspace:
+                default: null
+                optional: false
+                ref: input.workspace
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: check
+            tool_errors: raise
+            tools: []
+            type: tool
+            until: null
+          engineer:
+            body: null
+            branches: {}
+            condition: null
+            harness:
+              max_output_retries: 2
+              max_output_tokens: 4096
+              max_tool_rounds: 12
+              memory: null
+              output_errors: feedback
+              parallel_tool_calls: null
+              tool_errors: feedback
+              tool_limit: null
+              tool_selection: null
+            inputs:
+              feedback:
+                default: null
+                optional: false
+                ref: input.feedback
+              plan:
+                default: null
+                optional: false
+                ref: input.plan
+              request:
+                default: null
+                optional: false
+                ref: input.request
+              workspace:
+                default: null
+                optional: false
+                ref: input.workspace
+            instructions:
+              resource: engineer
+            items: null
+            join: all
+            mailbox: engineer
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              additionalProperties: false
+              properties:
+                summary:
+                  type: string
+              required:
+              - summary
+              type: object
+            response_format: json
+            skills:
+            - repository
+            tool: null
+            tool_errors: raise
+            tools:
+            - list
+            - read
+            - write
+            - diff
+            - peer_send
+            - peer_receive
+            - peer_ack
+            - document_read
+            type: agent
+            until: null
+          patch:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              workspace:
+                default: null
+                optional: false
+                ref: input.workspace
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: diff
+            tool_errors: raise
+            tools: []
+            type: tool
+            until: null
+          reviewer:
+            body: null
+            branches: {}
+            condition: null
+            harness:
+              max_output_retries: 2
+              max_output_tokens: 4096
+              max_tool_rounds: 12
+              memory: null
+              output_errors: feedback
+              parallel_tool_calls: null
+              tool_errors: feedback
+              tool_limit: null
+              tool_selection: null
+            inputs:
+              checks:
+                default: null
+                optional: false
+                ref: nodes.checks.output
+              patch:
+                default: null
+                optional: false
+                ref: nodes.patch.output
+              request:
+                default: null
+                optional: false
+                ref: input.request
+              summary:
+                default: null
+                optional: false
+                ref: nodes.engineer.output.summary
+              workspace:
+                default: null
+                optional: false
+                ref: input.workspace
+            instructions:
+              resource: reviewer
+            items: null
+            join: all
+            mailbox: reviewer
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              additionalProperties: false
+              properties:
+                accepted:
+                  type: boolean
+                feedback:
+                  type: string
+              required:
+              - accepted
+              - feedback
+              type: object
+            response_format: json
+            skills:
+            - repository
+            tool: null
+            tool_errors: raise
+            tools:
+            - read
+            - list
+            - peer_send
+            - peer_receive
+            - peer_ack
+            type: agent
+            until: null
+          verdict:
+            body: null
+            branches: {}
+            code: verdict
+            condition: null
+            inputs:
+              checks:
+                default: null
+                optional: false
+                ref: nodes.checks.output
+              patch:
+                default: null
+                optional: false
+                ref: nodes.patch.output
+              review:
+                default: null
+                optional: false
+                ref: nodes.reviewer.output
+              state:
+                default: null
+                optional: false
+                ref: input
+              summary:
+                default: null
+                optional: false
+                ref: nodes.engineer.output.summary
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+        output:
+          accepted:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.accepted
+          check:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.check
+          checks:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.checks
+          feedback:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.feedback
+          patch:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.patch
+          plan:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.plan
+          request:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.request
+          review:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.review
+          summary:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.summary
+          workspace:
+            default: null
+            optional: false
+            ref: nodes.verdict.output.workspace
+      branches: {}
+      condition: null
+      inputs:
+        check:
+          default: null
+          optional: false
+          ref: input.check
+        feedback:
+          default: null
+          optional: false
+          ref: nodes.baseline.output.output
+        plan:
+          default: null
+          optional: false
+          ref: nodes.triage.output.plan
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        workspace:
+          default: null
+          optional: false
+          ref: nodes.worktree.output.workspace
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 3
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: loop
+      until:
+        left:
+          default: null
+          optional: false
+          ref: input.accepted
+        op: truthy
+        right: null
+    triage:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 4096
+        max_tool_rounds: 12
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: feedback
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        workspace:
+          default: null
+          optional: false
+          ref: nodes.worktree.output.workspace
+      instructions:
+        resource: triage
+      items: null
+      join: all
+      mailbox: coordinator
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          plan:
+            type: string
+        required:
+        - plan
+        type: object
+      response_format: json
+      skills:
+      - repository
+      tool: null
+      tool_errors: raise
+      tools:
+      - list
+      - read
+      - document_read
+      - document_write
+      type: agent
+      until: null
+    worktree:
+      body: null
+      branches: {}
+      condition: null
+      inputs: {}
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: open
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+  output:
+    decision:
+      default: null
+      optional: false
+      ref: nodes.approval.output
+    proposal:
+      default: null
+      optional: false
+      ref: nodes.repair.output
+id: repository-agent
+input_schema:
+  additionalProperties: false
+  properties:
+    check:
+      minLength: 1
+      type: string
+    request:
+      type: string
+  required:
+  - request
+  - check
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    decision:
+      type: object
+    proposal:
+      type: object
+  required:
+  - proposal
+  - decision
+  type: object
+resources:
+  engineer:
+    path: prompts/engineer.md
+    role: prompt
+  repository:
+    path: skills/repository.md
+    role: skill
+  reviewer:
+    path: prompts/reviewer.md
+    role: prompt
+  triage:
+    path: prompts/triage.md
+    role: prompt
+  verdict:
+    path: code/verdict.py
+    role: code
+spec_version: '0.3'
+tools:
+  check:
+    plugin: repository.check
+    version: '1'
+  diff:
+    plugin: repository.diff
+    version: '1'
+  document_read:
+    plugin: workspace.read
+    version: '1'
+  document_write:
+    plugin: workspace.write
+    version: '1'
+  list:
+    plugin: repository.list
+    version: '1'
+  open:
+    plugin: repository.open
+    version: '1'
+  peer_ack:
+    plugin: messages.ack
+    version: '1'
+  peer_receive:
+    plugin: messages.receive
+    version: '1'
+  peer_send:
+    plugin: messages.send
+    version: '1'
+  python:
+    plugin: code.python
+    version: '1'
+  read:
+    plugin: repository.read
+    version: '1'
+  write:
+    plugin: repository.write
+    version: '1'

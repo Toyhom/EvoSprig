@@ -17,6 +17,8 @@ Start with a working application pattern, connect your model and tools, then mak
 
 | I want an agent that… | Application | What you can customize |
 | --- | --- | --- |
+| Directs an animated story with dialogue | [Episode Studio](episode-studio/) | Cast, voices, shot continuity, render controls and automatic retakes |
+| Repairs a repository and checks the patch | [Super-agent (EvoSprig)](repository-agent/) | Team roles, editable files, executable checks and review |
 | Turns a story into a short film | [VideoClaw (EvoSprig)](video-studio/) | Characters, scenes, prompts and editing |
 | Works with a team on shared documents | [CoworkOS (EvoSprig)](cowork/) | Specialist roles, project tools and follow-ups |
 | Sees a scene and rearranges objects | [RAI manipulation (EvoSprig)](rai-manipulation/) | Visual controller, robot tools and physical goal checks |
@@ -54,7 +56,7 @@ The catalog includes the five application categories highlighted by [MetaGPT](ht
 
 The comparisons use DeepSeek Flash as task model and judge. Each application page gives its task context and shows the result directly.
 
-Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../docs/evaluation.md), then choose one of the [14 training-free strategies](../docs/evolution.md). The same evaluator checks the original and candidate; you decide whether to adopt the result.
+Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../docs/evaluation.md), then choose one of the [23 training-free strategies](../docs/evolution.md). The same evaluator checks the original and candidate; you decide whether to adopt the result.
 
 ## Start running
 

@@ -166,3 +166,57 @@ async def test_agents_exchange_messages_and_resume_without_duplicate_delivery(tm
         for request in model.requests
         for tool in request.tools
     )
+
+
+@pytest.mark.parametrize("invalid_call", ["ack", "reply"])
+async def test_invalid_peer_writes_return_feedback_and_preserve_the_inbox(tmp_path, invalid_call):
+    class RecoveringPeer(MockProvider):
+        async def complete(self, request):
+            self.requests.append(request)
+            if len(self.requests) == 1:
+                return ModelResponse(tool_calls=(ToolCall("send", "send", {
+                    "recipient": "reviewer", "content": "Please check the patch."}),))
+            receipt = next(json.loads(m["content"]) for m in request.messages
+                           if m["role"] == "tool" and '"sequence"' in m["content"])
+            if len(self.requests) == 2:
+                # An outgoing receipt belongs to the peer's inbox, not ours.
+                call = ToolCall("bad", "ack", {"ids": [receipt["id"]]}) if invalid_call == "ack" else ToolCall(
+                    "bad", "send", {"recipient": "reviewer", "content": "Follow-up", "reply_to": receipt["id"]})
+                return ModelResponse(tool_calls=(call,))
+            feedback = json.loads([m for m in request.messages if m["role"] == "tool"][-1]["content"])
+            assert feedback["error"]["code"] == "invalid_message"
+            return ModelResponse(text="The reviewer will receive the patch.")
+
+    b = Builder("peer-feedback", {"type": "object"}, {"type": "object"}, spec_version="0.3")
+    b.model("main", "main", ["text", "tool_calling"])
+    for name in ("send", "ack"):
+        b.tool(name, "messages." + name)
+    b.node("engineer", "agent", model="main", instructions="Send your update.", mailbox="engineer",
+           tools=["send", "ack"], inputs={}, output_schema={"type": "object"},
+           harness={"tool_errors": "feedback", "max_tool_rounds": 3})
+    b.output(result={"ref": "nodes.engineer.output"})
+    b.execution(allow_side_effects=True)
+    scope, model = Scope("peer-feedback"), RecoveringPeer()
+    journal = SQLiteJournal(tmp_path / "runs.sqlite")
+    runtime = Runtime({"main": model}, make_tools(tmp_path, scope), journal=journal, allow_writes=True)
+    result = await runtime.run(compile_snapshot(b.build_spec(), {}), {}, scope=scope)
+    assert result.status == "succeeded", result.error
+    assert len(model.requests) == 3
+    inbox = MessageStore(tmp_path / "messages.sqlite").receive(scope, result.run_id, "reviewer")
+    assert len(inbox["messages"]) == 1
+    assert any(e["type"] == "tool.rejected" for e in result.events)
+
+
+async def test_message_write_without_agent_identity_fails_without_reconciliation(tmp_path):
+    b = Builder("missing-mailbox", {"type": "object"}, {"type": "object"}, spec_version="0.3")
+    b.tool("send", "messages.send")
+    b.node("send", "tool", tool="send", inputs={"recipient": {"value": "writer"},
+           "content": {"value": "A note"}}, output_schema={"type": "object"})
+    b.output(result={"ref": "nodes.send.output"}).execution(allow_side_effects=True)
+    scope = Scope("missing-mailbox")
+    result = await Runtime({}, make_tools(tmp_path, scope),
+                           journal=SQLiteJournal(tmp_path / "runs.sqlite"), allow_writes=True).run(
+        compile_snapshot(b.build_spec(), {}), {}, scope=scope)
+    assert result.status == "failed" and result.error["code"] == "invalid_message"
+    assert result.waiting == []
+    assert MessageStore(tmp_path / "messages.sqlite").receive(scope, result.run_id, "writer")["messages"] == []

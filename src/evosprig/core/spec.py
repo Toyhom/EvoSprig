@@ -286,7 +286,7 @@ class Execution(Contract):
     max_total_tokens: int = Field(default=8192, ge=1, le=1000000)
     max_output_tokens: int = Field(default=512, ge=1, le=32768)
     image_token_reserve: int = Field(default=4096, ge=256, le=65536)
-    timeout_seconds: float = Field(default=60.0, gt=0, le=3600)
+    timeout_seconds: float = Field(default=60.0, gt=0, le=86400)
     max_parallel_nodes: int = Field(default=1, ge=1, le=32)
     max_parallel_tools: int = Field(default=1, ge=1, le=16)
     allow_side_effects: bool = False
@@ -306,6 +306,8 @@ class AgentSpec(Contract):
     @model_validator(mode="after")
     def validate_graph(self):
         canonical_json(self.model_dump())
+        if self.spec_version != "0.3" and self.execution.timeout_seconds > 3600:
+            raise ValueError("active execution budgets above one hour require spec_version 0.3")
         check_schema(self.input_schema)
         check_schema(self.output_schema)
         for name in [self.id, *self.models, *self.tools, *self.resources, *self.graph.nodes]:

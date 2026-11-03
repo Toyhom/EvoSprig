@@ -36,7 +36,7 @@ export function nodeSize(config:NodeSpec) {
   if(config.type==='transform')return {width:224,height:98};
   if(config.type==='condition')return {width:244,height:128};
   if(config.type==='tool')return {width:256,height:112};
-  if(config.type==='agent')return {width:302,height:218};
+  if(config.type==='agent')return {width:302,height:166+(config.skills?.length?28:0)+(config.tools?.length?24:0)};
   if(config.body||Object.keys(config.branches??{}).length)return {width:280,height:170};
   if(config.type==='human')return {width:260,height:140};
   return {width:280,height:config.skills?.length?190:154};

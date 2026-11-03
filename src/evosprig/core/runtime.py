@@ -46,6 +46,11 @@ class Runtime:
     def create_run(self, version, inputs, *, run_id=None, scope=None, context=None):
         return self._engine.create_run(version, inputs, run_id=run_id, scope=scope, context=context)
 
+    def create_event_run(self, version, inputs, trigger, *, scope=None):
+        from .triggers import create_event_run
+
+        return create_event_run(self, version, inputs, trigger, scope=scope)
+
     async def run(
         self, version, inputs, *, run_id=None, scope=None, cancel=None, on_event=None, shutdown=None
     ):
