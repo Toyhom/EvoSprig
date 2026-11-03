@@ -8,9 +8,9 @@ export type NodeSpec = {
   type: NodeKind; inputs: Record<string, Binding>; output_schema: Json; model?: string | null;
   instructions?: string | { resource: string }; skills?:string[]; image_inputs?:string[]; temperature?:number|null; top_p?:number|null; tools?: string[]; tool?: string | null;
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;
-  items?: Binding|null; max_items?: number; tool_errors?: 'raise'|'feedback';
+  items?: Binding|null; carry?: Binding|null; max_items?: number; tool_errors?: 'raise'|'feedback';
   parallel_tool_calls?: boolean; tool_selection?: 'all'|'relevant'; tool_limit?: number; max_tool_rounds?: number|null;
-  output_errors?: 'raise'|'feedback'; max_output_retries?: number; max_output_tokens?:number|null;
+  output_errors?: 'raise'|'feedback'; max_output_retries?: number; max_output_tokens?:number|null; output_validator?:string|null;
   branches?: Record<string, Graph>; max_iterations?: number; until?: Predicate|null; join?: 'all'|'selected';
 };
 export type GraphEdge = { source: string; target: string; when?: boolean|null };
@@ -74,6 +74,7 @@ export function usedResources(spec:Spec):Set<string> {
   function visit(graph:Graph){for(const node of Object.values(graph.nodes)){
     if(typeof node.instructions==='object')names.add(node.instructions.resource);
     if(node.code)names.add(node.code);
+    if(node.output_validator)names.add(node.output_validator);
     node.skills?.forEach(name=>names.add(name));
     if(node.body)visit(node.body);
     Object.values(node.branches??{}).forEach(visit);

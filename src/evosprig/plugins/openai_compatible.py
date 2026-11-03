@@ -26,6 +26,7 @@ class Connection(Contract):
     max_keepalive_connections: int = Field(default=8, ge=0, le=1024)
     token_limit_field: Literal["max_tokens", "max_completion_tokens"] = "max_tokens"
     send_sampling_parameters: bool = True
+    json_mode: Literal["always", "without_tools", "off"] = "always"
     capabilities: list[str] = Field(
         default_factory=lambda: ["text", "tool_calling", "structured_output"]
     )
@@ -87,7 +88,9 @@ class OpenAICompatibleProvider:
             payload["tools"] = request.tools
         if request.top_p is not None and self.connection.send_sampling_parameters:
             payload["top_p"] = request.top_p
-        if request.json_output:
+        if request.json_output and self.connection.json_mode != "off" and (
+            self.connection.json_mode == "always" or not request.tools
+        ):
             payload["response_format"] = {"type": "json_object"}
         if stream:
             payload["stream_options"] = {"include_usage": True}

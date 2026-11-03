@@ -55,19 +55,40 @@ class Engine:
                 result[name]["connection"] = connection.model_dump(mode="json")
         return result
 
-    def create_run(self, version, inputs, *, run_id=None, scope=None):
+    def matches_model_metadata(self, recorded):
+        normalized = copy.deepcopy(recorded)
+        for name, provider in self.models.items():
+            binding = normalized.get(name, {})
+            connection = getattr(provider, "connection", None)
+            validate = getattr(type(connection), "model_validate", None)
+            if validate and "connection" in binding:
+                try:
+                    binding["connection"] = validate(binding["connection"]).model_dump(mode="json")
+                except ValueError:
+                    return False
+        # New connection defaults can be omitted in an older saved binding.
+        # Explicit values, provider identity and deployment settings must match.
+        return normalized == self.model_metadata()
+
+    def create_run(self, version, inputs, *, run_id=None, scope=None, context=None):
         run_id = run_id or uuid.uuid4().hex
         scope = scope or Scope(version.spec.id)
+        metadata = {
+            "models": self.model_metadata(),
+            "tools": self.tools.bindings,
+            "allow_writes": self.allow_writes,
+        }
+        if context is not None:
+            canonical_json(context)
+            if not isinstance(context, dict):
+                raise ValueError("run context must be a JSON object")
+            metadata["context"] = context
         self.journal.create(
             run_id,
             version,
             inputs,
             scope,
-            {
-                "models": self.model_metadata(),
-                "tools": self.tools.bindings,
-                "allow_writes": self.allow_writes,
-            },
+            metadata,
         )
         return run_id
 
@@ -102,7 +123,7 @@ class Engine:
             record["status"] == "waiting_input" and not record["cancel_requested"]
         ):
             return self.result(run_id, scope)
-        if record["metadata"]["models"] != self.model_metadata():
+        if not self.matches_model_metadata(record["metadata"]["models"]):
             raise ExecutionError("resume requires the original model bindings")
         if record["metadata"].get("tools", {}) != self.tools.bindings:
             raise ExecutionError("resume requires the original tool bindings")
@@ -443,25 +464,19 @@ class ExecutionSession:
                 items = resolve_value(node.items, context)
                 if not isinstance(items, list) or len(items) > node.max_items:
                     raise ExecutionError("map items must be a list within max_items")
-                semaphore = asyncio.Semaphore(self.spec.execution.max_parallel_nodes)
-
-                async def mapped(index, item):
-                    async with semaphore:
-                        return await self.graph(
+                if node.carry is not None:
+                    previous = resolve_value(node.carry, context)
+                    values = []
+                    for index, item in enumerate(items):
+                        previous = await self.graph(
                             node.body,
-                            {"item": item, "index": index, "context": arguments},
+                            {"item": item, "index": index, "context": arguments, "previous": previous},
                             f"{path}/item-{index}",
                         )
-
-                values = await asyncio.gather(
-                    *(mapped(i, item) for i, item in enumerate(items)), return_exceptions=True
-                )
-                errors = [value for value in values if isinstance(value, BaseException)]
-                if errors:
-                    raise next(
-                        (error for error in errors if not isinstance(error, Suspended)), errors[0]
-                    )
-                output = {"items": values}
+                        values.append(previous)
+                    output = {"items": values, "carry": previous}
+                else:
+                    output = await self.map_parallel(node, items, arguments, path)
             elif node.type == "tool":
                 output = await self.tool(node.tool, arguments, path, "direct")
             else:
@@ -479,9 +494,31 @@ class ExecutionSession:
                 self.halted = exc
             raise
 
+    async def map_parallel(self, node, items, arguments, path):
+        semaphore = asyncio.Semaphore(self.spec.execution.max_parallel_nodes)
+
+        async def mapped(index, item):
+            async with semaphore:
+                return await self.graph(
+                    node.body,
+                    {"item": item, "index": index, "context": arguments},
+                    f"{path}/item-{index}",
+                )
+
+        values = await asyncio.gather(
+            *(mapped(i, item) for i, item in enumerate(items)), return_exceptions=True
+        )
+        errors = [value for value in values if isinstance(value, BaseException)]
+        if errors:
+            raise next(
+                (error for error in errors if not isinstance(error, Suspended)), errors[0]
+            )
+        return {"items": values}
+
     async def model(self, node, arguments, path, slot):
         from .multimodal import input_reservation, user_content
 
+        validator_inputs = {key: value for key, value in arguments.items() if key not in node.image_inputs}
         provider = self.engine.models[self.spec.models[node.model].binding]
         if "messages" not in slot:
             instructions = (
@@ -699,7 +736,6 @@ class ExecutionSession:
                         else {"text": response["text"]}
                     )
                     Draft202012Validator(node.output_schema).validate(output)
-                    return output
                 except (ValueError, ValidationError) as exc:
                     reason = (
                         "Invalid JSON"
@@ -709,6 +745,21 @@ class ExecutionSession:
                     if feedback(reason, response["text"]):
                         continue
                     raise
+                if node.output_validator is not None:
+                    from .json_program import execute
+
+                    verdict = execute(self.version.resources[node.output_validator],
+                                      {"input": validator_inputs, "output": output})
+                    if (not isinstance(verdict, dict) or type(verdict.get("valid")) is not bool
+                            or not isinstance(verdict.get("feedback"), str)):
+                        raise ExecutionError("output validator must return {valid: boolean, feedback: string}")
+                    if not verdict["valid"]:
+                        reason = verdict["feedback"][:4000] or "Output failed the application's validation rules"
+                        self.save("model.validation", path, valid=False, reason=reason)
+                        if feedback(reason, response["text"]):
+                            continue
+                        raise ValueError(reason)
+                return output
             if node.type != "agent" or len({call["id"] for call in calls}) != len(calls):
                 raise ExecutionError("unexpected or duplicate tool calls")
             if not slot.get("assistant_recorded"):
@@ -862,6 +913,14 @@ class ExecutionSession:
                         job_id = await invoke(
                             tool.submit, **arguments, idempotency_key=operation_id
                         )
+                except ToolRejectedError as exc:
+                    self.journal.operation(
+                        self.lease, operation_id,
+                        update={"status": "rejected", "feedback": exc.observation()},
+                    )
+                    self.save("tool.rejected", path, tool=alias, operation_id=operation_id,
+                              feedback=exc.observation())
+                    raise
                 except (TimeoutError, OSError):
                     self.journal.operation(
                         self.lease, operation_id, update={"status": "submission_unknown"}
@@ -909,6 +968,11 @@ class ExecutionSession:
                 )
             if remote.status != "succeeded":
                 self.journal.operation(self.lease, operation_id, update={"status": remote.status})
+                from .version import SECRET
+
+                self.save("external.failed", path, tool=alias, operation_id=operation_id,
+                          job_id=operation["job_id"], state=remote.status,
+                          message=SECRET.sub("[redacted]", str(remote.error or "The external job failed."))[:2000])
                 raise ExecutionError("external task did not succeed")
             output = remote.output
         else:

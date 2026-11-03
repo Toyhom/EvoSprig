@@ -1,0 +1,2530 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 240
+  max_output_tokens: 4096
+  max_parallel_nodes: 2
+  max_parallel_tools: 2
+  max_steps: 5000
+  max_total_tokens: 1000000
+  timeout_seconds: 3600.0
+graph:
+  edges:
+  - source: art_director
+    target: render_profile
+    when: null
+  - source: producer
+    target: script_editor
+    when: null
+  - source: reference_library
+    target: shots
+    when: null
+  - source: render_profile
+    target: reference_library
+    when: null
+  - source: script_editor
+    target: art_director
+    when: null
+  - source: shots
+    target: timeline
+    when: null
+  - source: source_reader
+    target: producer
+    when: null
+  - source: timeline
+    target: assemble
+    when: null
+  entry: source_reader
+  nodes:
+    art_director:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 6000
+        max_tool_rounds: 1
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        plan:
+          default: null
+          optional: false
+          ref: nodes.script_editor.output
+        style:
+          default: null
+          optional: false
+          ref: input.style
+      instructions:
+        resource: art_director
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          assets:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                kind:
+                  enum:
+                  - character
+                  - location
+                prompt:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - kind
+              - prompt
+              type: object
+            maxItems: 8
+            minItems: 1
+            type: array
+          style:
+            minLength: 1
+            type: string
+        required:
+        - style
+        - assets
+        type: object
+      output_validator: art_valid
+      response_format: json
+      skills:
+      - continuity
+      - cinematography
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    assemble:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        clips:
+          default: null
+          optional: false
+          ref: nodes.timeline.output.clips
+        preserve_audio:
+          value: true
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          id:
+            minLength: 1
+            type: string
+          media_type:
+            minLength: 1
+            type: string
+          uri:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - uri
+        - media_type
+        type: object
+      response_format: text
+      tool: compose
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    producer:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 12000
+        max_tool_rounds: 1
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input
+        source:
+          default: null
+          optional: false
+          ref: nodes.source_reader.output
+      instructions:
+        resource: producer
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                name:
+                  minLength: 1
+                  type: string
+                visual_identity:
+                  minLength: 1
+                  type: string
+                voice:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - name
+              - visual_identity
+              - voice
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          locations:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          logline:
+            minLength: 1
+            type: string
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                action:
+                  minLength: 1
+                  type: string
+                action_scene:
+                  type: boolean
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  maxItems: 4
+                  type: array
+                dialogue:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      speaker:
+                        minLength: 1
+                        type: string
+                      text:
+                        minLength: 1
+                        type: string
+                    required:
+                    - speaker
+                    - text
+                    type: object
+                  type: array
+                duration_seconds:
+                  maximum: 15
+                  minimum: 3
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+                location:
+                  minLength: 1
+                  type: string
+                narration:
+                  type: string
+                transition:
+                  enum:
+                  - cut
+                  - continue
+              required:
+              - id
+              - location
+              - characters
+              - action
+              - camera
+              - dialogue
+              - narration
+              - duration_seconds
+              - transition
+              - action_scene
+              type: object
+            maxItems: 24
+            minItems: 1
+            type: array
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - logline
+        - characters
+        - locations
+        - shots
+        type: object
+      output_validator: plan_valid
+      response_format: json
+      skills:
+      - continuity
+      - cinematography
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    reference_library:
+      body:
+        edges:
+        - source: prepare
+          target: generate
+          when: null
+        entry: prepare
+        nodes:
+          generate:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              options:
+                value:
+                  height: 768
+                  steps: 40
+                  width: 1344
+              prompt:
+                default: null
+                optional: false
+                ref: nodes.prepare.output.prompt
+              references:
+                value: []
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                media_type:
+                  minLength: 1
+                  type: string
+                uri:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - uri
+              - media_type
+              type: object
+            response_format: text
+            tool: image
+            tool_errors: raise
+            tools: []
+            type: tool
+            until: null
+          prepare:
+            body: null
+            branches: {}
+            code: reference_prompt
+            condition: null
+            inputs:
+              asset:
+                default: null
+                optional: false
+                ref: input.item
+              style:
+                default: null
+                optional: false
+                ref: input.context.style
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+        output:
+          asset:
+            default: null
+            optional: false
+            ref: nodes.generate.output
+          id:
+            default: null
+            optional: false
+            ref: input.item.id
+          kind:
+            default: null
+            optional: false
+            ref: input.item.kind
+      branches: {}
+      condition: null
+      inputs:
+        style:
+          default: null
+          optional: false
+          ref: nodes.art_director.output.style
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: nodes.art_director.output.assets
+      join: all
+      max_items: 8
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+    render_profile:
+      body: null
+      branches: {}
+      condition: null
+      inputs: {}
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: render_profile
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    script_editor:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 12000
+        max_tool_rounds: 1
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input
+        draft:
+          default: null
+          optional: false
+          ref: nodes.producer.output
+        source:
+          default: null
+          optional: false
+          ref: nodes.source_reader.output
+      instructions:
+        resource: script_editor
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                name:
+                  minLength: 1
+                  type: string
+                visual_identity:
+                  minLength: 1
+                  type: string
+                voice:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - name
+              - visual_identity
+              - voice
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          locations:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          logline:
+            minLength: 1
+            type: string
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                action:
+                  minLength: 1
+                  type: string
+                action_scene:
+                  type: boolean
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  maxItems: 4
+                  type: array
+                dialogue:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      speaker:
+                        minLength: 1
+                        type: string
+                      text:
+                        minLength: 1
+                        type: string
+                    required:
+                    - speaker
+                    - text
+                    type: object
+                  type: array
+                duration_seconds:
+                  maximum: 15
+                  minimum: 3
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+                location:
+                  minLength: 1
+                  type: string
+                narration:
+                  type: string
+                transition:
+                  enum:
+                  - cut
+                  - continue
+              required:
+              - id
+              - location
+              - characters
+              - action
+              - camera
+              - dialogue
+              - narration
+              - duration_seconds
+              - transition
+              - action_scene
+              type: object
+            maxItems: 24
+            minItems: 1
+            type: array
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - logline
+        - characters
+        - locations
+        - shots
+        type: object
+      output_validator: plan_valid
+      response_format: json
+      skills:
+      - continuity
+      - cinematography
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    shots:
+      body:
+        edges:
+        - source: accepted
+          target: approved
+          when: true
+        - source: accepted
+          target: needs_review
+          when: false
+        - source: approved
+          target: gather_selected
+          when: null
+        - source: approved_frame
+          target: frame_choice
+          when: null
+        - source: first_frame
+          target: gather_references
+          when: null
+        - source: frame_accepted
+          target: approved_frame
+          when: true
+        - source: frame_accepted
+          target: frame_attention
+          when: false
+        - source: frame_attention
+          target: frame_choice
+          when: null
+        - source: frame_choice
+          target: first_frame
+          when: null
+        - source: frame_takes
+          target: frame_accepted
+          when: null
+        - source: gather_references
+          target: stage_references
+          when: null
+        - source: gather_selected
+          target: selected_take
+          when: null
+        - source: needs_review
+          target: gather_selected
+          when: null
+        - source: reference_names
+          target: takes
+          when: null
+        - source: shot_context
+          target: frame_takes
+          when: null
+        - source: stage_references
+          target: reference_names
+          when: null
+        - source: takes
+          target: accepted
+          when: null
+        entry: shot_context
+        nodes:
+          accepted:
+            body: null
+            branches: {}
+            condition:
+              left:
+                default: null
+                optional: false
+                ref: nodes.takes.output.accepted
+              op: truthy
+              right: null
+            inputs: {}
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                value:
+                  type: boolean
+              required:
+              - value
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: condition
+            until: null
+          approved:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              take:
+                default: null
+                optional: false
+                ref: nodes.takes.output.take
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: transform
+            until: null
+          approved_frame:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              frame:
+                default: null
+                optional: false
+                ref: nodes.frame_takes.output.frame
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                frame:
+                  additionalProperties: false
+                  properties:
+                    id:
+                      minLength: 1
+                      type: string
+                    media_type:
+                      minLength: 1
+                      type: string
+                    uri:
+                      minLength: 1
+                      type: string
+                  required:
+                  - id
+                  - uri
+                  - media_type
+                  type: object
+              required:
+              - frame
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: transform
+            until: null
+          first_frame:
+            body: null
+            branches: {}
+            code: selected_frame
+            condition: null
+            inputs:
+              approved:
+                default: null
+                optional: false
+                ref: nodes.frame_choice.output.approved
+              reviewed:
+                default: null
+                optional: false
+                ref: nodes.frame_choice.output.reviewed
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                media_type:
+                  minLength: 1
+                  type: string
+                uri:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - uri
+              - media_type
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          frame_accepted:
+            body: null
+            branches: {}
+            condition:
+              left:
+                default: null
+                optional: false
+                ref: nodes.frame_takes.output.accepted
+              op: truthy
+              right: null
+            inputs: {}
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                value:
+                  type: boolean
+              required:
+              - value
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: condition
+            until: null
+          frame_attention:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              feedback:
+                default: null
+                optional: false
+                ref: nodes.frame_takes.output.feedback
+              frame:
+                default: null
+                optional: false
+                ref: nodes.frame_takes.output.frame
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                frame:
+                  additionalProperties: false
+                  properties:
+                    id:
+                      minLength: 1
+                      type: string
+                    media_type:
+                      minLength: 1
+                      type: string
+                    uri:
+                      minLength: 1
+                      type: string
+                  required:
+                  - id
+                  - uri
+                  - media_type
+                  type: object
+              required:
+              - frame
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: human
+            until: null
+          frame_choice:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              approved:
+                default: null
+                optional: true
+                ref: nodes.approved_frame.output
+              reviewed:
+                default: null
+                optional: true
+                ref: nodes.frame_attention.output
+            instructions: ''
+            items: null
+            join: selected
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: join
+            until: null
+          frame_takes:
+            body:
+              edges:
+              - source: generate
+                target: review_inputs
+                when: null
+              - source: preview
+                target: frame_review
+                when: null
+              - source: review_inputs
+                target: preview
+                when: null
+              - source: settings
+                target: generate
+                when: null
+              - source: shot_director
+                target: settings
+                when: null
+              entry: shot_director
+              nodes:
+                frame_review:
+                  body: null
+                  branches: {}
+                  condition: null
+                  harness:
+                    max_output_retries: 2
+                    max_output_tokens: 4096
+                    max_tool_rounds: 1
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: null
+                    tool_limit: null
+                    tool_selection: null
+                  image_inputs:
+                  - images
+                  inputs:
+                    context:
+                      default: null
+                      optional: false
+                      ref: nodes.settings.output.context
+                    images:
+                      default: null
+                      optional: false
+                      ref: nodes.preview.output.images
+                    labels:
+                      default: null
+                      optional: false
+                      ref: nodes.review_inputs.output.labels
+                  instructions:
+                    resource: frame_review
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: vision
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      accepted:
+                        type: boolean
+                      feedback:
+                        type: string
+                    required:
+                    - accepted
+                    - feedback
+                    type: object
+                  response_format: json
+                  skills:
+                  - continuity
+                  - cinematography
+                  tool: null
+                  tool_errors: raise
+                  tools: []
+                  type: agent
+                  until: null
+                generate:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    options:
+                      default: null
+                      optional: false
+                      ref: nodes.settings.output.options
+                    prompt:
+                      default: null
+                      optional: false
+                      ref: nodes.settings.output.prompt
+                    references:
+                      default: null
+                      optional: false
+                      ref: nodes.settings.output.context.image_references
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      id:
+                        minLength: 1
+                        type: string
+                      media_type:
+                        minLength: 1
+                        type: string
+                      uri:
+                        minLength: 1
+                        type: string
+                    required:
+                    - id
+                    - uri
+                    - media_type
+                    type: object
+                  response_format: text
+                  tool: image
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                preview:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    assets:
+                      default: null
+                      optional: false
+                      ref: nodes.review_inputs.output.assets
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: vision_preview
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                review_inputs:
+                  body: null
+                  branches: {}
+                  code: frame_review_inputs
+                  condition: null
+                  inputs:
+                    context:
+                      default: null
+                      optional: false
+                      ref: nodes.settings.output.context
+                    frame:
+                      default: null
+                      optional: false
+                      ref: nodes.generate.output
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+                settings:
+                  body: null
+                  branches: {}
+                  code: frame_settings
+                  condition: null
+                  inputs:
+                    attempt:
+                      default: null
+                      optional: false
+                      ref: input.attempt
+                    context:
+                      default: null
+                      optional: false
+                      ref: input.context
+                    prompt:
+                      default: null
+                      optional: false
+                      ref: nodes.shot_director.output.prompt
+                    transition:
+                      default: null
+                      optional: false
+                      ref: nodes.shot_director.output.transition
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+                shot_director:
+                  body: null
+                  branches: {}
+                  condition: null
+                  harness:
+                    max_output_retries: 2
+                    max_output_tokens: 4096
+                    max_tool_rounds: 1
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: null
+                    tool_limit: null
+                    tool_selection: null
+                  inputs:
+                    context:
+                      default: null
+                      optional: false
+                      ref: input.context
+                    feedback:
+                      default: null
+                      optional: false
+                      ref: input.feedback
+                  instructions:
+                    resource: shot_director
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: main
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      prompt:
+                        minLength: 1
+                        type: string
+                      transition:
+                        enum:
+                        - cut
+                        - continue
+                    required:
+                    - prompt
+                    - transition
+                    type: object
+                  response_format: json
+                  skills:
+                  - continuity
+                  - cinematography
+                  tool: null
+                  tool_errors: raise
+                  tools: []
+                  type: agent
+                  until: null
+              output:
+                accepted:
+                  default: null
+                  optional: false
+                  ref: nodes.frame_review.output.accepted
+                attempt:
+                  default: null
+                  optional: false
+                  ref: nodes.settings.output.attempt
+                context:
+                  default: null
+                  optional: false
+                  ref: nodes.settings.output.context
+                feedback:
+                  default: null
+                  optional: false
+                  ref: nodes.frame_review.output.feedback
+                frame:
+                  default: null
+                  optional: false
+                  ref: nodes.generate.output
+            branches: {}
+            condition: null
+            inputs:
+              attempt:
+                value: 0
+              context:
+                default: null
+                optional: false
+                ref: nodes.shot_context.output
+              feedback:
+                value: ''
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 2
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: loop
+            until:
+              left:
+                default: null
+                optional: false
+                ref: input.accepted
+              op: truthy
+              right: null
+          gather_references:
+            body: null
+            branches: {}
+            code: gather_references
+            condition: null
+            inputs:
+              context:
+                default: null
+                optional: false
+                ref: nodes.frame_takes.output.context
+              frame:
+                default: null
+                optional: false
+                ref: nodes.first_frame.output
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          gather_selected:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              approved:
+                default: null
+                optional: true
+                ref: nodes.approved.output
+              reviewed:
+                default: null
+                optional: true
+                ref: nodes.needs_review.output
+            instructions: ''
+            items: null
+            join: selected
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: join
+            until: null
+          needs_review:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              feedback:
+                default: null
+                optional: false
+                ref: nodes.takes.output.feedback
+              take:
+                default: null
+                optional: false
+                ref: nodes.takes.output.take
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              additionalProperties: false
+              properties:
+                take:
+                  type: object
+              required:
+              - take
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: human
+            until: null
+          reference_names:
+            body: null
+            branches: {}
+            code: reference_names
+            condition: null
+            inputs:
+              items:
+                default: null
+                optional: false
+                ref: nodes.stage_references.output.items
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          selected_take:
+            body: null
+            branches: {}
+            code: selected_take
+            condition: null
+            inputs:
+              approved:
+                default: null
+                optional: false
+                ref: nodes.gather_selected.output.approved
+              reviewed:
+                default: null
+                optional: false
+                ref: nodes.gather_selected.output.reviewed
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          shot_context:
+            body: null
+            branches: {}
+            code: shot_context
+            condition: null
+            inputs:
+              context:
+                default: null
+                optional: false
+                ref: input.context
+              index:
+                default: null
+                optional: false
+                ref: input.index
+              previous:
+                default: null
+                optional: false
+                ref: input.previous
+              shot:
+                default: null
+                optional: false
+                ref: input.item
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          stage_references:
+            body:
+              edges: []
+              entry: stage
+              nodes:
+                stage:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    asset:
+                      default: null
+                      optional: false
+                      ref: input.item
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: stage
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+              output:
+                filename:
+                  default: null
+                  optional: false
+                  ref: nodes.stage.output.filename
+                media_type:
+                  default: null
+                  optional: false
+                  ref: input.item.media_type
+            branches: {}
+            condition: null
+            inputs: {}
+            instructions: ''
+            items:
+              default: null
+              optional: false
+              ref: nodes.gather_references.output.assets
+            join: all
+            max_items: 12
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: map
+            until: null
+          takes:
+            body:
+              edges:
+              - source: collect_media
+                target: select_clip
+                when: null
+              - source: configure_nodes
+                target: render
+                when: null
+              - source: continuity_review
+                target: record_take
+                when: null
+              - source: inspect_clip
+                target: review_images
+                when: null
+              - source: preview
+                target: continuity_review
+                when: null
+              - source: render
+                target: collect_media
+                when: null
+              - source: render_engineer
+                target: render_settings
+                when: null
+              - source: render_settings
+                target: configure_nodes
+                when: null
+              - source: review_images
+                target: preview
+                when: null
+              - source: select_clip
+                target: inspect_clip
+                when: null
+              entry: render_engineer
+              nodes:
+                collect_media:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    outputs:
+                      default: null
+                      optional: false
+                      ref: nodes.render.output
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: ingest
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                configure_nodes:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    controls:
+                      default: null
+                      optional: false
+                      ref: nodes.render_settings.output
+                    reference_audio:
+                      default: null
+                      optional: false
+                      ref: input.reference_audio
+                    reference_images:
+                      default: null
+                      optional: false
+                      ref: input.reference_images
+                    reference_videos:
+                      default: null
+                      optional: false
+                      ref: input.reference_videos
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: recipe
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                continuity_review:
+                  body: null
+                  branches: {}
+                  condition: null
+                  harness:
+                    max_output_retries: 2
+                    max_output_tokens: 3072
+                    max_tool_rounds: 1
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: null
+                    tool_limit: null
+                    tool_selection: null
+                  image_inputs:
+                  - images
+                  inputs:
+                    images:
+                      default: null
+                      optional: false
+                      ref: nodes.preview.output.images
+                    inspection:
+                      default: null
+                      optional: false
+                      ref: nodes.inspect_clip.output
+                    previous:
+                      default: null
+                      optional: false
+                      ref: input.context.previous
+                    reference_order:
+                      default: null
+                      optional: false
+                      ref: nodes.review_images.output.labels
+                    shot:
+                      default: null
+                      optional: false
+                      ref: input.context.shot
+                  instructions:
+                    resource: continuity_review
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: vision
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      accepted:
+                        type: boolean
+                      continuity:
+                        additionalProperties: false
+                        properties:
+                          character_positions:
+                            type: string
+                          end_action:
+                            type: string
+                          lighting:
+                            type: string
+                          props:
+                            type: string
+                        required:
+                        - character_positions
+                        - lighting
+                        - props
+                        - end_action
+                        type: object
+                      feedback:
+                        type: string
+                      issues:
+                        items:
+                          minLength: 1
+                          type: string
+                        type: array
+                    required:
+                    - accepted
+                    - issues
+                    - feedback
+                    - continuity
+                    type: object
+                  response_format: json
+                  skills:
+                  - continuity
+                  - cinematography
+                  tool: null
+                  tool_errors: raise
+                  tools: []
+                  type: agent
+                  until: null
+                inspect_clip:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    asset:
+                      default: null
+                      optional: false
+                      ref: nodes.select_clip.output
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: inspect
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                preview:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    assets:
+                      default: null
+                      optional: false
+                      ref: nodes.review_images.output.assets
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: vision_preview
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                record_take:
+                  body: null
+                  branches: {}
+                  code: record_take
+                  condition: null
+                  inputs:
+                    attempt:
+                      default: null
+                      optional: false
+                      ref: input.attempt
+                    context:
+                      default: null
+                      optional: false
+                      ref: input.context
+                    controls:
+                      default: null
+                      optional: false
+                      ref: nodes.render_settings.output
+                    frame:
+                      default: null
+                      optional: false
+                      ref: input.frame
+                    inspection:
+                      default: null
+                      optional: false
+                      ref: nodes.inspect_clip.output
+                    reference_images:
+                      default: null
+                      optional: false
+                      ref: input.reference_images
+                    reference_order:
+                      default: null
+                      optional: false
+                      ref: input.reference_order
+                    review:
+                      default: null
+                      optional: false
+                      ref: nodes.continuity_review.output
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+                render:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    prompt:
+                      default: null
+                      optional: false
+                      ref: nodes.configure_nodes.output.prompt
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: render
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                render_engineer:
+                  body: null
+                  branches: {}
+                  condition: null
+                  harness:
+                    max_output_retries: 2
+                    max_output_tokens: 4096
+                    max_tool_rounds: 1
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: null
+                    tool_limit: null
+                    tool_selection: null
+                  inputs:
+                    cast:
+                      default: null
+                      optional: false
+                      ref: input.context.cast
+                    feedback:
+                      default: null
+                      optional: false
+                      ref: input.feedback
+                    previous:
+                      default: null
+                      optional: false
+                      ref: input.context.previous
+                    reference_order:
+                      default: null
+                      optional: false
+                      ref: input.reference_order
+                    render_profile:
+                      default: null
+                      optional: false
+                      ref: input.context.render_profile
+                    shot:
+                      default: null
+                      optional: false
+                      ref: input.context.shot
+                    style:
+                      default: null
+                      optional: false
+                      ref: input.context.style
+                  instructions:
+                    resource: render_engineer
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: main
+                  output_schema:
+                    additionalProperties:
+                      type:
+                      - string
+                      - number
+                      - boolean
+                    properties:
+                      action:
+                        type: boolean
+                      prompt:
+                        minLength: 1
+                        type: string
+                    required:
+                    - prompt
+                    - action
+                    type: object
+                  output_validator: render_valid
+                  response_format: json
+                  skills:
+                  - continuity
+                  - cinematography
+                  tool: null
+                  tool_errors: raise
+                  tools: []
+                  type: agent
+                  until: null
+                render_settings:
+                  body: null
+                  branches: {}
+                  code: render_settings
+                  condition: null
+                  inputs:
+                    attempt:
+                      default: null
+                      optional: false
+                      ref: input.attempt
+                    context:
+                      default: null
+                      optional: false
+                      ref: input.context
+                    controls:
+                      default: null
+                      optional: false
+                      ref: nodes.render_engineer.output
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+                review_images:
+                  body: null
+                  branches: {}
+                  code: review_images
+                  condition: null
+                  inputs:
+                    frame:
+                      default: null
+                      optional: false
+                      ref: input.frame
+                    inspection:
+                      default: null
+                      optional: false
+                      ref: nodes.inspect_clip.output
+                    previous:
+                      default: null
+                      optional: false
+                      ref: input.context.previous
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+                select_clip:
+                  body: null
+                  branches: {}
+                  code: select_clip
+                  condition: null
+                  inputs:
+                    assets:
+                      default: null
+                      optional: false
+                      ref: nodes.collect_media.output.assets
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      id:
+                        minLength: 1
+                        type: string
+                      media_type:
+                        minLength: 1
+                        type: string
+                      uri:
+                        minLength: 1
+                        type: string
+                    required:
+                    - id
+                    - uri
+                    - media_type
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+              output:
+                accepted:
+                  default: null
+                  optional: false
+                  ref: nodes.record_take.output.accepted
+                attempt:
+                  default: null
+                  optional: false
+                  ref: nodes.record_take.output.attempt
+                context:
+                  default: null
+                  optional: false
+                  ref: nodes.record_take.output.context
+                feedback:
+                  default: null
+                  optional: false
+                  ref: nodes.record_take.output.feedback
+                frame:
+                  default: null
+                  optional: false
+                  ref: input.frame
+                reference_audio:
+                  default: null
+                  optional: false
+                  ref: input.reference_audio
+                reference_images:
+                  default: null
+                  optional: false
+                  ref: input.reference_images
+                reference_order:
+                  default: null
+                  optional: false
+                  ref: input.reference_order
+                reference_videos:
+                  default: null
+                  optional: false
+                  ref: input.reference_videos
+                take:
+                  default: null
+                  optional: false
+                  ref: nodes.record_take.output.take
+            branches: {}
+            condition: null
+            inputs:
+              attempt:
+                value: 0
+              context:
+                default: null
+                optional: false
+                ref: nodes.frame_takes.output.context
+              feedback:
+                value: ''
+              frame:
+                default: null
+                optional: false
+                ref: nodes.first_frame.output
+              reference_audio:
+                default: null
+                optional: false
+                ref: nodes.reference_names.output.audio
+              reference_images:
+                default: null
+                optional: false
+                ref: nodes.reference_names.output.images
+              reference_order:
+                default: null
+                optional: false
+                ref: nodes.gather_references.output.labels
+              reference_videos:
+                default: null
+                optional: false
+                ref: nodes.reference_names.output.videos
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 2
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: loop
+            until:
+              left:
+                default: null
+                optional: false
+                ref: input.accepted
+              op: truthy
+              right: null
+        output:
+          clip:
+            default: null
+            optional: false
+            ref: nodes.selected_take.output.clip
+          continuity:
+            default: null
+            optional: false
+            ref: nodes.selected_take.output.continuity
+          last_frame:
+            default: null
+            optional: false
+            ref: nodes.selected_take.output.last_frame
+          shot_id:
+            default: null
+            optional: false
+            ref: input.item.id
+          tail:
+            default: null
+            optional: false
+            ref: nodes.selected_take.output.tail
+          take:
+            default: null
+            optional: false
+            ref: nodes.selected_take.output
+          voice_references:
+            default: null
+            optional: false
+            ref: nodes.selected_take.output.voice_references
+      branches: {}
+      carry:
+        value:
+          continuity: {}
+          last_frame: null
+          shot_id: ''
+      condition: null
+      inputs:
+        art:
+          default: null
+          optional: false
+          ref: nodes.art_director.output
+        assets:
+          default: null
+          optional: false
+          ref: nodes.reference_library.output.items
+        plan:
+          default: null
+          optional: false
+          ref: nodes.script_editor.output
+        render_profile:
+          default: null
+          optional: false
+          ref: nodes.render_profile.output
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: nodes.script_editor.output.shots
+      join: all
+      max_items: 24
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+    source_reader:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 6000
+        max_tool_rounds: 1
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        source_text:
+          default: null
+          optional: false
+          ref: input.source_text
+      instructions:
+        resource: source_reader
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+                name:
+                  minLength: 1
+                  type: string
+                source_quote:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - name
+              - description
+              - source_quote
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          dialogue:
+            items:
+              additionalProperties: false
+              properties:
+                speaker:
+                  minLength: 1
+                  type: string
+                text:
+                  minLength: 1
+                  type: string
+              required:
+              - speaker
+              - text
+              type: object
+            maxItems: 80
+            type: array
+          ending:
+            minLength: 1
+            type: string
+        required:
+        - characters
+        - dialogue
+        - ending
+        type: object
+      output_validator: source_valid
+      response_format: json
+      skills:
+      - continuity
+      - cinematography
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    timeline:
+      body: null
+      branches: {}
+      code: timeline
+      condition: null
+      inputs:
+        shots:
+          default: null
+          optional: false
+          ref: nodes.shots.output.items
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+  output:
+    film:
+      default: null
+      optional: false
+      ref: nodes.assemble.output
+    plan:
+      default: null
+      optional: false
+      ref: nodes.script_editor.output
+    shots:
+      default: null
+      optional: false
+      ref: nodes.shots.output
+id: episode-studio
+input_schema:
+  additionalProperties: false
+  properties:
+    language:
+      minLength: 1
+      type: string
+    source_text:
+      minLength: 1
+      type: string
+    style:
+      minLength: 1
+      type: string
+    target_seconds:
+      maximum: 300
+      minimum: 12
+      type: integer
+  required:
+  - source_text
+  - style
+  - language
+  - target_seconds
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+  vision:
+    binding: vision
+    requires:
+    - text
+    - structured_output
+    - vision
+output_schema:
+  additionalProperties: false
+  properties:
+    film:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        media_type:
+          minLength: 1
+          type: string
+        uri:
+          minLength: 1
+          type: string
+      required:
+      - id
+      - uri
+      - media_type
+      type: object
+    plan:
+      additionalProperties: false
+      properties:
+        characters:
+          items:
+            additionalProperties: false
+            properties:
+              id:
+                minLength: 1
+                type: string
+              name:
+                minLength: 1
+                type: string
+              visual_identity:
+                minLength: 1
+                type: string
+              voice:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - name
+            - visual_identity
+            - voice
+            type: object
+          maxItems: 4
+          minItems: 1
+          type: array
+        locations:
+          items:
+            additionalProperties: false
+            properties:
+              description:
+                minLength: 1
+                type: string
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - description
+            type: object
+          maxItems: 4
+          minItems: 1
+          type: array
+        logline:
+          minLength: 1
+          type: string
+        shots:
+          items:
+            additionalProperties: false
+            properties:
+              action:
+                minLength: 1
+                type: string
+              action_scene:
+                type: boolean
+              camera:
+                minLength: 1
+                type: string
+              characters:
+                items:
+                  minLength: 1
+                  type: string
+                maxItems: 4
+                type: array
+              dialogue:
+                items:
+                  additionalProperties: false
+                  properties:
+                    speaker:
+                      minLength: 1
+                      type: string
+                    text:
+                      minLength: 1
+                      type: string
+                  required:
+                  - speaker
+                  - text
+                  type: object
+                type: array
+              duration_seconds:
+                maximum: 15
+                minimum: 3
+                type: integer
+              id:
+                minLength: 1
+                type: string
+              location:
+                minLength: 1
+                type: string
+              narration:
+                type: string
+              transition:
+                enum:
+                - cut
+                - continue
+            required:
+            - id
+            - location
+            - characters
+            - action
+            - camera
+            - dialogue
+            - narration
+            - duration_seconds
+            - transition
+            - action_scene
+            type: object
+          maxItems: 24
+          minItems: 1
+          type: array
+        title:
+          minLength: 1
+          type: string
+      required:
+      - title
+      - logline
+      - characters
+      - locations
+      - shots
+      type: object
+    shots:
+      type: object
+  required:
+  - film
+  - plan
+  - shots
+  type: object
+resources:
+  art_director:
+    path: prompts/art_director.md
+    role: prompt
+  art_valid:
+    path: code/art_valid.py
+    role: code
+  cinematography:
+    path: skills/cinematography.md
+    role: skill
+  continuity:
+    path: skills/continuity.md
+    role: skill
+  continuity_review:
+    path: prompts/continuity_review.md
+    role: prompt
+  frame_review:
+    path: prompts/frame_review.md
+    role: prompt
+  frame_review_inputs:
+    path: code/frame_review_inputs.py
+    role: code
+  frame_settings:
+    path: code/frame_settings.py
+    role: code
+  gather_references:
+    path: code/gather_references.py
+    role: code
+  plan_valid:
+    path: code/plan_valid.py
+    role: code
+  producer:
+    path: prompts/producer.md
+    role: prompt
+  record_take:
+    path: code/record_take.py
+    role: code
+  reference_names:
+    path: code/reference_names.py
+    role: code
+  reference_prompt:
+    path: code/reference_prompt.py
+    role: code
+  render_engineer:
+    path: prompts/render_engineer.md
+    role: prompt
+  render_settings:
+    path: code/render_settings.py
+    role: code
+  render_valid:
+    path: code/render_valid.py
+    role: code
+  review_images:
+    path: code/review_images.py
+    role: code
+  script_editor:
+    path: prompts/script_editor.md
+    role: prompt
+  select_clip:
+    path: code/select_clip.py
+    role: code
+  selected_frame:
+    path: code/selected_frame.py
+    role: code
+  selected_take:
+    path: code/selected_take.py
+    role: code
+  shot_context:
+    path: code/shot_context.py
+    role: code
+  shot_director:
+    path: prompts/shot_director.md
+    role: prompt
+  source_reader:
+    path: prompts/source_reader.md
+    role: prompt
+  source_valid:
+    path: code/source_valid.py
+    role: code
+  timeline:
+    path: code/timeline.py
+    role: code
+spec_version: '0.3'
+tools:
+  compose:
+    plugin: media.compose
+    version: '1'
+  image:
+    plugin: media.generate_image
+    version: '1'
+  ingest:
+    plugin: media.ingest_comfy
+    version: '1'
+  inspect:
+    plugin: media.inspect_video
+    version: '1'
+  python:
+    plugin: code.python
+    version: '1'
+  recipe:
+    plugin: film.recipe
+    version: '1'
+  render:
+    plugin: film.render
+    version: '1'
+  render_profile:
+    plugin: film.settings
+    version: '1'
+  stage:
+    plugin: media.stage_reference
+    version: '1'
+  vision_preview:
+    plugin: media.vision
+    version: '1'

@@ -15,6 +15,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError as SchemaValidationError
 from pydantic import Field, ValidationError
 
 from evosprig.config import make_models, make_tools, restore_models
@@ -62,6 +64,21 @@ class InputBody(Contract):
     response: dict[str, Any]
 
 
+class DebugSelection(Contract):
+    revision: int = Field(ge=1)
+    nodes: list[str] = Field(min_length=1, max_length=128)
+    path: list[str] = Field(default_factory=list, max_length=24)
+    source_run_id: str | None = None
+    source_prefix: str = Field(default="graph", max_length=2048)
+
+
+class DebugRunBody(DebugSelection):
+    input: dict[str, Any]
+    upstream: dict[str, Any] = Field(default_factory=dict)
+    mock: bool = True
+    allow_writes: bool = False
+
+
 def create_app(
     workspace: str | Path,
     *,
@@ -82,6 +99,12 @@ def create_app(
         raise ValueError("principals cannot be empty")
 
     def tools_for(scope, bindings=None):
+        if bindings is None:
+            import yaml
+
+            raw = yaml.safe_load(Path(profile).read_text()) if profile else {}
+            integration = store.integration(scope.project, "comfy", identity=(scope.user, scope.tenant))
+            bindings = {**(integration or {}).get("bindings", {}).get("tools", {}), **raw.get("tools", {})}
         return make_tools(workspace, scope, profile=profile, bindings=bindings)
 
     def restore_runtime(record):
@@ -214,6 +237,9 @@ def create_app(
     install_evolution_routes(
         app, studies, study_worker, store, compile_document, tools_for, profile
     )
+    from .comfy_api import install_comfy_routes
+
+    install_comfy_routes(app, store)
 
     @app.get("/api/health")
     async def health():
@@ -364,6 +390,73 @@ def create_app(
             run_record(record["run_id"])
             for record in journal.list(current_principal.get().scope(project_id))
         ]
+
+    def debug_context(project_id, body):
+        from evosprig.core.debug import plan_debug, saved_debug_context
+
+        document = store.get(project_id, identity=current_principal.get().key)
+        if document["revision"] != body.revision:
+            raise RevisionConflict("save or reload the current project before debugging")
+        try:
+            plan = plan_debug(AgentSpec.model_validate(document["spec"]), body.nodes, body.path)
+        except (ValueError, KeyError, IndexError) as exc:
+            raise HTTPException(422, "invalid debug selection: " + str(exc)[:300]) from None
+        cached, prior_input, contexts, source_prefix = {}, None, [], body.source_prefix
+        if body.source_run_id:
+            record = run_record(body.source_run_id)
+            if record["project_id"] != project_id or record.get("legacy"):
+                raise HTTPException(422, "choose a run from this project")
+            original = journal.get(body.source_run_id)
+            try:
+                original_spec = AgentSpec.model_validate_json(original["version"]["spec_json"])
+                debug = original["metadata"].get("context", {}).get("debug")
+                relative_path = body.path
+                if debug:
+                    parent_path = debug["path"]
+                    if body.path[:len(parent_path)] != parent_path:
+                        raise ValueError("choose a run from this subflow or its parent")
+                    relative_path = body.path[len(parent_path):]
+                source_prefix, contexts, prior_input = saved_debug_context(
+                    original_spec, relative_path, original["checkpoint"], original["input"], body.source_prefix)
+                if debug and not relative_path:
+                    prior_input = original["input"]["project"]
+                    cached.update({item["source"]: original["input"]["upstream"][item["source"]]
+                                   for item in plan.boundary if item["source"] in original["input"]["upstream"]})
+            except (ValueError, KeyError, IndexError) as exc:
+                raise HTTPException(422, "saved inputs are unavailable: " + str(exc)[:200]) from None
+            for item in plan.boundary:
+                slot = original["checkpoint"]["nodes"].get(source_prefix + "/" + item["source"], {})
+                if slot.get("status") == "succeeded":
+                    cached[item["source"]] = slot["output"]
+        return document, plan, cached, prior_input, contexts, source_prefix
+
+    @app.post("/api/projects/{project_id}/debug/plan")
+    async def debug_plan(project_id: str, body: DebugSelection):
+        _, plan, cached, prior_input, contexts, prefix = debug_context(project_id, body)
+        return {**plan.describe(), "upstream": cached, "previous_input": prior_input,
+                "source_contexts": contexts, "source_prefix": prefix}
+
+    @app.post("/api/projects/{project_id}/debug/runs", status_code=202)
+    async def debug_run(project_id: str, body: DebugRunBody):
+        document, plan, cached, _, _, _ = debug_context(project_id, body)
+        inputs = {"project": body.input, "upstream": {**cached, **body.upstream}}
+        try:
+            Draft202012Validator(plan.spec.input_schema).validate(inputs)
+        except SchemaValidationError as exc:
+            raise HTTPException(422, {"field": ".".join(map(str, exc.absolute_path)),
+                                      "message": SECRET.sub("[redacted]", exc.message)[:500]}) from None
+        original = compile_document(document)
+        version = compile_snapshot(plan.spec, {k: v for k, v in original.resources.items()
+                                               if k in plan.spec.resources})
+        runtime = Runtime(make_models(version.spec, profile, body.mock),
+                          tools_for(current_principal.get().scope(project_id)),
+                          journal=journal, allow_writes=body.allow_writes)
+        run_id = runtime.create_run(version, inputs, scope=current_principal.get().scope(project_id),
+                                    context={"debug": {"path": body.path, "selected": body.nodes,
+                                                       "source_run_id": body.source_run_id}})
+        worker.dispatch(run_id)
+        return {"run_id": run_id, "status": "queued", "agent_version": version.version_id,
+                "debug": plan.describe()}
 
     @app.post("/api/projects/{project_id}/runs", status_code=202)
     async def start_run(project_id: str, body: RunBody):

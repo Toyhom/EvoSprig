@@ -95,8 +95,9 @@ async def test_write_failure_still_requires_reconciliation(tmp_path):
     assert not any(event["type"] == "tool.feedback" for event in result.events)
 
 
-async def test_write_rejected_before_commit_can_be_corrected(tmp_path):
-    from evosprig.core.protocols import ToolRejectedError
+@pytest.mark.parametrize("external", [False, True])
+async def test_write_rejected_before_commit_can_be_corrected(tmp_path, external):
+    from evosprig.core.protocols import ExternalStatus, ExternalTool, ToolRejectedError
 
     writes = []
 
@@ -106,8 +107,7 @@ async def test_write_rejected_before_commit_can_be_corrected(tmp_path):
         writes.append(revision)
         return {"revision": 3}
 
-    version, registry = agent(
-        Tool(
+    action = Tool(
             "example.cas",
             "Write",
             {
@@ -119,7 +119,17 @@ async def test_write_rejected_before_commit_can_be_corrected(tmp_path):
             write,
             side_effect="write",
         )
-    )
+    if external:
+        async def submit(revision, *, idempotency_key):
+            write(revision)
+            return "accepted"
+
+        async def poll(job_id):
+            assert job_id == "accepted"
+            return ExternalStatus("succeeded", {"revision": 3})
+
+        action = ExternalTool(action.name, action.description, action.input_schema, action.output_schema, submit, poll)
+    version, registry = agent(action)
     model = MockProvider(
         [
             ModelResponse(tool_calls=(ToolCall("stale", "action", {"revision": 1}),)),

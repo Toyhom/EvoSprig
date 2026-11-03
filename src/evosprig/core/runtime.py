@@ -43,8 +43,8 @@ class Runtime:
         )
         self.journal = self._engine.journal
 
-    def create_run(self, version, inputs, *, run_id=None, scope=None):
-        return self._engine.create_run(version, inputs, run_id=run_id, scope=scope)
+    def create_run(self, version, inputs, *, run_id=None, scope=None, context=None):
+        return self._engine.create_run(version, inputs, run_id=run_id, scope=scope, context=context)
 
     async def run(
         self, version, inputs, *, run_id=None, scope=None, cancel=None, on_event=None, shutdown=None

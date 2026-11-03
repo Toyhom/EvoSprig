@@ -36,7 +36,7 @@
       "properties": {
         "max_steps": {
           "default": 32,
-          "maximum": 1000,
+          "maximum": 10000,
           "minimum": 1,
           "title": "Max Steps",
           "type": "integer"
@@ -549,6 +549,21 @@
           "default": null,
           "title": "Items"
         },
+        "carry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "$ref": "#/$defs/Value"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Carry"
+        },
         "max_items": {
           "default": 32,
           "maximum": 256,
@@ -640,6 +655,18 @@
             }
           ],
           "default": null
+        },
+        "output_validator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Validator"
         },
         "mailbox": {
           "anyOf": [

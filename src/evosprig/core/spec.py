@@ -156,6 +156,7 @@ class Node(Contract):
     until: Predicate | None = None
     join: Literal["all", "selected"] = "all"
     items: Ref | Value | None = None
+    carry: Ref | Value | None = None
     max_items: int = Field(default=32, ge=1, le=256)
     tool_errors: Literal["raise", "feedback"] = "raise"
     parallel_tool_calls: bool = False
@@ -166,12 +167,15 @@ class Node(Contract):
     max_output_retries: int = Field(default=1, ge=0, le=3)
     max_output_tokens: int | None = Field(default=None, ge=1, le=32768)
     harness: Harness | None = None
+    output_validator: str | None = None
     mailbox: str | Ref | None = None
     code: str | None = None
 
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if self.output_validator is not None and self.type not in {"model", "agent"}:
+            raise ValueError("output validators belong to model and agent nodes")
         if self.harness is not None and self.type != "agent":
             raise ValueError("structured harness belongs to an agent node")
         if self.mailbox is not None and self.type != "agent":
@@ -228,6 +232,8 @@ class Node(Contract):
             raise ValueError("loop and map nodes require a body graph")
         if (self.type == "map") != (self.items is not None):
             raise ValueError("map nodes require an items binding")
+        if self.carry is not None and self.type != "map":
+            raise ValueError("carry belongs to a map node")
         if self.type != "map" and self.max_items != 32:
             raise ValueError("max_items belongs to map nodes")
         if self.type != "agent" and self.tool_errors != "raise":
@@ -275,7 +281,7 @@ class Graph(Contract):
 
 
 class Execution(Contract):
-    max_steps: int = Field(default=32, ge=1, le=1000)
+    max_steps: int = Field(default=32, ge=1, le=10000)
     max_model_calls: int = Field(default=8, ge=0, le=1000)
     max_total_tokens: int = Field(default=8192, ge=1, le=1000000)
     max_output_tokens: int = Field(default=512, ge=1, le=32768)
@@ -345,6 +351,7 @@ class AgentSpec(Contract):
                 node.harness is not None
                 or node.mailbox is not None
                 or node.code is not None
+                or node.output_validator is not None
                 or node.parallel_tool_calls
                 or node.tool_selection != "all"
                 or node.tool_limit != 8
@@ -363,6 +370,11 @@ class AgentSpec(Contract):
                 raise ValueError(f"{node_id}: code must reference a declared code resource")
             if node.image_inputs and "vision" not in self.models[node.model].requires:
                 raise ValueError(f"{node_id}: image inputs require a vision-capable model")
+            if node.output_validator is not None and (
+                node.output_validator not in self.resources
+                or self.resources[node.output_validator].role != "code"
+            ):
+                raise ValueError(f"{node_id}: output_validator must reference a declared code resource")
             for tool in [node.tool] if node.tool else node.tools:
                 if tool not in self.tools:
                     raise ValueError(f"{node_id}: unknown tool {tool}")
@@ -379,6 +391,8 @@ class AgentSpec(Contract):
                 self._check_refs({"mailbox": node.mailbox}, ancestors[node_id], node_id)
             if node.items:
                 self._check_refs({"items": node.items}, ancestors[node_id], node_id)
+            if node.carry is not None:
+                self._check_refs({"carry": node.carry}, ancestors[node_id], node_id)
             if node.condition:
                 self._check_refs(
                     {"left": node.condition.left, "right": node.condition.right},
@@ -449,6 +463,8 @@ class AgentSpec(Contract):
                 names.update(node.skills)
                 if node.code:
                     names.add(node.code)
+                if node.output_validator:
+                    names.add(node.output_validator)
                 if node.body:
                     visit(node.body)
                 for branch in node.branches.values():
@@ -480,6 +496,8 @@ class AgentSpec(Contract):
                     ("harness", None),
                     ("mailbox", None),
                     ("code", None),
+                    ("output_validator", None),
+                    ("carry", None),
                 ):
                     if node[key] == default:
                         node.pop(key)

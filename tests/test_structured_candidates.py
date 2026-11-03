@@ -155,6 +155,13 @@ def test_candidate_python_has_no_host_capabilities_and_is_bounded(code):
         execute(code, {})
 
 
+def test_python_dictionary_construction_keeps_json_keys():
+    assert execute('def run(inputs):\n    return dict([["voice", inputs["asset"]]])',
+                   {"asset": {"id": "clip"}}) == {"voice": {"id": "clip"}}
+    with pytest.raises(ToolFeedbackError, match="dictionary keys"):
+        execute('def run(inputs):\n    return dict([[1, "voice"]])', {})
+
+
 async def test_harness_memory_and_model_route_affect_runtime(tmp_path):
     from evosprig.core.memory import MemoryScope
     from evosprig.plugins.sqlite_memory import SQLiteMemory

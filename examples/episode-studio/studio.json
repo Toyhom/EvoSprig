@@ -1,0 +1,314 @@
+{
+  "canvas": {
+    "groups": {
+      "graph": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:story",
+          "label": "Story & visual direction",
+          "members": [
+            "source_reader",
+            "producer",
+            "script_editor",
+            "art_director"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:assets",
+          "label": "Shared reference library",
+          "members": [
+            "render_profile",
+            "reference_library"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:shots",
+          "label": "Direct \u00b7 render \u00b7 review",
+          "members": [
+            "shots"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:edit",
+          "label": "The finished episode",
+          "members": [
+            "timeline",
+            "assemble"
+          ]
+        }
+      ],
+      "graph/shots/body": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:direction",
+          "label": "Direct the shot",
+          "members": [
+            "shot_context",
+            "frame_takes",
+            "frame_accepted"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:frame-approval",
+          "label": "Choose the first frame",
+          "members": [
+            "approved_frame",
+            "frame_attention",
+            "frame_choice",
+            "first_frame"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:references",
+          "label": "Cast \u00b7 motion \u00b7 voices",
+          "members": [
+            "gather_references",
+            "stage_references",
+            "reference_names"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:takes",
+          "label": "Render & visual review",
+          "members": [
+            "takes",
+            "accepted"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:selection",
+          "label": "Select & carry forward",
+          "members": [
+            "approved",
+            "needs_review",
+            "gather_selected",
+            "selected_take"
+          ]
+        }
+      ],
+      "graph/shots/body/frame_takes/body": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:frame-direction",
+          "label": "Compose the first frame",
+          "members": [
+            "shot_director",
+            "settings",
+            "generate"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:frame-quality",
+          "label": "Check identity & staging",
+          "members": [
+            "review_inputs",
+            "preview",
+            "frame_review"
+          ]
+        }
+      ],
+      "graph/shots/body/takes/body": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:render-controls",
+          "label": "Direct & configure",
+          "members": [
+            "render_engineer",
+            "render_settings",
+            "configure_nodes"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:render-output",
+          "label": "Generate & inspect",
+          "members": [
+            "render",
+            "collect_media",
+            "select_clip",
+            "inspect_clip"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:render-review",
+          "label": "Continuity & next take",
+          "members": [
+            "review_images",
+            "preview",
+            "continuity_review",
+            "record_take"
+          ]
+        }
+      ]
+    }
+  },
+  "layout": {
+    "art_director": {
+      "x": 64,
+      "y": 936
+    },
+    "assemble": {
+      "x": 1322,
+      "y": 689
+    },
+    "graph/shots/body/accepted": {
+      "x": 1258,
+      "y": 467
+    },
+    "graph/shots/body/approved": {
+      "x": 1648,
+      "y": 413
+    },
+    "graph/shots/body/approved_frame": {
+      "x": 472,
+      "y": 413
+    },
+    "graph/shots/body/first_frame": {
+      "x": 1462,
+      "y": 413
+    },
+    "graph/shots/body/frame_accepted": {
+      "x": 82,
+      "y": 569
+    },
+    "graph/shots/body/frame_attention": {
+      "x": 802,
+      "y": 413
+    },
+    "graph/shots/body/frame_choice": {
+      "x": 1132,
+      "y": 413
+    },
+    "graph/shots/body/frame_takes": {
+      "x": 64,
+      "y": 349
+    },
+    "graph/shots/body/gather_references": {
+      "x": 832,
+      "y": 132
+    },
+    "graph/shots/body/gather_selected": {
+      "x": 2308,
+      "y": 413
+    },
+    "graph/shots/body/needs_review": {
+      "x": 1978,
+      "y": 413
+    },
+    "graph/shots/body/reference_names": {
+      "x": 832,
+      "y": 556
+    },
+    "graph/shots/body/selected_take": {
+      "x": 2638,
+      "y": 413
+    },
+    "graph/shots/body/shot_context": {
+      "x": 64,
+      "y": 145
+    },
+    "graph/shots/body/stage_references": {
+      "x": 832,
+      "y": 336
+    },
+    "graph/shots/body/takes": {
+      "x": 1240,
+      "y": 247
+    },
+    "graph/shots/body/takes/body/collect_media": {
+      "x": 506,
+      "y": 368
+    },
+    "graph/shots/body/takes/body/configure_nodes": {
+      "x": 87,
+      "y": 706
+    },
+    "graph/shots/body/takes/body/continuity_review": {
+      "x": 902,
+      "y": 498
+    },
+    "graph/shots/body/takes/body/inspect_clip": {
+      "x": 506,
+      "y": 734
+    },
+    "graph/shots/body/takes/body/preview": {
+      "x": 925,
+      "y": 336
+    },
+    "graph/shots/body/takes/body/record_take": {
+      "x": 913,
+      "y": 766
+    },
+    "graph/shots/body/takes/body/render": {
+      "x": 506,
+      "y": 206
+    },
+    "graph/shots/body/takes/body/render_engineer": {
+      "x": 64,
+      "y": 234
+    },
+    "graph/shots/body/takes/body/render_settings": {
+      "x": 75,
+      "y": 502
+    },
+    "graph/shots/body/takes/body/review_images": {
+      "x": 913,
+      "y": 132
+    },
+    "graph/shots/body/takes/body/select_clip": {
+      "x": 494,
+      "y": 530
+    },
+    "producer": {
+      "x": 64,
+      "y": 400
+    },
+    "reference_library": {
+      "x": 494,
+      "y": 639
+    },
+    "render_profile": {
+      "x": 506,
+      "y": 477
+    },
+    "script_editor": {
+      "x": 64,
+      "y": 668
+    },
+    "shots": {
+      "x": 902,
+      "y": 558
+    },
+    "source_reader": {
+      "x": 64,
+      "y": 132
+    },
+    "timeline": {
+      "x": 1310,
+      "y": 485
+    }
+  }
+}

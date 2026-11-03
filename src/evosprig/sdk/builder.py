@@ -53,8 +53,8 @@ class Builder:
         self.data["graph"]["edges"].append(edge)
         return self
 
-    def map(self, node_id: str, *, items, body, output_schema, inputs=None, max_items=32):
-        """Run a declarative body for each item; each body sees item/index/context."""
+    def map(self, node_id: str, *, items, body, output_schema, inputs=None, max_items=32, carry=None):
+        """Map items; carry enables ordered execution with the previous body output."""
         self.data["spec_version"] = "0.3"
         return self.node(
             node_id,
@@ -64,6 +64,7 @@ class Builder:
             inputs=inputs or {},
             output_schema=output_schema,
             max_items=max_items,
+            carry=carry,
         )
 
     def output(self, **bindings):

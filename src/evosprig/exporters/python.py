@@ -31,6 +31,7 @@ MODULES = (
     "core/model_sessions.py",
     "core/multimodal.py",
     "core/engine.py",
+    "core/json_program.py",
     "core/journal.py",
     "core/expressions.py",
     "core/memory.py",
@@ -59,6 +60,10 @@ MODULES = (
     "plugins/http_tools.py",
     "plugins/external_http.py",
     "plugins/mcp_tools.py",
+    "plugins/comfy_tools.py",
+    "integrations/__init__.py",
+    "integrations/comfyui.py",
+    "integrations/comfy_client.py",
 )
 
 APP = """import argparse
@@ -168,7 +173,7 @@ def compatibility_report(
         if binding.plugin in tool_bindings:
             config = tool_bindings[binding.plugin]
             if (
-                config.get("kind") in {"http", "mcp", "external_http", "sqlite"}
+                config.get("kind") in {"http", "mcp", "external_http", "sqlite", "comfy_node", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
                 and config.get("version", "1") == binding.version
             ):
                 continue
@@ -219,6 +224,18 @@ def export_python(
                 from evosprig.plugins.sqlite_tools import SQLiteToolConfig
 
                 config = SQLiteToolConfig.model_validate(raw)
+            elif raw.get("kind") == "comfy_node":
+                from evosprig.plugins.comfy_tools import ComfyNodeConfig
+
+                config = ComfyNodeConfig.model_validate(raw)
+            elif raw.get("kind") in {"comfy_recipe", "comfy_recipe_info"}:
+                from evosprig.plugins.comfy_tools import ComfyRecipeConfig
+
+                config = ComfyRecipeConfig.model_validate(raw)
+            elif raw.get("kind") == "comfy_job":
+                from evosprig.plugins.comfy_tools import ComfyJobConfig
+
+                config = ComfyJobConfig.model_validate(raw)
             else:
                 raise ValueError("tool plugin has no bundled exporter")
             if config.name != tool.plugin:

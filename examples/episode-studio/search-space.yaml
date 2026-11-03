@@ -1,0 +1,36 @@
+fields:
+  /graph/nodes/source_reader/harness/max_output_tokens:
+    kind: integer
+    minimum: 3000
+    maximum: 8000
+  /graph/nodes/script_editor/harness/max_output_retries:
+    kind: integer
+    minimum: 1
+    maximum: 3
+  /graph/nodes/shots/body/nodes/frame_takes/max_iterations:
+    kind: integer
+    minimum: 1
+    maximum: 3
+  /graph/nodes/shots/body/nodes/takes/max_iterations:
+    kind: integer
+    minimum: 1
+    maximum: 3
+modules:
+  story:
+    - resource:source_reader
+    - resource:producer
+    - resource:script_editor
+    - /graph/nodes/source_reader/harness/max_output_tokens
+    - /graph/nodes/script_editor/harness/max_output_retries
+  visual_direction:
+    - resource:art_director
+    - resource:shot_director
+    - resource:cinematography
+  first_frame:
+    - resource:frame_review
+    - /graph/nodes/shots/body/nodes/frame_takes/max_iterations
+  motion_and_continuity:
+    - resource:render_engineer
+    - resource:continuity_review
+    - resource:continuity
+    - /graph/nodes/shots/body/nodes/takes/max_iterations

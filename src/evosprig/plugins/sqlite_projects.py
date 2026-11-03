@@ -17,6 +17,7 @@ class ProjectStore:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
+            db.execute("CREATE TABLE IF NOT EXISTS project_integrations (user TEXT, tenant TEXT, project TEXT, kind TEXT, data TEXT NOT NULL, PRIMARY KEY(user,tenant,project,kind))")
             db.execute(
                 "CREATE TABLE IF NOT EXISTS scoped_projects (user TEXT, tenant TEXT, id TEXT, revision INTEGER NOT NULL, spec TEXT NOT NULL, layout TEXT NOT NULL, PRIMARY KEY(user,tenant,id))"
             )
@@ -69,6 +70,7 @@ class ProjectStore:
         identity=("local", "local"),
         resources=None,
         canvas=None,
+        integrations=None,
     ):
         with self.connect() as db:
             try:
@@ -83,9 +85,18 @@ class ProjectStore:
                         canonical_json(canvas or {}),
                     ),
                 )
+                for kind, data in (integrations or {}).items():
+                    db.execute("INSERT INTO project_integrations VALUES(?,?,?,?,?)",
+                               (*identity, spec.id, kind, canonical_json(data)))
             except sqlite3.IntegrityError as exc:
                 raise RevisionConflict("project already exists") from exc
         return self.get(spec.id, identity=identity)
+
+    def integration(self, project_id, kind, *, identity=("local", "local")):
+        with self.connect() as db:
+            row = db.execute("SELECT data FROM project_integrations WHERE user=? AND tenant=? AND project=? AND kind=?",
+                             (*identity, project_id, kind)).fetchone()
+            return json.loads(row[0]) if row else None
 
     def get(self, project_id: str, *, identity=("local", "local")):
         with self.connect() as db:

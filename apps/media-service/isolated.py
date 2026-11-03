@@ -42,7 +42,7 @@ class IsolatedMediaBackend(MediaBackend):
             return self.stopping.is_set() or request_canceled()
         if canceled():
             raise RuntimeError("job canceled")
-        if operation == "compose":
+        if operation in {"compose", "stage-reference", "ingest-comfy", "inspect-video"}:
             return super().execute(operation, payload, name, canceled)
         family = "video" if operation in {"video", "generate-video"} else "image"
         if canceled():
@@ -65,6 +65,7 @@ class IsolatedMediaBackend(MediaBackend):
                 video_steps=self.video_steps,
                 width=self.width,
                 height=self.height,
+                image_backend=self.image_backend,
             )
             self.child.stdin.write(json.dumps({"config": config}) + "\n")
             self.family = family

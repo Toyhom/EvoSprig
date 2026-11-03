@@ -103,6 +103,21 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
 
             config = SQLiteToolConfig.model_validate(raw)
             tool = sqlite_tool(config)
+        elif raw.get("kind") == "comfy_node":
+            from evosprig.plugins.comfy_tools import ComfyNodeConfig, comfy_node_tool
+
+            config = ComfyNodeConfig.model_validate(raw)
+            tool = comfy_node_tool(config)
+        elif raw.get("kind") in {"comfy_recipe", "comfy_recipe_info"}:
+            from evosprig.plugins.comfy_tools import ComfyRecipeConfig, comfy_recipe_tool
+
+            config = ComfyRecipeConfig.model_validate(raw)
+            tool = comfy_recipe_tool(config)
+        elif raw.get("kind") == "comfy_job":
+            from evosprig.plugins.comfy_tools import ComfyJobConfig, comfy_job_tool
+
+            config = ComfyJobConfig.model_validate(raw)
+            tool = comfy_job_tool(config, Path(workspace) / "comfy.sqlite", scope)
         else:
             raise ValueError("unknown tool binding kind")
         if name != config.name:

@@ -29,7 +29,7 @@ test('review and result panels preview selected media without loading it in the 
   await expect(page.locator('.media-grid video')).toHaveAttribute('preload', 'none');
   await expect(page.locator('.media-grid video')).not.toHaveAttribute('autoplay');
   await expect(page.locator('.media-grid a')).toHaveCount(2);
-  await page.getByLabel('Response graph/review').fill(JSON.stringify({ frame: image }));
+  await page.getByLabel('Your response', { exact: true }).fill(JSON.stringify({ frame: image }));
   await page.getByRole('button', { name: 'Submit and continue', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('succeeded');
   await page.getByRole('button', { name: 'Show media · 1' }).click();

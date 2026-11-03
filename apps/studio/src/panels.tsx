@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MemoryControls } from './memory-controls';
 import { MediaPreview } from './media-preview';
+import { HumanResponse } from './human-response';
 import { usedResources } from './types';
 import type { Api, Document, Lang, Run } from './types';
 
@@ -57,14 +58,14 @@ export function MemoryPanel({doc,api,lang,onError}:Props) {
 }
 
 export function RunDetails({run,api,lang,onError,onRefresh}:{run:Run;api:Api;lang:Lang;onError:(e:unknown)=>void;onRefresh:()=>void}){
-  const [responses,setResponses]=useState<Record<string,string>>({});
   const act=async(path:string,body?:unknown)=>{try{await api(`/runs/${run.run_id}/${path}`,post(body));onRefresh();}catch(e){onError(e);}};
   return <div><div className="metrics"><span className={`status-badge status-${run.status}`}>{run.status}</span><span className="mono">{short(run.agent_version)}</span><span>{String(run.usage?.input_tokens??0)} / {String(run.usage?.output_tokens??0)} tokens</span></div>
     <MediaPreview value={run.output} lang={lang}/>
     <pre className="json-block">{json(run.output??run.error??{})}</pre>
-    {run.waiting?.map(wait=><article className="card" key={wait.path}><h3>{wait.kind==='human'?say(lang,'等待你的确认','Waiting for your input'):say(lang,'等待外部结果','Waiting for external result')}</h3><p className="mono">{wait.path}</p><pre className="json-block">{json(wait.input??wait)}</pre>
+    {run.waiting?.map(wait=><article className="card" key={run.run_id+wait.path}><h3>{wait.kind==='human'?say(lang,'等待你的确认','Waiting for your input'):say(lang,'等待外部结果','Waiting for external result')}</h3><p className="mono">{wait.path}</p>
       <MediaPreview value={wait.input} lang={lang}/>
-      {run.status==='waiting_input'&&<><details><summary>JSON Schema</summary><pre className="json-block">{json(wait.schema)}</pre></details><textarea aria-label={`Response ${wait.path}`} value={responses[wait.path]??'{}'} onChange={e=>setResponses({...responses,[wait.path]:e.target.value})}/><button onClick={()=>{try{void act('input',{path:wait.path,response:JSON.parse(responses[wait.path]??'{}')});}catch(e){onError(e);}}}>{say(lang,'提交并继续','Submit and continue')}</button></>}
+      <details><summary>{say(lang,'查看输入','View input')}</summary><pre className="json-block">{json(wait.input??wait)}</pre></details>
+      {run.status==='waiting_input'&&<HumanResponse wait={wait} lang={lang} onSubmit={response=>act('input',{path:wait.path,response})}/>}
     </article>)}
     {!['succeeded','failed','canceled'].includes(run.status)&&<div className="inline-form">{['queued','running','waiting_external'].includes(run.status)&&<button onClick={()=>act('resume')}>{say(lang,'恢复运行','Resume')}</button>}<button onClick={()=>act('cancel')}>{say(lang,'取消运行','Cancel run')}</button></div>}
     <details><summary>{say(lang,'事件与用量','Events and usage')}</summary><pre className="json-block">{json(run)}</pre></details>

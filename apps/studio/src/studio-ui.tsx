@@ -120,7 +120,14 @@ export function FitWorkflowView({revision=""}:{revision?:string}) {
   const width = useStore(state => state.width);
   const height = useStore(state => state.height);
   useEffect(() => {
-    if (initialized && width && height) void fitView({ padding: .22, maxZoom: 1 });
+    if (!initialized || !width || !height) return;
+    // React Flow measures resized containers after React's layout effects.
+    // Fit after those measurements, including when side panels are hidden.
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => { void fitView({ padding: .16, maxZoom: 1 }); });
+    });
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [initialized, width, height, fitView,revision]);
   return null;
 }

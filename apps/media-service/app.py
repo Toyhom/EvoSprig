@@ -6,6 +6,7 @@ import hmac
 import json
 import os
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -14,15 +15,22 @@ from fastapi.responses import FileResponse
 from isolated import IsolatedMediaBackend
 from store import JobStore
 
-OPERATIONS = {"assets", "image", "video", "compose", "generate-image", "generate-video"}
+OPERATIONS = {"assets", "image", "video", "compose", "generate-image", "generate-video",
+              "stage-reference", "ingest-comfy", "inspect-video"}
 
 
-def create_app(store, backend, *, token=None, start_worker=True):
+def create_app(store, backend, *, token=None, start_worker=True, idle_unload_seconds=120):
     stop = threading.Event()
     def work():
+        last_work = time.monotonic()
         try:
             while not stop.is_set():
-                if not store.run_once(backend):
+                if store.run_once(backend):
+                    last_work = time.monotonic()
+                else:
+                    if idle_unload_seconds > 0 and time.monotonic() - last_work >= idle_unload_seconds and hasattr(backend, "close"):
+                        backend.close()
+                        last_work = time.monotonic()
                     stop.wait(0.5)
         finally:
             if hasattr(backend, "close"):
@@ -150,14 +158,19 @@ def create_app(store, backend, *, token=None, start_worker=True):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image-model", required=True, type=Path)
-    parser.add_argument("--video-model", required=True, type=Path)
+    parser.add_argument("--image-backend", choices=["flux-klein", "qwen-image-2.1"], default="flux-klein")
+    parser.add_argument("--comfy-input", type=Path)
+    parser.add_argument("--comfy-output", type=Path)
+    parser.add_argument("--speech-model", type=Path, help="Local Faster Whisper model for dialogue checks")
+    parser.add_argument("--idle-unload-seconds", type=float, default=120)
+    parser.add_argument("--video-model", type=Path)
     parser.add_argument("--outputs", required=True, type=Path)
     parser.add_argument("--database", required=True, type=Path)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=18880)
     parser.add_argument("--public-url", default="http://127.0.0.1:18880")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--image-steps", type=int, default=4)
+    parser.add_argument("--image-steps", type=int)
     parser.add_argument("--video-steps", type=int, default=12)
     parser.add_argument("--width", type=int, default=848)
     parser.add_argument("--height", type=int, default=480)
@@ -166,10 +179,11 @@ def main():
     if args.host not in {"127.0.0.1", "::1", "localhost"} and not token:
         parser.error("non-loopback listening requires EVOSPRIG_MEDIA_TOKEN")
     backend = IsolatedMediaBackend(args.outputs, args.image_model, args.video_model, args.public_url,
-                           seed=args.seed, image_steps=args.image_steps, video_steps=args.video_steps,
-                           width=args.width, height=args.height)
+                           seed=args.seed, image_steps=args.image_steps or (40 if args.image_backend == "qwen-image-2.1" else 4), video_steps=args.video_steps,
+                           width=args.width, height=args.height, image_backend=args.image_backend,
+                           comfy_input=args.comfy_input, comfy_output=args.comfy_output, speech_model=args.speech_model)
     import uvicorn
-    uvicorn.run(create_app(JobStore(args.database), backend, token=token), host=args.host, port=args.port,
+    uvicorn.run(create_app(JobStore(args.database), backend, token=token, idle_unload_seconds=args.idle_unload_seconds), host=args.host, port=args.port,
                 access_log=False)
 
 

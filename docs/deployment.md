@@ -80,3 +80,5 @@ Independent evaluation cases can run concurrently using `evaluation.environment.
 ## Model HTTP connections
 
 The OpenAI-compatible adapter reuses HTTP connections across nodes and concurrent runs in the same provider session. Evaluation keeps task and judge pools open for a batch; the last session closes the client, including on cancellation. Model bindings accept `max_connections` (default 32) and `max_keepalive_connections` (default 8, no larger than the total). These limit sockets, while workflow and evaluation concurrency settings control scheduled work.
+
+For Qwen served by vLLM, set `json_mode: without_tools` in the model binding. This keeps the server's JSON grammar out of tool-call turns and enables it when no tools are offered. The runtime still validates every final answer against the node schema and applies its configured repair budget. The default `always` sends JSON mode on every JSON-output request; `off` leaves formatting to the model and runtime validation.

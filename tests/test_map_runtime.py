@@ -94,6 +94,54 @@ async def test_map_item_cap_and_shared_step_budget():
     assert limited.error["code"] == "budget_exhausted"
 
 
+async def test_long_workflow_uses_its_configured_budget():
+    from evosprig.core.debug import plan_debug
+
+    raw = mapping(cap=256).model_dump()
+    body = raw["graph"]["nodes"]["batch"]["body"]
+    body["nodes"]["finish"] = {"type": "tool", "tool": "add", "inputs": {
+        "a": {"ref": "nodes.work.output.value"}, "b": {"value": 1}}, "output_schema": {"type": "object"}}
+    body["edges"] = [{"source": "work", "target": "finish"}]
+    body["output"] = {"value": {"ref": "nodes.finish.output.value"}}
+    raw["execution"].update(max_steps=1100, timeout_seconds=120)
+    spec = AgentSpec.model_validate(raw)
+    assert plan_debug(spec, ["batch"]).spec.execution.max_steps == 1101
+    result = await Runtime({}, builtin_registry()).run(compile_agent(spec), {"values": list(range(256))})
+    assert result.status == "succeeded", result.error
+    assert result.usage["steps"] > 1000
+    assert result.output["results"][-1] == {"value": 257}
+
+
+async def test_carry_map_resumes_in_order_with_previous_output(tmp_path):
+    raw = mapping(human=True).model_dump()
+    batch = raw["graph"]["nodes"]["batch"]
+    batch["carry"] = {"value": {"value": 0}}
+    batch["body"]["nodes"]["work"]["inputs"]["b"] = {"ref": "input.previous.value"}
+    spec = AgentSpec.model_validate(raw)
+    journal = SQLiteJournal(tmp_path / "carry.sqlite")
+    first = await Runtime({}, builtin_registry(), journal=journal).run(compile_agent(spec), {"values": [3, 7]})
+    assert len(first.waiting) == 1
+    assert first.waiting[0]["input"] == {"a": 3, "b": 0}
+    journal.respond(first.run_id, first.waiting[0]["path"], {"value": 3})
+    second = await Runtime({}, builtin_registry(), journal=SQLiteJournal(journal.path)).resume(first.run_id)
+    assert len(second.waiting) == 1
+    assert second.waiting[0]["input"] == {"a": 7, "b": 3}
+    journal.respond(first.run_id, second.waiting[0]["path"], {"value": 10})
+    final = await Runtime({}, builtin_registry(), journal=SQLiteJournal(journal.path)).resume(first.run_id)
+    assert final.status == "succeeded"
+    assert final.output["results"] == [{"value": 3}, {"value": 10}]
+    completed = [e["node_id"] for e in final.events if e["type"] == "node.completed"]
+    assert completed.count("graph/batch/item-0/work") == 1
+
+
+async def test_empty_carry_map_returns_initial_state():
+    raw = mapping().model_dump()
+    raw["graph"]["nodes"]["batch"]["carry"] = {"value": {"value": 9}}
+    raw["graph"]["output"] = {"last": {"ref": "nodes.batch.output.carry"}}
+    result = await Runtime({}, builtin_registry()).run(compile_agent(AgentSpec.model_validate(raw)), {"values": []})
+    assert result.output == {"last": {"value": 9}}
+
+
 def test_map_requires_new_spec_and_preserves_legacy_canonical_hashes():
     spec = mapping()
     raw = spec.model_dump()

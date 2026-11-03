@@ -1,0 +1,66 @@
+"""Connect the episode team to a model server, media service and render recipe."""
+
+import argparse
+import json
+from pathlib import Path
+
+import yaml
+from build_agent import ANY, ASSET, ASSETS, STRING, TEXT, obj
+
+from evosprig.plugins.comfy_tools import ComfyRecipeConfig, comfy_recipe_tool
+
+
+def profile(recipe, *, model_url, model_name, media_url, comfy_url):
+    config = ComfyRecipeConfig.model_validate(recipe)
+    if config.name != "film.recipe":
+        raise ValueError("the recipe binding must be named film.recipe")
+    comfy_recipe_tool(config)
+    expected = {"prompt", "action", "steps", "scheduler", "shift_video", "shift_audio", "duration", "seed"}
+    if expected - config.parameters.keys():
+        raise ValueError("recipe controls missing: " + ", ".join(sorted(expected - config.parameters.keys())))
+    if len(config.reference_slots) < 6:
+        raise ValueError("the episode recipe needs at least six reference slots")
+    if len(config.audio_slots) < 3 or not config.video_slots:
+        raise ValueError("the episode recipe needs three audio reference slots and a video slot")
+    model = {"base_url": model_url, "model": model_name, "api_key_env": "LOCAL_MODEL_API_KEY",
+             "capabilities": ["text", "structured_output", "tool_calling", "vision"],
+             "timeout_seconds": 600, "json_mode": "without_tools",
+             "options": {"chat_template_kwargs": {"enable_thinking": False}}}
+    bindings = {"film.recipe": config.model_dump(mode="json"),
+                "film.settings": {**config.model_dump(mode="json"), "kind": "comfy_recipe_info", "name": "film.settings"},
+                "film.render": {"kind": "comfy_job", "name": "film.render", "base_url": comfy_url,
+                                "dedicated": True, "job_timeout_seconds": 14400}}
+    contracts = {
+        "generate_image": ("generate-image", obj(prompt=TEXT, references=ASSETS, options=ANY), ASSET),
+        "stage_reference": ("stage-reference", obj(asset=ASSET), obj(filename=TEXT, asset=ASSET)),
+        "ingest_comfy": ("ingest-comfy", obj(outputs=ANY), obj(assets={"type": "array", "items": ANY})),
+        "inspect_video": ("inspect-video", obj(asset=ASSET), ANY),
+        "compose": ("compose", obj(clips=ASSETS, preserve_audio={"type": "boolean"}), ASSET),
+    }
+    for name, (path, inputs, outputs) in contracts.items():
+        key = "media." + name
+        bindings[key] = {"kind": "external_http", "name": key, "description": "Media: " + name,
+                         "endpoint": media_url.rstrip("/") + "/" + path,
+                         "input_schema": inputs, "output_schema": outputs,
+                         "side_effect": "write", "idempotent": True}
+    bindings["media.vision"] = {"kind": "http", "name": "media.vision", "description": "Read image previews",
+                                "endpoint": media_url.rstrip("/") + "/vision", "method": "POST",
+                                "input_schema": obj(assets=ASSETS),
+                                "output_schema": obj(images={"type": "array", "items": STRING}),
+                                "side_effect": "read_only", "max_response_bytes": 10000000}
+    return {"models": {"main": model, "vision": dict(model)}, "tools": bindings}
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--recipe", type=Path, required=True)
+    parser.add_argument("--model-url", default="http://127.0.0.1:18882/v1")
+    parser.add_argument("--model-name", default="Qwen3.8-Flash-Next")
+    parser.add_argument("--media-url", default="http://127.0.0.1:18880")
+    parser.add_argument("--comfy-url", default="http://127.0.0.1:18884")
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
+    result = profile(json.loads(args.recipe.read_text()), model_url=args.model_url, model_name=args.model_name,
+                     media_url=args.media_url, comfy_url=args.comfy_url)
+    with args.out.open("x") as target:
+        yaml.safe_dump(result, target, sort_keys=False)

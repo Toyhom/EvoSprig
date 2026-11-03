@@ -24,6 +24,16 @@ Visual groups do not add execution steps or change the behavior version. They ar
 
 Loop, map and parallel cards open real executable subgraphs. Use the breadcrumbs to return to an outer graph. Edits, pending node JSON and positions are preserved when navigating and saving. These subgraphs share the application's declared models, tools and prompt resources.
 
+Choose **Focus canvas** for more room to inspect a large graph. **Exit focus** or Escape restores the project list and inspector. Opening node debugging also brings the inspector back.
+
+## Try a node or a group
+
+Select a node, several nodes or a collapsed group, then choose **Debug selection**. Fill the input fields or choose **Use outputs from the last run**. The selected nodes execute with their current prompts and settings, and the panel supplies saved outputs for the surrounding graph.
+
+Inside a map or loop, choose a saved item or take. Studio restores that execution's inputs, including the previous shot's state. You can also select separated nodes: live outputs flow between the selected nodes while intermediate outputs come from the saved run. Repeating a debug run retains the inputs you last used.
+
+Start with a planning node, then try an asset group and a single rendering step. **History** shows each result and any service error. Once those sections work, run the complete application.
+
 ## Tune model behavior
 
 The inspector's **Execution settings** controls a node's output-token limit and structured-output repair policy. An empty token limit inherits the application default. Choose feedback repair for a model that occasionally produces invalid JSON, and set a maximum retry count. Every retry still consumes the shared execution budget.

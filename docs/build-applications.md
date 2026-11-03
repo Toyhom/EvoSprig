@@ -24,6 +24,10 @@ Open `http://127.0.0.1:18766`. Configure your model connection, edit the request
 
 **History** shows the active step and waiting requests. Respond to an approval to continue the same run. **Memory** manages persistent facts and documents. See the [Studio guide](studio.md) for controls and keyboard shortcuts.
 
+Select one or more nodes and choose **Debug selection** to test that section. Fill the generated input form or reuse outputs from the last run. Inside a map or retry loop, select the saved item or take to restore its inputs and prior state. Collapsed groups can be selected together. The debug run uses the same model, tools and permissions as the application.
+
+For image and video pipelines, [import a ComfyUI workflow](comfyui.md) to turn its computations into editable tool nodes.
+
 ## Design in Python
 
 Save this as `build_agent.py` beside `prompts/draft.md` and `skills/style.md`:
@@ -84,6 +88,8 @@ Declare tool aliases in the application and configure HTTP, MCP or database bind
 
 Use `allow_side_effects=True` in the graph and `--allow-writes` for a run that saves documents or invokes write tools.
 
+For rules that depend on the request, attach a bounded Python code resource with `output_validator="check_plan"` to a model or agent node (spec 0.3). Its `run(inputs)` receives `inputs["input"]` and `inputs["output"]`, and returns `{"valid": bool, "feedback": str}`. Image input fields are omitted. For example, validate that a generated itinerary uses requested cities, or that shot references name declared characters. With `output_errors="feedback"`, the model receives the failed rule and repairs its answer within `max_output_retries`. Studio exposes this under **Application validation**.
+
 ## Add self-evolution
 
 1. Put representative requests in JSONL, one input object per line.
@@ -92,7 +98,7 @@ Use `allow_side_effects=True` in the graph and `--allow-writes` for a run that s
 4. Start the study. Inspect the resource diff and application outputs.
 5. Enable the selected version in **Versions**.
 
-Prompts, textual skills, demonstrations and experience playbooks are searchable today. [Evolution components](evolution-components.md) explains the full component map.
+Search can cover prompts, skills, code resources, harness settings, model routing, memory parameters and workflow structure. Define the permitted search space and evaluation tasks in advance. [Evolution components](evolution-components.md) explains the component map.
 
 ## Ship
 
