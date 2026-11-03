@@ -21,6 +21,6 @@ Python runs in Pyodide with the standard library. `from evosprig_plot import bar
 
 Generated code receives no host filesystem, process environment or network access. Browser routes serve only bundled runtime assets; other requests and WebSockets are blocked. Jobs have time, input, output and concurrency limits. A browser context does not enforce an OS memory quota: deploy this optional service in a resource-limited container/process under an unprivileged account when accepting untrusted workloads. Keep it behind your application or an authenticated proxy rather than exposing it as a public code runner.
 
-The core framework does not depend on this service. Replace its bindings with your own code sandbox, browser automation or OCR backend.
+You can also bind your own code sandbox, browser automation or OCR backend.
 
 The browser action schema is published in [contracts.json](contracts.json) and reused by the SDK catalog builder. Actions require `kind` and `selector`; `fill` adds `value`, and `text` adds `contains`. Use this schema in your own HTTP binding so invalid requests can be corrected before execution.

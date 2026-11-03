@@ -20,10 +20,17 @@ Build agents with Python or a visual canvas, then improve their prompts and skil
 
 ## What will you build?
 
-<img src="docs/assets/applications.png" alt="Applications built with EvoSprig: a generated web app, data charts, receipt processing and book writing" width="100%" />
+<table>
+<tr>
+<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw reproduction: Moon Garden, The Last Library and Cloud Bakery" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw, built with EvoSprig</a></b><br>A story idea becomes a short film.</td>
+<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS reproduction: a team creates a launch pack" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS, built with EvoSprig</a></b><br>A team that plans, writes and works with you.</td>
+</tr>
+</table>
 
 | Build an agent that… | Start here |
 | --- | --- |
+| Turns a story into a film | **[VideoClaw reproduction](examples/video-studio/)** — characters, scenes and a finished cut |
+| Works with you on a project | **[CoworkOS reproduction](examples/cowork/)** — specialist teams and shared documents |
 | Tailors a resume and runs interview practice | **[Career coach](examples/career-coach/)** — job fit, application materials and feedback |
 | Turns one announcement into a content campaign | **[Content studio](examples/content-studio/)** — parallel channels and shared editing skills |
 | Teaches a topic and reviews your answers | **[Study coach](examples/study-coach/)** — lessons, exercises and personal feedback |
@@ -32,12 +39,13 @@ Build agents with Python or a visual canvas, then improve their prompts and skil
 | Helps you make a difficult decision | **[Decision room](examples/debate/)** — opposing arguments, rebuttals and a moderated recommendation |
 | Reads receipts and checks expenses | **[Receipt assistant](examples/receipt-assistant/)** — OCR, structured extraction and policy review |
 | Researches a question with a team | **[Research team](examples/research-team/)** — parallel investigation, sources and editorial approval |
-| Produces a video from an idea | **[Video studio](examples/video-studio/)** — Kimi vision, local FLUX.2 + Hunyuan models and shot retakes |
 | Organizes the rest of your work | **[Meetings](examples/meeting-assistant/)** · **[Books](examples/book-studio/)** · **[Travel](examples/travel-planner/)** |
 
-Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examples/document-chat/)**, **[customer support](examples/customer-support/)** and **[personal memory](examples/personal-memory/)**. Every application uses EvoSprig's own SDK, AgentSpec and runtime. Open the **[gallery](examples/README.md)** for setup, workflow canvases and application outputs.
+Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examples/document-chat/)**, **[customer support](examples/customer-support/)** and **[personal memory](examples/personal-memory/)**. Open the **[gallery](examples/README.md)** for setup, workflow canvases and application outputs.
 
 ## Why EvoSprig?
+
+<img src="docs/assets/capabilities.svg" alt="14 self-evolution strategies, memory policies, tool integrations and application evaluation" width="100%" />
 
 - **Self-evolving agents, under your control.** 14 training-free strategies across 12 method families: prompt search, joint instruction/demo search, populations, reflections and experience playbooks. Choose the resources, budget and release criteria.
 - **Evaluation that fits your application.** Start with task inputs and an LLM judge, or bring reference answers, business checks and a sandbox. Score outputs, steps, tools and environment outcomes.
@@ -86,9 +94,11 @@ In the **[study coach](examples/study-coach/)**, one Self-Refine round changed t
 
 Explore the **[book-writing comparison](examples/book-studio/)** and **[document-answering comparison](examples/document-chat/)** to see prompt changes and selected outputs. Each page shows what changed and how it affected the answer.
 
-Bring your own inputs to **[LLM-as-judge](docs/evaluation.md)**, or connect your evaluator. The **[method guide](docs/evolution.md)** explains which feedback each strategy uses. Review the diff and outputs before enabling a version; a search never publishes itself.
+Bring your own inputs to **[LLM-as-judge](docs/evaluation.md)**, or connect your evaluator. The **[method guide](docs/evolution.md)** explains which feedback each strategy uses.
 
 ## Documentation
+
+**[Build applications: canvas and Python](docs/build-applications.md)** · **[Extend the framework](docs/extend-framework.md)** · **[Add an evolution algorithm](docs/optimizer-plugins.md)**
 
 [Workflows and architecture](docs/architecture.md) · [Memory](docs/memory.md) · [Tools and MCP](docs/tools.md) · [Durable execution](docs/durable-runtime.md) · [Deployment](docs/deployment.md) · [Roadmap](docs/roadmap.md)
 

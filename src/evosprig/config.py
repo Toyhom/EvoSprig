@@ -70,6 +70,9 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
     registry = register_memory_tools(
         builtin_registry(), SQLiteMemory(Path(workspace) / "memory.sqlite"), scope
     )
+    from evosprig.plugins.workspace_tools import WorkspaceStore, register_workspace_tools
+
+    register_workspace_tools(registry, WorkspaceStore(Path(workspace) / "documents.sqlite"), scope)
     if bindings is None:
         raw = yaml.safe_load(Path(profile).read_text()) if profile else {}
         bindings = raw.get("tools", {})

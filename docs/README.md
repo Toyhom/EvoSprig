@@ -1,20 +1,28 @@
-# EvoSprig documentation
+# Documentation
 
-Build an application, connect your services, then improve it against your own tasks.
+## Build an agent application
 
-1. **[Quickstart](quickstart.md)** — install, run and connect a model.
-2. **[Application gallery](../examples/README.md)** — choose a useful starting point.
-3. **[Studio](studio.md)** — edit workflows, group agents and open subflows.
-4. **[Evaluation](evaluation.md)** — use an LLM judge, business checks or an environment.
-5. **[Controlled evolution](evolution.md)** — search resources, compare outputs and release a version.
-6. **[Deployment](deployment.md)** — serve, authenticate and export your application.
+Start with the [application developer guide](build-applications.md), covering Python and the visual canvas.
 
-## Develop your application
+| Step | Guide |
+| --- | --- |
+| Install and run | [Quickstart](quickstart.md) |
+| Choose a starting point | [VideoClaw](../examples/video-studio/) · [CoworkOS](../examples/cowork/) · [All examples](../examples/) |
+| Design the agent | [Prompts, skills and model settings](agent-resources.md) · [Studio](studio.md) · [SDK and graphs](architecture.md) |
+| Connect capabilities | [Tools and MCP](tools.md) · [Vision](vision.md) · [Memory](memory.md) · [Shared documents](shared-workspaces.md) |
+| Improve the application | [Evaluation](evaluation.md) · [Self-evolution](evolution.md) · [Industry environments](industry-environments.md) |
+| Run in production | [Recovery](durable-runtime.md) · [Deployment and export](deployment.md) |
 
-[Architecture and SDK](architecture.md) · [Tools](tools.md) · [Images and vision](vision.md) · [Memory and retrieval](memory.md) · [Durable execution](durable-runtime.md) · [Industry environments](industry-environments.md)
+## Extend EvoSprig
 
-## Reference
+Start with the [framework contributor guide](extend-framework.md).
 
-[Method requirements](method-requirements.md) · [Research papers](references.md) · [Supported interfaces](support-matrix.md) · [Example conventions](example-guide.md) · [Roadmap](roadmap.md)
+| Extension | Guide |
+| --- | --- |
+| Add an evolution algorithm | [Optimizer plugins](optimizer-plugins.md) |
+| Add a model, tool, memory backend or evaluator | [Extension contracts](extend-framework.md#extension-contracts) |
+| Understand editable components and future methods | [Evolution components](evolution-components.md) · [Method requirements](method-requirements.md) |
+| Contribute an application | [Example conventions](example-guide.md) |
+| Set up development | [Contributing](../CONTRIBUTING.md) |
 
-[Configure agents: prompts, skills, tools, memory and model parameters](agent-resources.md).
+[Research references](references.md) · [Supported interfaces](support-matrix.md) · [Roadmap](roadmap.md)

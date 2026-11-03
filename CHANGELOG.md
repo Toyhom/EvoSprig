@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4
+
+- Add shared, revisioned team documents, conflict-aware agent edits and durable scheduled wake-ups.
+- Reproduce CoworkOS office-team workflows through the native runtime, with an English/Chinese document workbench.
+- Register custom evolution algorithms through Python and package entry points, using the common evaluator, budgets and version selection.
+- Charge reported usage on truncated model responses before bounded repair retries.
+- Isolate local image/video models in reusable worker processes and support explicit retries of interrupted media jobs.
+- Add short-film previews, larger architecture graphics and separate application/contributor guides.
+
 ## 0.1.3
 
 - Add native image inputs and Studio selectors for vision-capable model and agent nodes.

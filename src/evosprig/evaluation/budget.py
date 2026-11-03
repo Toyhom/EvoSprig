@@ -129,6 +129,8 @@ class BudgetedProvider:
         try:
             response = await self.provider.complete(request)
         except ProviderError as exc:
+            if exc.usage is not None:
+                self.meter.settle(reservation, exc.usage)
             if exc.code == "output_limit" and request.max_output_tokens < requested:
                 raise BudgetExceeded(
                     "experiment token allowance truncated a response", scope="experiment"

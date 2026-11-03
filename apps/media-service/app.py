@@ -9,9 +9,9 @@ import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from backend import MediaBackend
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
+from isolated import IsolatedMediaBackend
 from store import JobStore
 
 OPERATIONS = {"assets", "image", "video", "compose", "generate-image", "generate-video"}
@@ -20,17 +20,27 @@ OPERATIONS = {"assets", "image", "video", "compose", "generate-image", "generate
 def create_app(store, backend, *, token=None, start_worker=True):
     stop = threading.Event()
     def work():
-        while not stop.is_set():
-            if not store.run_once(backend):
-                stop.wait(0.5)
+        try:
+            while not stop.is_set():
+                if not store.run_once(backend):
+                    stop.wait(0.5)
+        finally:
+            if hasattr(backend, "close"):
+                backend.close()
 
     @asynccontextmanager
     async def lifespan(app):
+        worker = None
         if start_worker:
             store.recover()
-            threading.Thread(target=work, daemon=True).start()
+            worker = threading.Thread(target=work, daemon=True)
+            worker.start()
         yield
         stop.set()
+        if hasattr(backend, "shutdown"):
+            backend.shutdown()
+        if worker:
+            await asyncio.to_thread(worker.join)
 
     app = FastAPI(title="EvoSprig local media", lifespan=lifespan)
 
@@ -124,6 +134,16 @@ def create_app(store, backend, *, token=None, start_worker=True):
             raise HTTPException(404, "job not found") from None
         return {"status": store.get(identifier)["status"]}
 
+    @app.post("/jobs/{identifier}/retry")
+    async def retry(identifier: str):
+        try:
+            store.retry(identifier)
+        except KeyError:
+            raise HTTPException(404, "job not found") from None
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
+        return {"job_id": identifier, "status": "pending"}
+
     return app
 
 
@@ -145,7 +165,7 @@ def main():
     token = os.environ.get("EVOSPRIG_MEDIA_TOKEN")
     if args.host not in {"127.0.0.1", "::1", "localhost"} and not token:
         parser.error("non-loopback listening requires EVOSPRIG_MEDIA_TOKEN")
-    backend = MediaBackend(args.outputs, args.image_model, args.video_model, args.public_url,
+    backend = IsolatedMediaBackend(args.outputs, args.image_model, args.video_model, args.public_url,
                            seed=args.seed, image_steps=args.image_steps, video_steps=args.video_steps,
                            width=args.width, height=args.height)
     import uvicorn

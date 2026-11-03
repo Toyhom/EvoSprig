@@ -1,117 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2880" height="1400" viewBox="0 0 1440 700"><rect width="1440" height="700" fill="white"/>
-<text x="44" y="57.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="30" font-weight="700" fill="#202B3A">EvoSprig</text>
-<text x="44" y="101.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="24" font-weight="400" fill="#687587">Self-evolving agents. From workflow to application.</text>
-<text x="44" y="155.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#446C9E">01</text>
-<text x="44" y="190.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="24" font-weight="700" fill="#202B3A">Build</text>
-<rect x="44" y="218" width="232" height="244" rx="13" fill="#FFFFFF" stroke="#DAE1E8"/>
-<path d="M276,340 L320,340" fill="none" stroke="#687587" stroke-width="2"/>
-<polygon points="320,340 313.0,337.0 313.0,343.0" fill="#687587"/>
-<text x="324" y="155.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#397A70">02</text>
-<text x="324" y="190.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="24" font-weight="700" fill="#202B3A">Run</text>
-<rect x="324" y="218" width="232" height="244" rx="13" fill="#FFFFFF" stroke="#DAE1E8"/>
-<path d="M556,340 L600,340" fill="none" stroke="#687587" stroke-width="2"/>
-<polygon points="600,340 593.0,337.0 593.0,343.0" fill="#687587"/>
-<text x="604" y="155.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#A17A45">03</text>
-<text x="604" y="190.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="24" font-weight="700" fill="#202B3A">Evaluate</text>
-<rect x="604" y="218" width="232" height="244" rx="13" fill="#FFFFFF" stroke="#DAE1E8"/>
-<path d="M836,340 L880,340" fill="none" stroke="#687587" stroke-width="2"/>
-<polygon points="880,340 873.0,337.0 873.0,343.0" fill="#687587"/>
-<text x="884" y="155.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#80679F">04</text>
-<text x="884" y="190.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="24" font-weight="700" fill="#202B3A">Evolve</text>
-<rect x="884" y="218" width="232" height="244" rx="13" fill="#FFFFFF" stroke="#DAE1E8"/>
-<path d="M1116,340 L1160,340" fill="none" stroke="#687587" stroke-width="2"/>
-<polygon points="1160,340 1153.0,337.0 1153.0,343.0" fill="#687587"/>
-<text x="1164" y="155.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="700" fill="#397A70">05</text>
-<text x="1164" y="190.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="24" font-weight="700" fill="#202B3A">Ship</text>
-<rect x="1164" y="218" width="232" height="244" rx="13" fill="#FFFFFF" stroke="#DAE1E8"/>
-<rect x="66" y="244" width="82" height="46" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
-<text x="86" y="272.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="22" font-weight="700" fill="#446C9E">&lt;/&gt;</text>
-<rect x="172" y="244" width="82" height="46" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
-<rect x="181" y="255" width="22" height="10" rx="3" fill="#FFFFFF" stroke="#446C9E"/>
-<rect x="214" y="251" width="22" height="10" rx="3" fill="#FFFFFF" stroke="#446C9E"/>
-<rect x="214" y="271" width="22" height="10" rx="3" fill="#FFFFFF" stroke="#446C9E"/>
-<path d="M203,260 L209,260" fill="none" stroke="#446C9E" stroke-width="1"/>
-<path d="M209,260 L209,256" fill="none" stroke="#446C9E" stroke-width="1"/>
-<path d="M209,256 L214,256" fill="none" stroke="#446C9E" stroke-width="1"/>
-<path d="M209,260 L209,276" fill="none" stroke="#446C9E" stroke-width="1"/>
-<path d="M209,276 L214,276" fill="none" stroke="#446C9E" stroke-width="1"/>
-<path d="M107,290 L107,311" fill="none" stroke="#446C9E" stroke-width="1.7"/>
-<path d="M107,311 L160,311" fill="none" stroke="#446C9E" stroke-width="1.7"/>
-<path d="M160,311 L160,327" fill="none" stroke="#446C9E" stroke-width="1.7"/>
-<polygon points="160,327 163.0,320.0 157.0,320.0" fill="#446C9E"/>
-<path d="M213,290 L213,311" fill="none" stroke="#446C9E" stroke-width="1.7"/>
-<path d="M213,311 L160,311" fill="none" stroke="#446C9E" stroke-width="1.7"/>
-<rect x="84" y="327" width="152" height="45" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
-<text x="107" y="351.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#202B3A">AgentSpec</text>
-<text x="67" y="421.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="16" font-weight="700" fill="#202B3A">Code + canvas</text>
-<path d="M353,274 L398,274" fill="none" stroke="#397A70" stroke-width="2"/>
-<path d="M428,274 L470,249" fill="none" stroke="#397A70" stroke-width="2"/>
-<path d="M428,274 L470,301" fill="none" stroke="#397A70" stroke-width="2"/>
-<rect x="346" y="259" width="36" height="32" rx="8" fill="#F3F8F5" stroke="#DAE1E8"/>
-<rect x="355" y="268" width="18" height="14" rx="3" fill="#FFFFFF" stroke="#397A70"/>
-<rect x="398" y="259" width="36" height="32" rx="8" fill="#F3F8F5" stroke="#DAE1E8"/>
-<rect x="407" y="268" width="18" height="14" rx="3" fill="#FFFFFF" stroke="#397A70"/>
-<rect x="470" y="234" width="36" height="32" rx="8" fill="#F3F8F5" stroke="#DAE1E8"/>
-<rect x="479" y="243" width="18" height="14" rx="3" fill="#FFFFFF" stroke="#397A70"/>
-<rect x="470" y="286" width="36" height="32" rx="8" fill="#F3F8F5" stroke="#DAE1E8"/>
-<rect x="479" y="295" width="18" height="14" rx="3" fill="#FFFFFF" stroke="#397A70"/>
-<rect x="347" y="348" width="186" height="27" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
-<text x="376" y="364.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="12" font-weight="400" fill="#397A70">Shared context</text>
-<path d="M416,316 L416,348" fill="none" stroke="#397A70" stroke-width="1.7"/>
-<text x="344" y="420.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#202B3A">Multi-agent workflows</text>
-<rect x="625" y="242" width="75" height="16" rx="4" fill="#F7F9FB" stroke="#DAE1E8"/>
-<path d="M633,250 L684,250" fill="none" stroke="#687587" stroke-width="2"/>
-<rect x="625" y="268" width="75" height="16" rx="4" fill="#F7F9FB" stroke="#DAE1E8"/>
-<path d="M633,276 L684,276" fill="none" stroke="#687587" stroke-width="2"/>
-<rect x="625" y="294" width="75" height="16" rx="4" fill="#F7F9FB" stroke="#DAE1E8"/>
-<path d="M633,302 L684,302" fill="none" stroke="#687587" stroke-width="2"/>
-<path d="M707,276 L729,276" fill="none" stroke="#A17A45" stroke-width="1.7"/>
-<polygon points="729,276 722.0,273.0 722.0,279.0" fill="#A17A45"/>
-<rect x="742" y="290" width="13" height="24" rx="3" fill="#EDE4D2" stroke="#EDE4D2"/>
-<rect x="764" y="271" width="13" height="43" rx="3" fill="#EDE4D2" stroke="#EDE4D2"/>
-<rect x="786" y="253" width="13" height="61" rx="3" fill="#EDE4D2" stroke="#EDE4D2"/>
-<text x="628" y="359.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#202B3A">Your tasks</text>
-<text x="623" y="418.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="13" font-weight="400" fill="#687587">Judge / checks / sandbox</text>
-<rect x="910" y="245" width="176" height="53" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
-<text x="927" y="276.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#80679F">Prompt</text>
-<rect x="922" y="309" width="176" height="53" rx="10" fill="#F8F6FB" stroke="#DAE1E8"/>
-<text x="940" y="340.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#80679F">Skill</text>
-<path d="M1072,272 L1101,272" fill="none" stroke="#80679F" stroke-width="1.7"/>
-<path d="M1101,272 L1101,336" fill="none" stroke="#80679F" stroke-width="1.7"/>
-<path d="M1101,336 L1098,336" fill="none" stroke="#80679F" stroke-width="1.7"/>
-<polygon points="1098,336 1105.0,339.0 1105.0,333.0" fill="#80679F"/>
-<text x="902" y="419.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="14" font-weight="700" fill="#202B3A">14 training-free strategies</text>
-<rect x="1193" y="246" width="62" height="66" rx="10" fill="#F7F9FB" stroke="#DAE1E8"/>
-<text x="1208" y="283.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="20" font-weight="700" fill="#687587">v1</text>
-<rect x="1275" y="246" width="87" height="66" rx="10" fill="#F3F8F5" stroke="#DAE1E8"/>
-<text x="1291" y="283.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="20" font-weight="700" fill="#397A70">v2</text>
-<path d="M1328,288 L1335,295" fill="none" stroke="#397A70" stroke-width="2.5"/>
-<path d="M1335,295 L1349,277" fill="none" stroke="#397A70" stroke-width="2.5"/>
-<text x="1183" y="361.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="15" font-weight="700" fill="#202B3A">Review + enable</text>
-<text x="1180" y="418.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="13" font-weight="400" fill="#687587">Python / HTTP / container</text>
-<path d="M1000,462 L1000,510" fill="none" stroke="#80679F" stroke-width="2"/>
-<path d="M1000,510 L440,510" fill="none" stroke="#80679F" stroke-width="2"/>
-<path d="M440,510 L440,462" fill="none" stroke="#80679F" stroke-width="2"/>
-<polygon points="440,462 437.0,469.0 443.0,469.0" fill="#80679F"/>
-<rect x="552" y="493" width="333" height="33" rx="0" fill="#FFFFFF" stroke="#FFFFFF"/>
-<text x="579" y="514.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="17" font-weight="700" fill="#80679F">Test → compare → refine</text>
-<path d="M44,557 L1396,557" fill="none" stroke="#DAE1E8" stroke-width="1"/>
-<rect x="44" y="589" width="40" height="40" rx="9" fill="#F7F9FB" stroke="#DAE1E8"/>
-<path d="M53,609 L61,601" fill="none" stroke="#446C9E" stroke-width="2"/>
-<path d="M61,601 L68,608" fill="none" stroke="#446C9E" stroke-width="2"/>
-<path d="M68,608 L75,601" fill="none" stroke="#446C9E" stroke-width="2"/>
-<text x="98" y="603.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="19" font-weight="700" fill="#202B3A">Tools + APIs</text>
-<text x="98" y="630.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="14" font-weight="400" fill="#687587">MCP · Python · SQL · browser</text>
-<rect x="510" y="589" width="40" height="40" rx="9" fill="#F7F9FB" stroke="#DAE1E8"/>
-<path d="M520,600 L540,600" fill="none" stroke="#397A70" stroke-width="2"/>
-<path d="M520,607 L540,607" fill="none" stroke="#397A70" stroke-width="2"/>
-<path d="M520,614 L540,614" fill="none" stroke="#397A70" stroke-width="2"/>
-<text x="564" y="603.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="19" font-weight="700" fill="#202B3A">Persistent memory</text>
-<text x="564" y="630.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="14" font-weight="400" fill="#687587">Personal + shared knowledge</text>
-<rect x="976" y="589" width="40" height="40" rx="9" fill="#F7F9FB" stroke="#DAE1E8"/>
-<rect x="984" y="614" width="5" height="10" rx="1" fill="#EDE4D2" stroke="#EDE4D2"/>
-<rect x="993" y="608" width="5" height="16" rx="1" fill="#EDE4D2" stroke="#EDE4D2"/>
-<rect x="1002" y="602" width="5" height="22" rx="1" fill="#EDE4D2" stroke="#EDE4D2"/>
-<text x="1030" y="603.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="19" font-weight="700" fill="#202B3A">Industry environments</text>
-<text x="1030" y="630.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="14" font-weight="400" fill="#687587">Business tasks + outcome checks</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="2240" height="1360" viewBox="0 0 1120 680"><rect width="1120" height="680" fill="white"/>
+<text x="40" y="60.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="36" font-weight="700" fill="#202B3A">Build agents that improve.</text>
+<rect x="40" y="116" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="64" y="168.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="32" font-weight="700" fill="#446C9E">Build</text>
+<text x="64" y="216.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="22" font-weight="400" fill="#687587">Python + canvas</text>
+<rect x="430" y="116" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="454" y="168.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="32" font-weight="700" fill="#397A70">Run</text>
+<text x="454" y="216.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="22" font-weight="400" fill="#687587">Agent teams</text>
+<rect x="820" y="116" width="260" height="142" rx="14" fill="#FFFFFF" stroke="#DAE1E8"/>
+<text x="844" y="168.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="32" font-weight="700" fill="#446C9E">Ship</text>
+<text x="844" y="216.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="22" font-weight="400" fill="#687587">Apps + services</text>
+<path d="M300,187 L430,187" fill="none" stroke="#687587" stroke-width="3"/>
+<polygon points="430,187 423.0,184.0 423.0,190.0" fill="#687587"/>
+<path d="M690,187 L820,187" fill="none" stroke="#687587" stroke-width="3"/>
+<polygon points="820,187 813.0,184.0 813.0,190.0" fill="#687587"/>
+<text x="319" y="163.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="18" font-weight="700" fill="#687587">AgentSpec</text>
+<text x="725" y="163.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="18" font-weight="700" fill="#687587">Version</text>
+<rect x="105" y="340" width="360" height="158" rx="14" fill="#F7F9FB" stroke="#DAE1E8"/>
+<text x="133" y="389.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="30" font-weight="700" fill="#A17A45">Evaluate</text>
+<text x="133" y="436.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="23" font-weight="400" fill="#687587">Your tasks + criteria</text>
+<rect x="655" y="340" width="360" height="158" rx="14" fill="#F8F6FB" stroke="#DAE1E8"/>
+<text x="683" y="389.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="30" font-weight="700" fill="#80679F">Evolve</text>
+<text x="683" y="436.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="23" font-weight="400" fill="#687587">Prompts + skills</text>
+<path d="M560,258 L560,290" fill="none" stroke="#A17A45" stroke-width="3"/>
+<path d="M560,290 L285,290" fill="none" stroke="#A17A45" stroke-width="3"/>
+<path d="M285,290 L285,340" fill="none" stroke="#A17A45" stroke-width="3"/>
+<polygon points="285,340 288.0,333.0 282.0,333.0" fill="#A17A45"/>
+<path d="M465,420 L655,420" fill="none" stroke="#80679F" stroke-width="3"/>
+<polygon points="655,420 648.0,417.0 648.0,423.0" fill="#80679F"/>
+<text x="495" y="399.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="21" font-weight="700" fill="#80679F">Feedback</text>
+<path d="M835,340 L835,288" fill="none" stroke="#80679F" stroke-width="3"/>
+<path d="M835,288 L620,288" fill="none" stroke="#80679F" stroke-width="3"/>
+<path d="M620,288 L620,258" fill="none" stroke="#80679F" stroke-width="3"/>
+<polygon points="620,258 617.0,265.0 623.0,265.0" fill="#80679F"/>
+<text x="864" y="300.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="20" font-weight="700" fill="#80679F">Compare + adopt</text>
+<path d="M40,551 L1080,551" fill="none" stroke="#DAE1E8" stroke-width="1.7"/>
+<text x="40" y="604.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="27" font-weight="700" fill="#202B3A">Tools</text>
+<text x="40" y="644.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="21" font-weight="400" fill="#687587">HTTP · MCP · code</text>
+<text x="400" y="604.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="27" font-weight="700" fill="#202B3A">Memory</text>
+<text x="400" y="644.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="21" font-weight="400" fill="#687587">Facts · retrieval · skills</text>
+<text x="760" y="604.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="27" font-weight="700" fill="#202B3A">Recovery</text>
+<text x="760" y="644.0" font-family="Noto Sans CJK SC,Arial,sans-serif" font-size="21" font-weight="400" fill="#687587">Checkpoints · jobs</text>
 </svg>

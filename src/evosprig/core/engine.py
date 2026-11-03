@@ -22,6 +22,7 @@ from .protocols import (
     ModelRequest,
     ProviderError,
     ToolFeedbackError,
+    ToolRejectedError,
 )
 from .spec import ResourceRef, canonical_json, digest
 from .version import AgentVersion
@@ -191,7 +192,16 @@ class Engine:
                     "code",
                     "validation_error" if isinstance(exc, ValueError) else "execution_error",
                 ),
-                "message": f"{type(exc).__name__}: execution failed; inspect node events and configuration",
+                "message": str(exc)
+                if isinstance(exc, BudgetExceeded)
+                and str(exc)
+                in {
+                    "step budget exhausted",
+                    "model call budget exhausted",
+                    "token budget cannot reserve another request",
+                    "provider usage exceeded reserved budget",
+                }
+                else f"{type(exc).__name__}: execution failed; inspect node events and configuration",
             }
             session.finish("failed")
         finally:
@@ -479,7 +489,10 @@ class ExecutionSession:
             ):
                 return False
             if previous:
-                slot["messages"].append(copy.deepcopy((slot.get("response") or {}).get("assistant_message")) or {"role": "assistant", "content": previous})
+                slot["messages"].append(
+                    copy.deepcopy((slot.get("response") or {}).get("assistant_message"))
+                    or {"role": "assistant", "content": previous}
+                )
             slot["messages"].append(
                 {
                     "role": "user",
@@ -566,6 +579,27 @@ class ExecutionSession:
                             )
                         )
                     except ProviderError as exc:
+                        if exc.usage is not None:
+                            usage["input_tokens"] += exc.usage.input_tokens
+                            usage["output_tokens"] += exc.usage.output_tokens
+                            usage["reserved_tokens"] -= reservation
+                            usage["unreported_model_calls"] -= 1
+                            self.save(
+                                "model.rejected",
+                                path,
+                                call_id=call_id,
+                                code=exc.code,
+                                usage=asdict(exc.usage),
+                            )
+                            if (
+                                usage["input_tokens"]
+                                + usage["output_tokens"]
+                                + usage["reserved_tokens"]
+                                > budget.max_total_tokens
+                            ):
+                                raise BudgetExceeded(
+                                    "provider usage exceeded reserved budget"
+                                ) from None
                         if exc.code == "output_limit" and feedback(
                             "Response exceeded the output-token limit"
                         ):
@@ -616,7 +650,8 @@ class ExecutionSession:
             if not slot.get("assistant_recorded"):
                 slot["tool_rounds"] = slot.get("tool_rounds", 0) + 1
                 slot["messages"].append(
-                    copy.deepcopy(response.get("assistant_message")) or {
+                    copy.deepcopy(response.get("assistant_message"))
+                    or {
                         "role": "assistant",
                         "content": response["text"] or None,
                         "tool_calls": [
@@ -839,6 +874,14 @@ class ExecutionSession:
                         )
                     raise
                 except Exception as exc:
+                    if isinstance(exc, ToolRejectedError):
+                        self.journal.operation(
+                            self.lease,
+                            operation_id,
+                            update={"status": "rejected", "feedback": exc.observation()},
+                        )
+                        self.save("tool.rejected", path, tool=alias, operation_id=operation_id)
+                        raise
                     if tool.side_effect != "read_only":
                         self.journal.operation(
                             self.lease, operation_id, update={"status": "unknown"}

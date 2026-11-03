@@ -40,4 +40,4 @@ evosprig serve --project examples/document-chat/agent.yaml \
 Export the application with `evosprig export examples/document-chat/agent.yaml --out exported-docs`.
 After installing the exported project, load documents using `python app.py --documents ./notes`,
 then ask a question with `python app.py --input '{"question":"What is our learning budget?"}'`.
-The application uses its own workspace; export does not copy your original document collection.
+Load your document collection into the exported application’s workspace.

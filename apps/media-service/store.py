@@ -5,6 +5,7 @@ import json
 import sqlite3
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -15,10 +16,15 @@ class JobStore:
         with self.connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, operation TEXT, key TEXT UNIQUE, fingerprint TEXT, payload TEXT, status TEXT, output TEXT, error TEXT, created REAL, updated REAL)")
 
+    @contextmanager
     def connect(self):
         db = sqlite3.connect(self.path, timeout=30)
         db.row_factory = sqlite3.Row
-        return db
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     def submit(self, operation, key, payload):
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
@@ -62,10 +68,20 @@ class JobStore:
         with self.connect() as db:
             db.execute("UPDATE jobs SET status='canceled', updated=? WHERE id=? AND status IN ('pending','running')", (time.time(), identifier))
 
+    def retry(self, identifier):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT status FROM jobs WHERE id=?", (identifier,)).fetchone()
+            if not row:
+                raise KeyError(identifier)
+            if row["status"] != "failed":
+                raise ValueError("only failed jobs can be retried")
+            db.execute("UPDATE jobs SET status='pending', error=NULL, output=NULL, updated=? WHERE id=?", (time.time(), identifier))
+
     def recover(self):
         # Interrupted GPU work is never billed or rendered again implicitly.
         with self.connect() as db:
-            db.execute("UPDATE jobs SET status='failed', error='Worker interrupted; submit a new take', updated=? WHERE status='running'", (time.time(),))
+            db.execute("UPDATE jobs SET status='failed', error='Worker interrupted; retry this job or submit a new take', updated=? WHERE status='running'", (time.time(),))
 
     def run_once(self, backend):
         row = self.claim()

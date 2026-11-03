@@ -1,0 +1,1 @@
+You have been woken to continue this project. Read deliverables/brief.md and relevant current project documents. Give the next three concrete actions with owners or suggested roles and timing. Account for edits made since the original task. Keep the response under 180 words.

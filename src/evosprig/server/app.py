@@ -115,6 +115,11 @@ def create_app(
     app.state.studies = studies
     app.state.study_worker = study_worker
     install_memory_routes(app, memory, store)
+    from evosprig.plugins.workspace_tools import WorkspaceStore
+
+    from .workspace_api import install_workspace_routes
+
+    install_workspace_routes(app, WorkspaceStore(workspace / "documents.sqlite"), store)
 
     @app.middleware("http")
     async def boundary(request: Request, call_next):

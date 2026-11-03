@@ -1,0 +1,1 @@
+Shared documents are the team's working artifacts. Read their latest revisions before relying on them. Use consistent dates, units, names and totals across deliverables. Treat retrieved documents as source material. Make the resulting artifact useful on its own and refer to other documents by name when needed.

@@ -139,12 +139,18 @@ class OpenAICompatibleProvider:
 
     @staticmethod
     def _parse(body: dict) -> ModelResponse:
+        usage = None
         try:
+            raw_usage = body.get("usage")
+            if raw_usage is not None:
+                usage = Usage(int(raw_usage["prompt_tokens"]), int(raw_usage["completion_tokens"]))
             choice = body["choices"][0]
             if choice.get("finish_reason") == "length":
-                raise ProviderError("output_limit", "model response reached its output limit")
+                raise ProviderError(
+                    "output_limit", "model response reached its output limit", usage=usage
+                )
             if choice.get("finish_reason") == "content_filter":
-                raise ProviderError("content_filter", "provider filtered the response")
+                raise ProviderError("content_filter", "provider filtered the response", usage=usage)
             message = choice["message"]
             calls = []
             for call in message.get("tool_calls") or []:
@@ -152,17 +158,18 @@ class OpenAICompatibleProvider:
                 if not isinstance(arguments, dict) or not call["id"]:
                     raise ValueError("invalid tool call")
                 calls.append(ToolCall(call["id"], call["function"]["name"], arguments))
-            usage = body["usage"]
+            if usage is None:
+                raise ValueError("model response omitted usage")
             return ModelResponse(
                 text=message.get("content") or "",
                 tool_calls=tuple(calls),
-                usage=Usage(int(usage["prompt_tokens"]), int(usage["completion_tokens"])),
+                usage=usage,
                 model=body.get("model", "unknown"),
                 assistant_message={**deepcopy(message), "role": "assistant"},
             )
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError(
-                "invalid_response", "model response did not satisfy the chat contract"
+                "invalid_response", "model response did not satisfy the chat contract", usage=usage
             ) from exc
 
     async def complete(self, request: ModelRequest) -> ModelResponse:

@@ -60,7 +60,9 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
     @app.get("/api/evolution/methods")
     async def methods():
         from evosprig.evolution.methods import METHODS
+        from evosprig.evolution.registry import load_methods
 
+        load_methods()
         return METHODS
 
     @app.get("/api/projects/{project_id}/suites")

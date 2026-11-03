@@ -24,7 +24,7 @@ plugins. CLI, Studio and independent exports bind their scope outside tool
 arguments. A model cannot supply another user or project. Writes follow the same
 three-part write opt-in as other effectful tools. Retrieval results are untrusted
 data and retain source attribution; keep system policies in versioned prompt/skill
-resources. The runtime does not automatically promote retrieved text into policy.
+resources.
 
 `DocumentRetriever.ingest` accepts bounded plain text, a title and source identifier.
 It creates deterministic chunks and citation references containing exact offsets.
@@ -65,8 +65,8 @@ Set the corresponding tokens in the server environment and use bearer authentica
 Each principal owns its projects, runs, facts and documents. Request bodies cannot
 choose the identity; unknown and out-of-scope records both return 404. The server
 continues to bind to loopback; expose it through an authenticated TLS reverse proxy
-with the allowed loopback Host forwarded. This Alpha baseline does not implement
-organization sharing, an identity provider or account administration.
+with the allowed loopback Host forwarded. Manage the identity list through the
+server configuration file.
 
 Memory routes are under `/api/projects/{id}/memory`; document upload, listing,
 search and delete are under `/api/projects/{id}/documents`. A memory data export is
@@ -147,9 +147,9 @@ experiences.summarize(scope, "Avoid peanuts when planning meals", [record["id"]]
 hits = experiences.recall(scope, "meal preferences", limit=5)
 ```
 
-Native tools `memory.remember`, `memory.recall` and `memory.summarize` expose these operations to agents. Summaries are supplied by the calling model and retain their source IDs and revisions. Deleting, expiring or changing a source hides stale derived summaries, including after restoration. Summary generation and link choice are explicit agent decisions; the store does not run a hidden LLM or perform automatic semantic consolidation.
+Native tools `memory.remember`, `memory.recall` and `memory.summarize` expose these operations to agents. Summaries are supplied by the calling model and retain their source IDs and revisions. Deleting, expiring or changing a source hides stale derived summaries, including after restoration. The agent chooses when to summarize and which experiences to link.
 
-This adds relevance/importance/recency recall and linked experience notes alongside BM25, hybrid semantic retrieval, context blocks and temporal relationships. It draws on ideas used by [Generative Agents](https://github.com/joonspk-research/generative_agents) and [A-Mem](https://github.com/agiresearch/A-mem); it is a native memory policy, not an adapter to either project.
+This adds relevance/importance/recency recall and linked experience notes alongside BM25, hybrid semantic retrieval, context blocks and temporal relationships. It draws on ideas used by [Generative Agents](https://github.com/joonspk-research/generative_agents) and [A-Mem](https://github.com/agiresearch/A-mem), implemented as native memory policies.
 
 ## Multi-query retrieval
 

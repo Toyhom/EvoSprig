@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 660" width="1120" height="660"><rect width="1120" height="660" fill="white"/>
+<text x="30" y="46" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#26323e">An agent toolkit that grows with your application.</text>
+<rect x="30" y="88" width="655" height="318" rx="14" fill="#fafbfc" stroke="#e1e5eb"/><rect x="52" y="112" width="5" height="30" rx="2" fill="#71558c"/>
+<text x="72" y="137" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#71558c">Self-evolution</text>
+<text x="72" y="178" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#7f7290">14 strategies · 12 families</text>
+<text x="54" y="228" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">OPRO</text>
+<text x="303" y="228" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">GEPA</text>
+<text x="458" y="228" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">MIPRO</text>
+<text x="54" y="273" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">EvoPrompt GA / DE</text>
+<text x="303" y="273" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">APE</text>
+<text x="458" y="273" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">ProTeGi</text>
+<text x="54" y="318" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">Self-Refine</text>
+<text x="303" y="318" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">ACE</text>
+<text x="458" y="318" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">ExpeL</text>
+<text x="54" y="363" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">Bootstrap / search</text>
+<text x="303" y="363" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">Reflexion</text>
+<text x="458" y="363" font-family="Arial,sans-serif" font-size="20" font-weight="400" fill="#26323e">PromptBreeder</text>
+<rect x="710" y="88" width="380" height="318" rx="14" fill="#fafbfc" stroke="#e1e5eb"/><rect x="732" y="112" width="5" height="30" rx="2" fill="#3b7265"/>
+<text x="752" y="137" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#3b7265">Memory</text>
+<text x="736" y="183" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#26323e">BM25 + semantic retrieval</text>
+<text x="736" y="225" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#26323e">Context blocks + facts</text>
+<text x="736" y="267" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#26323e">Linked experiences</text>
+<text x="736" y="309" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#26323e">Temporal relations</text>
+<text x="736" y="351" font-family="Arial,sans-serif" font-size="21" font-weight="400" fill="#26323e">Source-aware summaries</text>
+<rect x="30" y="431" width="515" height="195" rx="14" fill="#fafbfc" stroke="#e1e5eb"/><rect x="52" y="455" width="5" height="30" rx="2" fill="#426c98"/>
+<text x="72" y="480" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#426c98">Tools</text>
+<text x="56" y="528" font-family="Arial,sans-serif" font-size="24" font-weight="400" fill="#26323e">HTTP · MCP · SQL · Python</text>
+<text x="56" y="574" font-family="Arial,sans-serif" font-size="22" font-weight="400" fill="#647386">Vision · browser · OCR · async jobs</text>
+<rect x="575" y="431" width="515" height="195" rx="14" fill="#fafbfc" stroke="#e1e5eb"/><rect x="597" y="455" width="5" height="30" rx="2" fill="#9a783c"/>
+<text x="617" y="480" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#9a783c">Evaluation</text>
+<text x="601" y="528" font-family="Arial,sans-serif" font-size="23" font-weight="400" fill="#26323e">LLM judge · rules · custom scorers</text>
+<text x="601" y="574" font-family="Arial,sans-serif" font-size="22" font-weight="400" fill="#647386">Industry sandboxes · release checks</text>
+</svg>

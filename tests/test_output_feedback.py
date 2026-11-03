@@ -97,3 +97,31 @@ async def test_node_output_limit_overrides_default_but_respects_total_budget():
     old_hash = b.build_spec().spec_hash
     b.data["graph"]["nodes"]["short"]["max_output_tokens"] = None
     assert b.build_spec().spec_hash == old_hash
+
+
+async def test_truncated_response_with_usage_settles_run_and_study_budgets():
+    from evosprig.core.protocols import Usage
+    from evosprig.evaluation.budget import BudgetedProvider, BudgetMeter, ExperimentBudget
+    from evosprig.plugins.openai_compatible import OpenAICompatibleProvider
+
+    class Truncated(MockProvider):
+        async def complete(self, request):
+            self.requests.append(request)
+            if len(self.requests) == 1:
+                return OpenAICompatibleProvider._parse(
+                    {
+                        "choices": [{"finish_reason": "length", "message": {"content": "partial"}}],
+                        "usage": {"prompt_tokens": 40, "completion_tokens": 20},
+                    }
+                )
+            return ModelResponse(text='{"answer":42}', usage=Usage(45, 5))
+
+    meter = BudgetMeter(ExperimentBudget())
+    result = await Runtime({"main": BudgetedProvider(Truncated(), meter)}).run(build(), {})
+    assert result.status == "succeeded"
+    for usage in [result.usage, meter.snapshot()]:
+        assert usage["reserved_tokens"] == 0
+        assert usage["unreported_model_calls"] == 0
+        assert usage["input_tokens"] == 85
+        assert usage["output_tokens"] == 25
+    assert any(e["type"] == "model.rejected" for e in result.events)

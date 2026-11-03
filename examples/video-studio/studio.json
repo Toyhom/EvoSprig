@@ -1,31 +1,64 @@
 {
   "canvas": {
-    "groups": {}
+    "groups": {
+      "graph": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:plan",
+          "label": "Develop the story",
+          "members": [
+            "script",
+            "script_review",
+            "characters"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:produce",
+          "label": "Produce the shots",
+          "members": [
+            "shots"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:edit",
+          "label": "Assemble the film",
+          "members": [
+            "edit_review",
+            "assemble"
+          ]
+        }
+      ]
+    }
   },
   "layout": {
     "assemble": {
-      "x": 1776.0,
-      "y": 89.0
+      "x": 882,
+      "y": 424
     },
     "characters": {
-      "x": 740.0,
-      "y": 89.0
+      "x": 76,
+      "y": 526
     },
     "edit_review": {
-      "x": 1436.0,
-      "y": 75.0
+      "x": 880,
+      "y": 234
     },
     "script": {
-      "x": 40.0,
-      "y": 68.0
+      "x": 64,
+      "y": 132
     },
     "script_review": {
-      "x": 400.0,
-      "y": 75.0
+      "x": 74,
+      "y": 336
     },
     "shots": {
-      "x": 1076.0,
-      "y": 60.0
+      "x": 472,
+      "y": 300
     }
   }
 }

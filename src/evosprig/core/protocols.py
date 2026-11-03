@@ -25,9 +25,10 @@ class BudgetExceeded(ExecutionError):
 
 
 class ProviderError(ExecutionError):
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, *, usage: Usage | None = None):
         super().__init__(message)
         self.code = code
+        self.usage = usage
 
 
 class ToolFeedbackError(ExecutionError):
@@ -39,6 +40,10 @@ class ToolFeedbackError(ExecutionError):
 
     def observation(self):
         return {"error": {"code": self.code, "message": str(self)}}
+
+
+class ToolRejectedError(ToolFeedbackError):
+    """A tool guarantees the requested write was rejected before any side effect."""
 
 
 @dataclass(frozen=True)

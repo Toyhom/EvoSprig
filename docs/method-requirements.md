@@ -19,24 +19,36 @@ The same application task can support several optimization methods. What differs
 | Reflexion | Interactive task attempts, observations and success/failure signals | Failure trajectories and environment or judge feedback; bounded reflections become versioned resources |
 | ExpeL | Successful and failed experiences, often multiple attempts per task | Runtime experiences with a score and reason; rules reference actual search sample IDs |
 
-Replacing a paper's labels or environment reward with an LLM judge changes the evaluation objective. The native strategy remains useful for an application, but its scores are not directly comparable to published benchmark numbers. Final comparisons use the same fixed criterion for both versions.
+Use the same fixed evaluation criterion to compare candidate versions.
+
+## Skills and harness evolution
+
+The [coverage table](evolution-components.md#coverage-of-the-flashrsi-method-list) tracks nine pending methods from FlashRSI. Their evaluation inputs extend the existing task contract:
+
+- **SkillOpt / Evo-Harness:** task streams, execution traces, skill discovery and separate validation tasks.
+- **AHE / Meta-Harness / RRSI:** editable harness files, reproducible task environments, execution traces, outcome scores and token or monetary costs.
+- **ADAS / DarwinX:** runnable candidate designs, a design or branch archive, and repeatable fitness measurements.
+- **ModularRSI:** explicit module boundaries, per-module tasks and whole-application integration tasks.
+- **Arbor:** train/validation task execution, hypothesis-linked changes and experiment outcomes for insight propagation.
+
+An LLM judge can score qualitative outputs. For actions or code changes, supply the environment and its observable outcomes as well.
 
 ## Other training-free directions
 
-These are integration targets, not additional implemented algorithms:
+Planned integrations:
 
-| Direction | Required inputs/environment | Why a generic answer-only dataset is insufficient |
+| Direction | Required inputs/environment | Integration work |
 | --- | --- | --- |
-| [TextGrad](https://github.com/zou-group/textgrad) | Task inputs, a textual loss/evaluator and a graph of editable variables | Feedback must reach the responsible component, not merely a final prompt |
+| [TextGrad](https://github.com/zou-group/textgrad) | Task inputs, a textual loss/evaluator and a graph of editable variables | Route feedback to the responsible component |
 | Full [DSPy MIPROv2](https://github.com/stanfordnlp/dspy/blob/main/dspy/teleprompt/mipro_optimizer_v2.py) | Train/validation tasks, a callable metric, instruction and demonstration candidates | Native resource search is available; upstream DSPy program bindings, teacher bootstrapping and minibatch allocation remain to integrate |
 | [ADAS](https://github.com/ShengranHu/ADAS) | Task data, an execution environment for generated agent code, a task fitness function | Generated architectures require bounded execution and behavioral checks |
 | [AFlow](https://github.com/geekan/MetaGPT/tree/main/examples/aflow) | Executable workflow operators, task inputs and an evaluation environment | Search changes orchestration, so topology and resource costs must be validated |
 | [Darwin Gödel Machine](https://github.com/jennyzzt/dgm) | Repository tasks, an isolated execution environment, tests and an archive of agent variants | Modifying the agent implementation requires code-level validation and recoverable candidate execution |
 | [AlphaEvolve](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/) | Executable programs, a verifiable objective and inexpensive candidate evaluation | Program evolution needs sandboxed execution and domain-specific correctness checks |
 | [Voyager](https://github.com/MineDojo/Voyager) | An interactive world, observations, task/curriculum feedback and reusable skills | Skill success depends on environment state and action effects |
-| [SkillWeaver](https://github.com/OSU-NLP-Group/SkillWeaver) | Browser tasks, page observations, executable skills and verification | A reusable browser procedure needs more than a plausible text response |
+| [SkillWeaver](https://github.com/OSU-NLP-Group/SkillWeaver) | Browser tasks, page observations, executable skills and verification | Execute and verify the procedure in the browser environment |
 
-Memory policies have a different contract. [Generative Agents](https://github.com/joonspk-research/generative_agents) uses relevance, importance and recency; [A-Mem](https://github.com/agiresearch/A-mem) organizes and links notes; [Mem0](https://github.com/mem0ai/mem0) and [Graphiti](https://github.com/getzep/graphiti) provide memory extraction/update or temporal knowledge mechanisms. Their write paths need events, source metadata and scope; a labeled benchmark is optional for use, but application-specific recall and outcome checks are needed to measure benefit. EvoSprig's native memory policies and their boundaries are listed in the [memory guide](memory.md).
+Memory policies have a different contract. [Generative Agents](https://github.com/joonspk-research/generative_agents) uses relevance, importance and recency; [A-Mem](https://github.com/agiresearch/A-mem) organizes and links notes; [Mem0](https://github.com/mem0ai/mem0) and [Graphiti](https://github.com/getzep/graphiti) provide memory extraction/update or temporal knowledge mechanisms. Their write paths need events, source metadata and scope; a labeled benchmark is optional for use, and application-specific recall and outcome checks measure its benefit. EvoSprig's native memory policies and their boundaries are listed in the [memory guide](memory.md).
 
 Methods whose essential step updates model weights—such as Toolformer-style tool-use training or policy fine-tuning—are outside this training-free strategy count. A pretrained external model may still be connected as a model, embedder or evaluator.
 

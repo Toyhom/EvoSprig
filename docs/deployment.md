@@ -31,7 +31,7 @@ Use your process manager to restart the service. Durable runs resume from checkp
 
 ## Persistent state
 
-The workspace contains project, run, memory, deletion-ledger, study and version databases. Keep SQLite on a filesystem that supports random writes and locks. Store large media artifacts in your chosen object store.
+The workspace contains project, run, memory, shared-document, deletion-ledger, study and version databases. Keep SQLite on a filesystem that supports random writes and locks. Store large media artifacts in your chosen object store.
 
 Back up databases using SQLite's backup API or stop the platform while taking a consistent backup. Retain the newest deletion ledger during restore so deleted memory cannot reappear. Supply credentials again through the deployment environment.
 

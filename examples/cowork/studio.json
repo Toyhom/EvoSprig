@@ -1,0 +1,79 @@
+{
+  "canvas": {
+    "groups": {
+      "graph": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:team",
+          "label": "Build the team",
+          "members": [
+            "context",
+            "plan",
+            "team"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:deliver",
+          "label": "Create and review",
+          "members": [
+            "assemble",
+            "review",
+            "publish"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:continue",
+          "label": "Remember and follow up",
+          "members": [
+            "remember",
+            "wake",
+            "follow_up"
+          ]
+        }
+      ]
+    }
+  },
+  "layout": {
+    "assemble": {
+      "x": 494,
+      "y": 132
+    },
+    "context": {
+      "x": 87,
+      "y": 170
+    },
+    "follow_up": {
+      "x": 924,
+      "y": 523
+    },
+    "plan": {
+      "x": 64,
+      "y": 332
+    },
+    "publish": {
+      "x": 494,
+      "y": 590
+    },
+    "remember": {
+      "x": 947,
+      "y": 199
+    },
+    "review": {
+      "x": 515,
+      "y": 400
+    },
+    "team": {
+      "x": 75,
+      "y": 600
+    },
+    "wake": {
+      "x": 947,
+      "y": 361
+    }
+  }
+}

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from evosprig.core.protocols import BudgetExceeded
 from evosprig.core.spec import Contract
@@ -13,11 +13,18 @@ from evosprig.evaluation.runner import Evaluator
 
 from .context import EvolutionContext
 from .gate import ReleaseGate
-from .methods import Method
+from .registry import custom_method, require_method
 
 
 class StudyConfig(Contract):
-    method: Method
+    method: str
+    options: dict = Field(default_factory=dict)
+
+    @field_validator("method")
+    @classmethod
+    def installed_method(cls, value):
+        return require_method(value)
+
     allowed_resources: list[str] = Field(min_length=1, max_length=32)
     budget: ExperimentBudget = Field(default_factory=ExperimentBudget)
     gate: ReleaseGate = Field(default_factory=ReleaseGate)
@@ -122,7 +129,10 @@ async def execute_study(
         on_event=on_event,
     )
     try:
-        if config.method == "opro":
+        plugin = custom_method(config.method)
+        if plugin:
+            method_result = await plugin.optimize(context, config=config)
+        elif config.method == "opro":
             from .opro import optimize
 
             method_result = await optimize(context, rounds=config.rounds)
@@ -136,10 +146,13 @@ async def execute_study(
             from .mipro import optimize
 
             method_result = await optimize(
-                context, rounds=config.rounds, seed=config.seed,
+                context,
+                rounds=config.rounds,
+                seed=config.seed,
                 instruction_candidates=config.instruction_candidates,
                 demo_candidates=config.demo_candidates,
-                max_demos=config.max_demos, demo_threshold=config.demo_threshold,
+                max_demos=config.max_demos,
+                demo_threshold=config.demo_threshold,
             )
         elif config.method.startswith("evoprompt_"):
             from .search import evoprompt

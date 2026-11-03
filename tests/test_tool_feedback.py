@@ -93,3 +93,44 @@ async def test_write_failure_still_requires_reconciliation(tmp_path):
     result = await runtime.resume(result.run_id)
     assert result.status == "succeeded" and len(writes) == 1
     assert not any(event["type"] == "tool.feedback" for event in result.events)
+
+
+async def test_write_rejected_before_commit_can_be_corrected(tmp_path):
+    from evosprig.core.protocols import ToolRejectedError
+
+    writes = []
+
+    def write(revision):
+        if revision != 2:
+            raise ToolRejectedError("revision_conflict", "Read revision 2 before retrying")
+        writes.append(revision)
+        return {"revision": 3}
+
+    version, registry = agent(
+        Tool(
+            "example.cas",
+            "Write",
+            {
+                "type": "object",
+                "properties": {"revision": {"type": "integer"}},
+                "required": ["revision"],
+            },
+            {"type": "object"},
+            write,
+            side_effect="write",
+        )
+    )
+    model = MockProvider(
+        [
+            ModelResponse(tool_calls=(ToolCall("stale", "action", {"revision": 1}),)),
+            ModelResponse(tool_calls=(ToolCall("merged", "action", {"revision": 2}),)),
+            ModelResponse(text="Saved"),
+        ]
+    )
+    journal = SQLiteJournal(tmp_path / "runs.sqlite")
+    result = await Runtime({"main": model}, registry, journal=journal, allow_writes=True).run(
+        version, {}
+    )
+    assert result.status == "succeeded"
+    assert writes == [2]
+    assert any(op["status"] == "rejected" for op in journal.operations(result.run_id))

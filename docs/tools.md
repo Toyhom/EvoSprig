@@ -69,7 +69,7 @@ print(manifest["protocol_version"], manifest["tools"])
 
 Copy the selected tool's `inputSchema` and `outputSchema` into a deployment entry
 with `kind: mcp`, `name`, `remote_name`, `description`, `endpoint`, `input_schema`,
-`output_schema` and an audited `side_effect`. Structured results are the default;
+`output_schema` and an explicit `side_effect`. Structured results are the default;
 `result_format: content` returns a JSON object with content blocks for tools without
 a structured output contract. MCP annotations alone do not grant write permission.
 MCP writes have no generic idempotency guarantee, so receipt-unknown writes pause
@@ -172,8 +172,12 @@ The optional [Toolbox](../apps/toolbox/README.md) provides Python execution, HTM
 
 ## Bounded output repair
 
-Model and agent nodes in AgentSpec 0.3 can set `output_errors: feedback` and `max_output_retries: 2`. Invalid JSON, schema mismatches and explicit output-limit errors receive a bounded correction turn. Network errors are not automatically retried. All correction calls consume the original run/study budget; unknown usage from a truncated provider call remains reserved.
+Model and agent nodes in AgentSpec 0.3 can set `output_errors: feedback` and `max_output_retries: 2`. Invalid JSON, schema mismatches and explicit output-limit errors receive a bounded correction turn. Network errors are not automatically retried. All correction calls consume the original run/study budget; reported usage from a truncated response is charged before retrying; calls without usage retain their reservation.
 
 An agent can also set `max_tool_rounds: 4`. Once the limit is reached, the runtime removes tool descriptors and asks for a final answer from the collected observations. This bounds repeated retrieval without changing the application's tools or prompts. Omit it to retain the run-wide call limit.
 
 Original papers and implementation mappings: [Research references](references.md).
+
+## Shared team documents
+
+Use [workspace tools](shared-workspaces.md) for revisioned documents, edit history and durable wake-ups. A write tool can raise `ToolRejectedError(code, message)` when it rejects a request before any side effect; the runtime records the rejection and gives an agent configured with `tool_errors: feedback` a correction turn. Use this for failed preconditions such as revision conflicts. Ambiguous write failures enter reconciliation.

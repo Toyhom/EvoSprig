@@ -1,6 +1,6 @@
 # Self-evolving agents and controlled RSI
 
-Improve the prompts and skills your agent uses, without training model weights. Choose editable resources, bring your tasks and evaluator, set a budget, then inspect the resulting versions before release.
+Automatically improve the prompts and skills your agent uses. Choose editable resources, bring your tasks and evaluator, set a budget, then inspect the resulting versions before release.
 
 The self-improvement loop revises application resources, reruns the same tasks and uses feedback for further candidates. You control which resources can change, the budget and version adoption.
 
@@ -11,21 +11,21 @@ EvoSprig offers **14 training-free strategies across 12 method families**. They 
 | Strategy | What changes | Feedback and data needed | Implementation |
 | --- | --- | --- | --- |
 | [OPRO](https://arxiv.org/abs/2309.03409) `opro` | Instructions | Task inputs and scalar scores | Score-history proposals |
-| [GEPA](https://arxiv.org/abs/2507.19457) `gepa` | Selected prompt components | Scores, execution trajectories and textual feedback | Official `gepa==0.1.4` adapter; Pareto selection, round-robin components, no merge |
+| [GEPA](https://arxiv.org/abs/2507.19457) `gepa` | Selected prompt components | Scores, execution trajectories and textual feedback | Official `gepa==0.1.4` adapter; Pareto selection and round-robin components |
 | [EvoPrompt GA](https://arxiv.org/abs/2309.08532) `evoprompt_ga` | Prompt population | Inputs and scalar fitness | Tournament parents, crossover, mutation and elitist survival |
 | EvoPrompt DE `evoprompt_de` | Prompt population | Inputs and scalar fitness | Distinct donor triples, textual differences and target replacement |
 | [Self-Refine](https://arxiv.org/abs/2303.17651) `self_refine` | Instruction resources | Execution feedback and a critic | Critique → revise → evaluate; adapts the paper's output-refinement idea to resources |
 | [ACE](https://arxiv.org/abs/2510.04618) `ace` | Experience playbook | Trajectories, scores and failure feedback | Reflector/curator with stable entry IDs and validated add/update/remove deltas |
 | [APE](https://arxiv.org/abs/2211.01910) `ape` | Instruction pool | Task examples and scores; references optional | Instruction induction, scored pool and neighborhood sampling |
-| [ProTeGi](https://arxiv.org/abs/2305.03495) `protesgi` | Instruction beam | Failure minibatches, feedback and scores | Textual gradients and full-score beam search; does not implement the paper's UCB allocation |
-| [Bootstrap few-shot](https://arxiv.org/abs/2310.03714) `bootstrap_fewshot` | Demonstrations appended to resources | Successful search executions accepted by the evaluator | Harvests actual passing input/output pairs; no teacher-model or module-level DSPy optimization |
+| [ProTeGi](https://arxiv.org/abs/2305.03495) `protesgi` | Instruction beam | Failure minibatches, feedback and scores | Textual gradients and full-score beam search |
+| [Bootstrap few-shot](https://arxiv.org/abs/2310.03714) `bootstrap_fewshot` | Demonstrations appended to resources | Successful search executions accepted by the evaluator | Harvests passing input/output pairs from the running application |
 | Few-shot random search `fewshot_search` | Demonstration subsets and order | The same successful execution pool | Seeded subset/order search with held-out selection |
 | [MIPRO resource search](https://arxiv.org/abs/2406.11695) `mipro` | Instructions and component demonstrations jointly | Tasks, scalar scores and successful component input/output traces | Grounded proposals, trace bootstrapping and categorical TPE over resource choices |
 | [PromptBreeder](https://arxiv.org/abs/2309.16797) `promptbreeder` | Task and mutation instructions | Population fitness and feedback | Coevolves bounded task/mutator populations; a reduced operator set |
 | [Reflexion](https://arxiv.org/abs/2303.11366) `reflexion` | Episodic reflections | Failure trajectories and environment/judge feedback | Appends bounded reflections while keeping the base instruction fixed |
 | [ExpeL](https://arxiv.org/abs/2308.10144) `expel` | Reusable insight rules | Successful and failed experiences with feedback | Contrasts observations and updates rules citing actual search samples |
 
-GA/DE are one paper family; the two demonstration strategies are another. Native adaptations run on EvoSprig resources rather than reproducing upstream benchmark harnesses. Full DSPy MIPROv2 program integration, TextGrad, ADAS, AFlow, DGM and executable skill synthesis remain integration targets. The [method requirements guide](method-requirements.md#other-training-free-directions) lists the missing mechanisms and their environment needs.
+Explore [component coverage and upcoming algorithms](evolution-components.md), or [add your own optimizer](optimizer-plugins.md).
 
 For the original papers, see [research references](references.md#training-free-evolution).
 
@@ -33,7 +33,7 @@ For upstream feedback assumptions and upcoming integration contracts, see the [m
 
 ## What should my evaluation set look like?
 
-The optimizer does not need a special benchmark format for each method. EvoSprig converts your application evaluations into scalar scores, written feedback and execution observations. All strategies can use [LLM-as-judge from task inputs](evaluation.md); objective environment checks remain useful whenever they exist.
+EvoSprig converts your application evaluations into scalar scores, written feedback and execution observations. All strategies can use [LLM-as-judge from task inputs](evaluation.md); objective environment checks remain useful whenever they exist.
 
 | Application | Useful input/reference data | Useful feedback granularity |
 | --- | --- | --- |
@@ -82,10 +82,10 @@ This native adaptation uses independent categorical densities and full-split eva
 
 ## Budget, inspect and release
 
-A study caps evaluations, candidates, model calls, tokens and elapsed time. Task, proposer and judge calls all count. Search initially receives 60% of the call/token/time cap; paired release/test evaluations are reserved. Validation may use the remaining balance. Failed calls without usage receipts retain their reservations. Monetary cost is unknown without provider billing data.
+A study caps evaluations, candidates, model calls, tokens and elapsed time. Task, proposer and judge calls all count. Search initially receives 60% of the call/token/time cap; paired release/test evaluations are reserved. Validation may use the remaining balance. Calls with usage receipts are charged even when the provider truncates the response; calls without usage retain their reservations. Monetary cost is unknown without provider billing data.
 
-Reports retain actual outputs, failure status, tool/environment observations and usage. Candidate archives retain rejected edits and lineage. A study interrupted by a lost lease is not silently replayed; start a new study from an archived candidate. Ordinary agent runs have their own node-level recovery.
+Reports retain actual outputs, failure status, tool/environment observations and usage. Candidate archives retain rejected edits and lineage. After a study loses its lease, start a new study from an archived candidate. Ordinary agent runs have their own node-level recovery.
 
-The release gate checks paired quality, task-group regressions, successful execution, sample count and inference usage. Review the diff and application outputs, then enable a version manually. Existing runs retain their original versions; rollback preserves current user memory. No search automatically changes the production release.
+The release gate checks paired quality, task-group regressions, successful execution, sample count and inference usage. Review the diff and application outputs, then enable a version manually. Existing runs retain their original versions; rollback preserves current user memory.
 
 See [evaluation setup](evaluation.md) for custom scorers, environments and comparison exports, and the [application gallery](../examples/README.md) for concrete results.

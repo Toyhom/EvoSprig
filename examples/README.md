@@ -1,13 +1,15 @@
 # What will you build?
 
-Start with a working application pattern, connect your model and tools, then make it your own. Each application uses EvoSprig's SDK, AgentSpec and runtime for its coordination, tool calls, memory and approvals.
+Start with a working application pattern, connect your model and tools, then make it your own.
 
-<img src="../docs/assets/applications.png" alt="Generated web app, Python chart, receipt input and a written guide" width="100%" />
+[![VideoClaw reproduction: three short films](video-studio/assets/gallery.png)](video-studio/)
 
 ## Build something useful
 
 | I want an agent that… | Application | What you can customize |
 | --- | --- | --- |
+| Turns a story into a short film | [VideoClaw reproduction](video-studio/) | Characters, scenes, prompts and editing |
+| Works with a team on shared documents | [CoworkOS reproduction](cowork/) | Specialist roles, project tools and follow-ups |
 | Tailors an application and helps me practice | [Career coach](career-coach/) | Resume facts, job requirements and interview skills |
 | Adapts an announcement for several channels | [Content studio](content-studio/) | Source facts, channels, brand voice and editing skills |
 | Teaches a topic and reviews my answers | [Study coach](study-coach/) | Course material, learning preferences and feedback |
@@ -16,7 +18,6 @@ Start with a working application pattern, connect your model and tools, then mak
 | Helps make a difficult decision | [Decision room](debate/) | Perspectives, rebuttals and decision criteria |
 | Reads receipts and checks expenses | [Receipt assistant](receipt-assistant/) | OCR, arithmetic, expense rules and approval routing |
 | Turns a question into a sourced brief | [Research team](research-team/) | Planning, parallel researchers, document collections and editorial review |
-| Makes a video from a brief | [Video studio](video-studio/) | Kimi visual review, local FLUX.2 + Hunyuan generation, approvals and retakes |
 | Turns a meeting into clear next steps | [Meeting assistant](meeting-assistant/) | Decisions, owners, dates and review criteria |
 | Writes a consistent multi-chapter guide | [Book studio](book-studio/) | Shared outline, parallel writers, style and editing |
 | Builds a trip that fits the budget | [Travel planner](travel-planner/) | Traveler constraints, available activities and cost checks |
@@ -27,7 +28,7 @@ Start with a working application pattern, connect your model and tools, then mak
 | Helps customers with orders | [Customer support](customer-support/) | Order services, refund policies and human approval |
 | Remembers preferences across sessions | [Personal assistant](personal-memory/) | Scoped facts, linked recall and source-aware summaries |
 
-The catalog includes the five application categories highlighted by [MetaGPT](https://github.com/FoundationAgents/MetaGPT), writing/planning patterns from [CrewAI](https://github.com/crewAIInc/crewAI-examples), retrieval and stateful assistant patterns used with [LangGraph](https://docs.langchain.com/oss/python/langgraph/workflows-agents), and [VideoClaw](https://github.com/HITsz-TMG/VideoClaw)-style production. These are EvoSprig implementations of the application patterns. Their guides describe the connected tools and scope.
+The catalog includes the five application categories highlighted by [MetaGPT](https://github.com/FoundationAgents/MetaGPT), writing/planning patterns from [CrewAI](https://github.com/crewAIInc/crewAI-examples), retrieval and stateful assistant patterns used with [LangGraph](https://docs.langchain.com/oss/python/langgraph/workflows-agents), [VideoClaw](https://github.com/HITsz-TMG/VideoClaw) production, and [CoworkOS](https://github.com/RUC-NLPIR/CoworkOS) collaboration.
 
 ## Self-evolution in action
 

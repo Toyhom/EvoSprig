@@ -1,6 +1,6 @@
 # Research references
 
-EvoSprig implements the mechanisms described in the [evolution](evolution.md), [memory](memory.md) and [tools](tools.md) guides. Named methods below credit their original papers. GEPA uses the official library; other evolution strategies adapt their mechanisms to versioned EvoSprig resources. See the implementation column in the evolution guide for the precise scope.
+Original research behind EvoSprig’s [evolution methods](evolution.md), [memory](memory.md) and [tool use](tools.md).
 
 ## Training-free evolution
 
@@ -29,7 +29,7 @@ EvoSprig implements the mechanisms described in the [evolution](evolution.md), [
 | BM25 | Robertson and Zaragoza (2009), [The Probabilistic Relevance Framework: BM25 and Beyond](https://doi.org/10.1561/1500000019) | Lexical ranking |
 | Reciprocal-rank fusion | Cormack, Clarke and Buettcher (2009), [Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods](https://doi.org/10.1145/1571941.1572114) | Multi-query result fusion |
 | Diversity-aware retrieval | Carbonell and Goldstein (1998), [The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries](https://doi.org/10.1145/290941.291025) | Lexical similarity penalty during result selection |
-| Iterative tool use | Yao et al. (2022), [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629) | Model/tool observation loop; no hidden-reasoning requirement |
+| Iterative tool use | Yao et al. (2022), [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629) | Model/tool observation loop |
 | LLM evaluation | Zheng et al. (2023), [Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena](https://arxiv.org/abs/2306.05685) | Fixed-rubric task judging with optional repeated ratings |
 
-The memory policies are native implementations of these ideas, with explicit writes and scope isolation. Agent-level automatic linking, reflection scheduling and full upstream benchmark reproductions are distinct capabilities. The [method requirements](method-requirements.md) guide explains what application data and feedback each family needs.
+See [method requirements](method-requirements.md) for application data and feedback contracts.

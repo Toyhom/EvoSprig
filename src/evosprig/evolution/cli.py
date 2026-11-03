@@ -23,6 +23,9 @@ from .study import StudyConfig
 
 
 def add_commands(commands):
+    from .registry import load_methods
+
+    load_methods()
     suite_parser = commands.add_parser(
         "suite", help="Create an LLM-judged suite from JSONL task inputs"
     )

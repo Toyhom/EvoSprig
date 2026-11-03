@@ -2,6 +2,8 @@
 
 Welcome! Useful contributions include bug fixes, application examples, model/tool integrations, memory backends and evaluation suites.
 
+Application authors can follow [Build an application](docs/build-applications.md). Algorithm and integration authors can start with [Extend EvoSprig](docs/extend-framework.md) and [Optimizer plugins](docs/optimizer-plugins.md).
+
 ## Development setup
 
 Use Python 3.12+ and Node.js 20+:

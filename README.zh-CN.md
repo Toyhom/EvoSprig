@@ -20,10 +20,15 @@
 
 ## 你可以开发什么？
 
-<img src="docs/assets/applications.png" alt="使用 EvoSprig 开发的网页应用、数据图表、收据助手和书籍创作" width="100%" />
+<table><tr>
+<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw 复刻：月球花园、最后的图书馆、云上面包房" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw 复刻</a></b><br>从故事想法到一部短片。</td>
+<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS 复刻：团队协作完成上线计划" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS 复刻</a></b><br>会规划、写作并与你协作的智能体团队。</td>
+</tr></table>
 
 | 想做什么 | 从这里开始 |
 | --- | --- |
+| 把故事拍成短片 | [VideoClaw 复刻](examples/video-studio/)：角色、分镜和成片 |
+| 与智能体团队一起完成项目 | [CoworkOS 复刻](examples/cowork/)：任务分工、共享文档和后续跟进 |
 | 准备求职材料并练习面试 | [求职教练](examples/career-coach/)：岗位匹配、简历要点和练习反馈 |
 | 把一份公告改写成多个渠道的内容 | [内容工作室](examples/content-studio/)：并行写作、共享文风和事实核对技能 |
 | 讲解知识并根据回答安排练习 | [学习教练](examples/study-coach/)：课程、互动练习与针对性反馈 |
@@ -32,12 +37,13 @@
 | 从多个角度分析决策 | [决策讨论室](examples/debate/)：正反论证、回应与建议 |
 | 自动整理票据与报销 | [收据助手](examples/receipt-assistant/)：OCR、结构化提取、算账与规则核对 |
 | 组织团队完成资料研究 | [研究团队](examples/research-team/)：并行调查、引用与人工审稿 |
-| 把想法变成视频 | [视频工作室](examples/video-studio/)：Kimi 视觉审核、本地 FLUX.2／混元模型与单镜头重做 |
 | 安排日常工作与创作 | [会议助手](examples/meeting-assistant/) · [书籍创作](examples/book-studio/) · [旅行规划](examples/travel-planner/) |
 
 还有 [SQL 分析](examples/data-analyst/)、[文档对话](examples/document-chat/)、[客服](examples/customer-support/)和[个人记忆](examples/personal-memory/)。所有案例均使用 EvoSprig 自身框架编排，打开[应用库](examples/README.md)即可修改成自己的智能体。
 
 ## 平台特色
+
+<img src="docs/assets/capabilities.svg" alt="自进化算法、记忆、工具与评测能力" width="100%" />
 
 - **可控自进化**：14 种无需模型训练的策略，覆盖 12 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
 - **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
@@ -81,6 +87,8 @@ evosprig serve --project examples/hello/agent.yaml \
 [书籍创作](examples/book-studio/)与[文档问答](examples/document-chat/)直接展示实际提示词修改和精选输出对照。使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[配置指南](docs/agent-resources.md)说明如何完成首次改进。
 
 ## 文档与贡献
+
+**[应用开发：画布与 Python](docs/build-applications.md)** · **[框架扩展](docs/extend-framework.md)** · **[接入自进化算法](docs/optimizer-plugins.md)**
 
 [架构](docs/architecture.md) · [记忆](docs/memory.md) · [工具](docs/tools.md) · [部署](docs/deployment.md) · [路线图](docs/roadmap.md) · [贡献指南](CONTRIBUTING.md)
 

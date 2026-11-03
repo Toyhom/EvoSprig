@@ -20,7 +20,7 @@ python apps/media-service/app.py \
   --outputs outputs/media --database .evosprig-media/jobs.sqlite
 ```
 
-The default address is `http://127.0.0.1:18880`. A single worker serializes GPU jobs and switches between image and video pipelines. CPU offloading and tiled video decoding reduce GPU memory use. Keep the job database on a filesystem that supports SQLite locking.
+The default address is `http://127.0.0.1:18880`. A single worker serializes GPU jobs. Each model family runs in a reusable child process; switching families releases the previous process and its GPU allocation. CPU offloading and tiled video decoding reduce GPU memory use. Keep the job database on a filesystem that supports SQLite locking.
 
 Defaults are seed 42, 4 image steps, 12 video steps, 848 × 480 image pixels and 24 video frames per second. Change the seed, steps and image dimensions with CLI flags. Hunyuan selects a video resolution bucket from the first frame and its checkpoint configuration. The video backend supports first-frame generation for 1–15 seconds and silent composition; subtitle input uses SRT. Audio generation and first/last-frame conditioning need a different backend.
 
@@ -40,7 +40,7 @@ Start Studio with `examples/video-studio/local-agent.yaml` and `deployment.local
 | `/generate-image`, `/generate-video` | Lower-level generation for other applications |
 | `/upload` | Import an image into the service's asset store |
 
-Generation endpoints use `POST` with an `Idempotency-Key`, followed by `GET /<endpoint>/<job_id>`. `DELETE` requests cancellation. Reusing a key with different inputs returns 409. Completed results remain available after a restart; interrupted jobs become failed takes and are never silently rerendered.
+Generation endpoints use `POST` with an `Idempotency-Key`, followed by `GET /<endpoint>/<job_id>`. `DELETE` requests cancellation. Reusing a key with different inputs returns 409. Completed results remain available after a restart. Retry an interrupted or failed take with `POST /jobs/<job_id>/retry`; its original inputs and job ID are preserved.
 
 The service binds to loopback by default. Set `EVOSPRIG_MEDIA_TOKEN` and the matching tool `auth_env` when authentication is needed; listening on a non-loopback address requires this token. Use a secure tunnel or HTTPS reverse proxy for remote access.
 
