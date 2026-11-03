@@ -1,0 +1,762 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 128
+  max_output_tokens: 4096
+  max_parallel_nodes: 3
+  max_parallel_tools: 3
+  max_steps: 640
+  max_total_tokens: 500000
+  timeout_seconds: 1200.0
+graph:
+  edges:
+  - source: context
+    target: lessons
+    when: null
+  - source: lessons
+    target: plan
+    when: null
+  - source: plan
+    target: team
+    when: null
+  - source: publish
+    target: retrospective
+    when: null
+  - source: remember
+    target: wake
+    when: null
+  - source: retrospective
+    target: remember
+    when: null
+  - source: review
+    target: publish
+    when: null
+  - source: team
+    target: review
+    when: null
+  - source: wake
+    target: follow_up
+    when: null
+  entry: context
+  nodes:
+    context:
+      body: null
+      branches: {}
+      condition: null
+      inputs: {}
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: memory_context
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    follow_up:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        wake:
+          default: null
+          optional: false
+          ref: nodes.wake.output
+      instructions:
+        resource: follow_up
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_tool_rounds: 6
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          text:
+            minLength: 1
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: feedback
+      tools:
+      - list
+      - read
+      - memory_search
+      type: agent
+      until: null
+    lessons:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        limit:
+          value: 5
+        query:
+          default: null
+          optional: false
+          ref: input.request
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: memory_search
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    plan:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        lessons:
+          default: null
+          optional: false
+          ref: nodes.lessons.output
+        memory:
+          default: null
+          optional: false
+          ref: nodes.context.output
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions:
+        resource: plan
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      max_tool_rounds: 6
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          tasks:
+            items:
+              additionalProperties: false
+              properties:
+                document:
+                  minLength: 1
+                  type: string
+                role:
+                  minLength: 1
+                  type: string
+                task:
+                  minLength: 1
+                  type: string
+              required:
+              - role
+              - task
+              - document
+              type: object
+            maxItems: 6
+            minItems: 1
+            type: array
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - tasks
+        type: object
+      response_format: json
+      skills:
+      - collaboration
+      tool: null
+      tool_errors: feedback
+      tools:
+      - list
+      - read
+      type: agent
+      until: null
+    publish:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        draft:
+          default: null
+          optional: false
+          ref: nodes.review.output.content
+        name:
+          value: deliverables/brief.md
+      instructions:
+        resource: editor
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_tool_rounds: 8
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          name:
+            minLength: 1
+            type: string
+          revision:
+            minimum: 1
+            type: integer
+          summary:
+            minLength: 1
+            type: string
+        required:
+        - name
+        - revision
+        - summary
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: feedback
+      tools:
+      - read
+      - write
+      type: agent
+      until: null
+    remember:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        content:
+          default: null
+          optional: false
+          ref: nodes.retrospective.output.memory
+        source:
+          value: deliverables/brief.md
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: memory_write
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    retrospective:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        approved_document:
+          default: null
+          optional: false
+          ref: nodes.review.output.content
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        team_review:
+          default: null
+          optional: false
+          ref: nodes.team.output
+      instructions:
+        resource: retrospective
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      max_output_retries: 2
+      max_output_tokens: 1200
+      model: main
+      output_errors: feedback
+      output_schema:
+        additionalProperties: false
+        properties:
+          memory:
+            minLength: 1
+            type: string
+        required:
+        - memory
+        type: object
+      response_format: json
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    review:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        draft:
+          default: null
+          optional: false
+          ref: nodes.team.output.content
+        team:
+          default: null
+          optional: false
+          ref: nodes.team.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          content:
+            minLength: 1
+            type: string
+        required:
+        - content
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    team:
+      body:
+        edges:
+        - source: dispatch
+          target: acceptance
+          when: null
+        entry: dispatch
+        nodes:
+          acceptance:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              request:
+                default: null
+                optional: false
+                ref: input.request
+              wave:
+                default: null
+                optional: false
+                ref: nodes.dispatch.output
+            instructions:
+              resource: acceptance
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            max_output_retries: 2
+            max_tool_rounds: 10
+            model: main
+            output_errors: feedback
+            output_schema:
+              additionalProperties: false
+              allOf:
+              - else:
+                  properties:
+                    tasks:
+                      maxItems: 0
+                if:
+                  properties:
+                    accepted:
+                      const: false
+                then:
+                  properties:
+                    tasks:
+                      minItems: 1
+              properties:
+                accepted:
+                  type: boolean
+                content:
+                  minLength: 1
+                  type: string
+                tasks:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      document:
+                        minLength: 1
+                        type: string
+                      role:
+                        minLength: 1
+                        type: string
+                      task:
+                        minLength: 1
+                        type: string
+                    required:
+                    - role
+                    - task
+                    - document
+                    type: object
+                  maxItems: 6
+                  type: array
+              required:
+              - content
+              - accepted
+              - tasks
+              type: object
+            parallel_tool_calls: true
+            response_format: json
+            skills:
+            - collaboration
+            tool: null
+            tool_errors: feedback
+            tools:
+            - read
+            - list
+            type: agent
+            until: null
+          dispatch:
+            body:
+              edges:
+              - source: current
+                target: save
+                when: null
+              - source: specialist
+                target: current
+                when: null
+              entry: specialist
+              nodes:
+                current:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    name:
+                      default: null
+                      optional: false
+                      ref: input.item.document
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: read
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                save:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    current:
+                      default: null
+                      optional: false
+                      ref: nodes.current.output
+                    draft:
+                      default: null
+                      optional: false
+                      ref: nodes.specialist.output.content
+                    name:
+                      default: null
+                      optional: false
+                      ref: input.item.document
+                  instructions:
+                    resource: editor
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  max_tool_rounds: 8
+                  model: main
+                  output_errors: feedback
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      name:
+                        minLength: 1
+                        type: string
+                      revision:
+                        minimum: 1
+                        type: integer
+                      summary:
+                        minLength: 1
+                        type: string
+                    required:
+                    - name
+                    - revision
+                    - summary
+                    type: object
+                  response_format: json
+                  tool: null
+                  tool_errors: feedback
+                  tools:
+                  - read
+                  - write
+                  type: agent
+                  until: null
+                specialist:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    assignment:
+                      default: null
+                      optional: false
+                      ref: input.item
+                    request:
+                      default: null
+                      optional: false
+                      ref: input.context.request
+                  instructions:
+                    resource: specialist
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  max_output_retries: 2
+                  max_output_tokens: 4096
+                  max_tool_rounds: 8
+                  model: main
+                  output_errors: feedback
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      content:
+                        minLength: 1
+                        type: string
+                    required:
+                    - content
+                    type: object
+                  parallel_tool_calls: true
+                  response_format: json
+                  skills:
+                  - collaboration
+                  tool: null
+                  tool_errors: feedback
+                  tools:
+                  - list
+                  - read
+                  - memory_search
+                  type: agent
+                  until: null
+              output:
+                assignment:
+                  default: null
+                  optional: false
+                  ref: input.item
+                document:
+                  default: null
+                  optional: false
+                  ref: nodes.save.output
+            branches: {}
+            condition: null
+            inputs:
+              request:
+                default: null
+                optional: false
+                ref: input.request
+            instructions: ''
+            items:
+              default: null
+              optional: false
+              ref: input.tasks
+            join: all
+            max_items: 6
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: map
+            until: null
+        output:
+          accepted:
+            default: null
+            optional: false
+            ref: nodes.acceptance.output.accepted
+          content:
+            default: null
+            optional: false
+            ref: nodes.acceptance.output.content
+          last_wave:
+            default: null
+            optional: false
+            ref: nodes.dispatch.output
+          request:
+            default: null
+            optional: false
+            ref: input.request
+          tasks:
+            default: null
+            optional: false
+            ref: nodes.acceptance.output.tasks
+      branches: {}
+      condition: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        tasks:
+          default: null
+          optional: false
+          ref: nodes.plan.output.tasks
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 3
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: loop
+      until:
+        left:
+          default: null
+          optional: false
+          ref: input.accepted
+        op: truthy
+        right: null
+    wake:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        message:
+          value: Review the latest project documents and prepare the next actions.
+        seconds:
+          default: 0
+          optional: true
+          ref: input.follow_up_seconds
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: wait
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+  output:
+    follow_up:
+      default: null
+      optional: false
+      ref: nodes.follow_up.output.text
+    report:
+      default: null
+      optional: false
+      ref: nodes.publish.output
+    team:
+      default: null
+      optional: false
+      ref: nodes.team.output
+id: cowork-rsi
+input_schema:
+  additionalProperties: false
+  properties:
+    follow_up_seconds:
+      maximum: 604800
+      minimum: 0
+      type: number
+    request:
+      minLength: 1
+      type: string
+  required:
+  - request
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - tool_calling
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    follow_up:
+      minLength: 1
+      type: string
+    report:
+      type: object
+    team:
+      type: object
+  required:
+  - report
+  - team
+  - follow_up
+  type: object
+resources:
+  acceptance:
+    path: prompts/acceptance.md
+    role: prompt
+  collaboration:
+    path: prompts/collaboration.md
+    role: skill
+  editor:
+    path: prompts/editor.md
+    role: prompt
+  follow_up:
+    path: prompts/follow_up.md
+    role: prompt
+  plan:
+    path: prompts/plan.md
+    role: prompt
+  retrospective:
+    path: prompts/retrospective.md
+    role: prompt
+  specialist:
+    path: prompts/specialist.md
+    role: prompt
+spec_version: '0.3'
+tools:
+  history:
+    plugin: workspace.history
+    version: '1'
+  list:
+    plugin: workspace.list
+    version: '1'
+  memory_context:
+    plugin: memory.context
+    version: '1'
+  memory_search:
+    plugin: memory.search
+    version: '1'
+  memory_write:
+    plugin: memory.write
+    version: '1'
+  read:
+    plugin: workspace.read
+    version: '1'
+  wait:
+    plugin: workspace.wait
+    version: '1'
+  write:
+    plugin: workspace.write
+    version: '1'

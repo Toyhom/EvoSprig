@@ -11,6 +11,8 @@ test('cowork documents preserve edits on conflict and render untrusted text safe
     await page.route('**' + url + '*', async route => route.fulfill({ body: await readFile('../cowork/' + file), contentType: type }));
   }
   await page.goto('/cowork.html?project=' + id);
+  await expect(page).toHaveTitle('CoworkOS (EvoSprig)');
+  await expect(page.locator('.brand')).toHaveText('CoworkOS (EvoSprig)');
   await page.locator('#documents button').click();
   await expect(page.locator('#document-content')).toContainText('<script>window.injected=true</script>');
   expect(await page.evaluate(() => (window as any).injected)).toBeUndefined();

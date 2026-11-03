@@ -33,3 +33,7 @@ Original research behind EvoSprig’s [evolution methods](evolution.md), [memory
 | LLM evaluation | Zheng et al. (2023), [Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena](https://arxiv.org/abs/2306.05685) | Fixed-rubric task judging with optional repeated ratings |
 
 See [method requirements](method-requirements.md) for application data and feedback contracts.
+
+## Embodied applications
+
+- **RAI** — Rachwał et al., *RAI: Flexible Agent Framework for Embodied AI* (2025). [Paper](https://arxiv.org/abs/2505.07532) · [Code](https://github.com/RobotecAI/rai). The [manipulation application](../examples/rai-manipulation/) recreates the camera–reasoning–tool–feedback loop in EvoSprig.

@@ -1,4 +1,6 @@
 EvoSprig
 Copyright 2026 EvoSprig contributors
 
-This product includes independently implemented agent runtime and application examples.
+Robot simulation media uses Franka Panda assets distributed with Bullet Physics
+under Apache-2.0:
+https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_data/franka_panda

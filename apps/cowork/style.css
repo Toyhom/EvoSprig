@@ -2,3 +2,5 @@
 
 svg{width:20px;height:20px;flex-shrink:0;vertical-align:middle}.brand svg{width:28px;height:28px}#brand-icon{display:flex}.nav,nav button{display:flex;gap:9px;align-items:center}nav button svg{width:16px;height:16px}#next-actions{max-height:260px;overflow:auto;border-left:2px solid #dce5df;padding-left:20px}#document-content p:empty{display:none}
 header{position:sticky;top:0;z-index:4;background:white}#document-view>.section-title{position:sticky;top:76px;background:white;z-index:3;margin-top:0;padding:12px 0 20px}#document-content h2{scroll-margin-top:240px}
+
+.brand span{font-size:20px;line-height:1.25}.brand small{display:block;font-size:12px;font-weight:500;color:#747b85}

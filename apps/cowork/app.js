@@ -1,6 +1,15 @@
 const $ = id => document.getElementById(id);
-const project = new URLSearchParams(location.search).get('project') || 'cowork';
+let project = new URLSearchParams(location.search).get('project');
+if (!project) {
+  const catalog = await fetch('/api/projects').then(r => r.ok ? r.json() : []).catch(() => []);
+  project = Array.isArray(catalog) && !catalog.some(p => p.id === 'cowork') && catalog.some(p => p.id === 'cowork-rsi') ? 'cowork-rsi' : 'cowork';
+}
 const root = '/api/projects/' + encodeURIComponent(project);
+if (project === 'cowork-rsi') {
+  document.title = 'CoworkRSI';
+  $('brand-name').textContent = 'CoworkRSI';
+  $('application-name').textContent = 'CoworkRSI';
+}
 let run = null, doc = null, dirty = false, busy = false, approvalPath = null;
 const words = {
   en: { start: 'Start working', overview: 'Team workspace', approve: 'Save and continue', save: 'Save changes', edit: 'Edit latest', ready: 'Ready', working: 'Working', steps: 'steps completed', planning: 'Planning the work…', open: 'Open document', shared: 'Shared document', revision: 'Revision', viewing: 'Viewing revision', discard: 'Discard unsaved edits?', succeeded: 'Completed', failed: 'Failed', canceled: 'Canceled', running: 'Working', waiting_input: 'Your review', waiting_external: 'Waiting', queued: 'Queued' },

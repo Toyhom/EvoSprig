@@ -1,26 +1,18 @@
-# VideoClaw, built with EvoSprig
+# VideoClaw (EvoSprig)
 
 ![Production workflow in EvoSprig Studio](canvas.png)
 
 An EvoSprig reproduction of [VideoClaw](https://github.com/HITsz-TMG/VideoClaw). Turn a story idea into a short film: plan the scenes, create the characters, generate the shots and assemble the cut.
 
-## Moon Garden
+## Short films
 
-A tiny robot tends luminous flowers in a greenhouse on the moon.
-
-[![Watch Moon Garden](assets/moon-garden.webp)](assets/moon-garden.mp4)
-
-## The Last Library
-
-A librarian discovers a book that fills the night with light.
-
-[![Watch The Last Library](assets/last-library.webp)](assets/last-library.mp4)
-
-## Cloud Bakery
-
-An orange cat opens a little bakery above the clouds.
-
-[![Watch Cloud Bakery](assets/cloud-bakery.webp)](assets/cloud-bakery.mp4)
+<table>
+<tr>
+<td align="center" valign="top" width="33%"><a href="assets/moon-garden.mp4"><img src="assets/moon-garden.webp" width="100%" alt="Play Moon Garden" /></a><br><b>▶ Moon Garden</b><br>A robot grows a garden on the moon.</td>
+<td align="center" valign="top" width="33%"><a href="assets/last-library.mp4"><img src="assets/last-library.webp" width="100%" alt="Play The Last Library" /></a><br><b>▶ The Last Library</b><br>One book lights up the night.</td>
+<td align="center" valign="top" width="33%"><a href="assets/cloud-bakery.mp4"><img src="assets/cloud-bakery.webp" width="100%" alt="Play Cloud Bakery" /></a><br><b>▶ Cloud Bakery</b><br>A cat opens a bakery in the clouds.</td>
+</tr>
+</table>
 
 ## Make your own film
 
@@ -50,8 +42,11 @@ The included profile uses Kimi K3.1 Pro, FLUX.2-klein-4B and HunyuanVideo-1.5. T
 
 **Laid Off** — a programmer receives an envelope, closes his laptop and leaves with a box.
 
-[![EvoSprig and VideoClaw, side by side](assets/preview.webp)](assets/evosprig.mp4)
+<table>
+<tr>
+<td align="center" width="50%"><a href="assets/evosprig.mp4"><img src="assets/evosprig.webp" width="100%" alt="Play VideoClaw (EvoSprig)" /></a><br><b>▶ VideoClaw (EvoSprig)</b></td>
+<td align="center" width="50%"><a href="assets/videoclaw.mp4"><img src="assets/videoclaw.webp" width="100%" alt="Play VideoClaw (Original)" /></a><br><b>▶ VideoClaw (Original)</b></td>
+</tr>
+</table>
 
-[EvoSprig film](assets/evosprig.mp4) · [VideoClaw film](assets/videoclaw.mp4)
-
-Both productions use the [same brief](brief.json) and model setup. The VideoClaw film runs its [original workflow](https://github.com/HITsz-TMG/VideoClaw/tree/16c1ce0b553e30eff90ff1274e8a8a63c1d548a3) through the [provider adapter](../../apps/media-service/videoclaw.py).
+[Same brief](brief.json) · [Original VideoClaw workflow](https://github.com/HITsz-TMG/VideoClaw/tree/16c1ce0b553e30eff90ff1274e8a8a63c1d548a3) · [Shared model adapter](../../apps/media-service/videoclaw.py)

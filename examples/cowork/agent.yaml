@@ -1,17 +1,14 @@
 execution:
   allow_side_effects: true
-  max_model_calls: 64
+  max_model_calls: 128
   max_output_tokens: 4096
   max_parallel_nodes: 3
   max_parallel_tools: 3
-  max_steps: 240
-  max_total_tokens: 300000
+  max_steps: 640
+  max_total_tokens: 500000
   timeout_seconds: 1200.0
 graph:
   edges:
-  - source: assemble
-    target: review
-    when: null
   - source: context
     target: plan
     when: null
@@ -28,56 +25,13 @@ graph:
     target: publish
     when: null
   - source: team
-    target: assemble
+    target: review
     when: null
   - source: wake
     target: follow_up
     when: null
   entry: context
   nodes:
-    assemble:
-      body: null
-      branches: {}
-      condition: null
-      inputs:
-        request:
-          default: null
-          optional: false
-          ref: input.request
-        team:
-          default: null
-          optional: false
-          ref: nodes.team.output
-      instructions: Read each completed team document. Produce a concise decision-ready
-        Markdown report with actions, owners, dates and the supplied numbers. Include
-        links to workspace document names. Return JSON with content.
-      items: null
-      join: all
-      max_items: 32
-      max_iterations: 1
-      max_tool_rounds: 10
-      model: main
-      output_errors: feedback
-      output_schema:
-        additionalProperties: false
-        properties:
-          content:
-            minLength: 1
-            type: string
-        required:
-        - content
-        type: object
-      parallel_tool_calls: true
-      response_format: json
-      skills:
-      - collaboration
-      tool: null
-      tool_errors: feedback
-      tools:
-      - read
-      - list
-      type: agent
-      until: null
     context:
       body: null
       branches: {}
@@ -278,7 +232,7 @@ graph:
         draft:
           default: null
           optional: false
-          ref: nodes.assemble.output.content
+          ref: nodes.team.output.content
         team:
           default: null
           optional: false
@@ -307,120 +261,79 @@ graph:
     team:
       body:
         edges:
-        - source: current
-          target: save
+        - source: dispatch
+          target: acceptance
           when: null
-        - source: specialist
-          target: current
-          when: null
-        entry: specialist
+        entry: dispatch
         nodes:
-          current:
+          acceptance:
             body: null
             branches: {}
             condition: null
             inputs:
-              name:
-                default: null
-                optional: false
-                ref: input.item.document
-            instructions: ''
-            items: null
-            join: all
-            max_items: 32
-            max_iterations: 1
-            model: null
-            output_schema:
-              type: object
-            response_format: text
-            tool: read
-            tool_errors: raise
-            tools: []
-            type: tool
-            until: null
-          save:
-            body: null
-            branches: {}
-            condition: null
-            inputs:
-              current:
-                default: null
-                optional: false
-                ref: nodes.current.output
-              draft:
-                default: null
-                optional: false
-                ref: nodes.specialist.output.content
-              name:
-                default: null
-                optional: false
-                ref: input.item.document
-            instructions:
-              resource: editor
-            items: null
-            join: all
-            max_items: 32
-            max_iterations: 1
-            max_tool_rounds: 8
-            model: main
-            output_errors: feedback
-            output_schema:
-              additionalProperties: false
-              properties:
-                name:
-                  minLength: 1
-                  type: string
-                revision:
-                  minimum: 1
-                  type: integer
-                summary:
-                  minLength: 1
-                  type: string
-              required:
-              - name
-              - revision
-              - summary
-              type: object
-            response_format: json
-            tool: null
-            tool_errors: feedback
-            tools:
-            - read
-            - write
-            type: agent
-            until: null
-          specialist:
-            body: null
-            branches: {}
-            condition: null
-            inputs:
-              assignment:
-                default: null
-                optional: false
-                ref: input.item
               request:
                 default: null
                 optional: false
-                ref: input.context.request
+                ref: input.request
+              wave:
+                default: null
+                optional: false
+                ref: nodes.dispatch.output
             instructions:
-              resource: specialist
+              resource: acceptance
             items: null
             join: all
             max_items: 32
             max_iterations: 1
             max_output_retries: 2
-            max_output_tokens: 4096
-            max_tool_rounds: 8
+            max_tool_rounds: 10
             model: main
             output_errors: feedback
             output_schema:
               additionalProperties: false
+              allOf:
+              - else:
+                  properties:
+                    tasks:
+                      maxItems: 0
+                if:
+                  properties:
+                    accepted:
+                      const: false
+                then:
+                  properties:
+                    tasks:
+                      minItems: 1
               properties:
+                accepted:
+                  type: boolean
                 content:
                   minLength: 1
                   type: string
+                tasks:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      document:
+                        minLength: 1
+                        type: string
+                      role:
+                        minLength: 1
+                        type: string
+                      task:
+                        minLength: 1
+                        type: string
+                    required:
+                    - role
+                    - task
+                    - document
+                    type: object
+                  maxItems: 6
+                  type: array
               required:
               - content
+              - accepted
+              - tasks
               type: object
             parallel_tool_calls: true
             response_format: json
@@ -429,20 +342,194 @@ graph:
             tool: null
             tool_errors: feedback
             tools:
-            - list
             - read
-            - memory_search
+            - list
             type: agent
             until: null
+          dispatch:
+            body:
+              edges:
+              - source: current
+                target: save
+                when: null
+              - source: specialist
+                target: current
+                when: null
+              entry: specialist
+              nodes:
+                current:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    name:
+                      default: null
+                      optional: false
+                      ref: input.item.document
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: read
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                save:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    current:
+                      default: null
+                      optional: false
+                      ref: nodes.current.output
+                    draft:
+                      default: null
+                      optional: false
+                      ref: nodes.specialist.output.content
+                    name:
+                      default: null
+                      optional: false
+                      ref: input.item.document
+                  instructions:
+                    resource: editor
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  max_tool_rounds: 8
+                  model: main
+                  output_errors: feedback
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      name:
+                        minLength: 1
+                        type: string
+                      revision:
+                        minimum: 1
+                        type: integer
+                      summary:
+                        minLength: 1
+                        type: string
+                    required:
+                    - name
+                    - revision
+                    - summary
+                    type: object
+                  response_format: json
+                  tool: null
+                  tool_errors: feedback
+                  tools:
+                  - read
+                  - write
+                  type: agent
+                  until: null
+                specialist:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    assignment:
+                      default: null
+                      optional: false
+                      ref: input.item
+                    request:
+                      default: null
+                      optional: false
+                      ref: input.context.request
+                  instructions:
+                    resource: specialist
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  max_output_retries: 2
+                  max_output_tokens: 4096
+                  max_tool_rounds: 8
+                  model: main
+                  output_errors: feedback
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      content:
+                        minLength: 1
+                        type: string
+                    required:
+                    - content
+                    type: object
+                  parallel_tool_calls: true
+                  response_format: json
+                  skills:
+                  - collaboration
+                  tool: null
+                  tool_errors: feedback
+                  tools:
+                  - list
+                  - read
+                  - memory_search
+                  type: agent
+                  until: null
+              output:
+                assignment:
+                  default: null
+                  optional: false
+                  ref: input.item
+                document:
+                  default: null
+                  optional: false
+                  ref: nodes.save.output
+            branches: {}
+            condition: null
+            inputs:
+              request:
+                default: null
+                optional: false
+                ref: input.request
+            instructions: ''
+            items:
+              default: null
+              optional: false
+              ref: input.tasks
+            join: all
+            max_items: 6
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: map
+            until: null
         output:
-          assignment:
+          accepted:
             default: null
             optional: false
-            ref: input.item
-          document:
+            ref: nodes.acceptance.output.accepted
+          content:
             default: null
             optional: false
-            ref: nodes.save.output
+            ref: nodes.acceptance.output.content
+          last_wave:
+            default: null
+            optional: false
+            ref: nodes.dispatch.output
+          request:
+            default: null
+            optional: false
+            ref: input.request
+          tasks:
+            default: null
+            optional: false
+            ref: nodes.acceptance.output.tasks
       branches: {}
       condition: null
       inputs:
@@ -450,14 +537,15 @@ graph:
           default: null
           optional: false
           ref: input.request
+        tasks:
+          default: null
+          optional: false
+          ref: nodes.plan.output.tasks
       instructions: ''
-      items:
-        default: null
-        optional: false
-        ref: nodes.plan.output.tasks
+      items: null
       join: all
-      max_items: 6
-      max_iterations: 1
+      max_items: 32
+      max_iterations: 3
       model: null
       output_schema:
         type: object
@@ -465,8 +553,14 @@ graph:
       tool: null
       tool_errors: raise
       tools: []
-      type: map
-      until: null
+      type: loop
+      until:
+        left:
+          default: null
+          optional: false
+          ref: input.accepted
+        op: truthy
+        right: null
     wake:
       body: null
       branches: {}
@@ -542,6 +636,9 @@ output_schema:
   - follow_up
   type: object
 resources:
+  acceptance:
+    path: prompts/acceptance.md
+    role: prompt
   collaboration:
     path: prompts/collaboration.md
     role: skill

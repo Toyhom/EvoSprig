@@ -14,21 +14,28 @@
 
 </div>
 
-使用 Python 或可视化画布开发智能体，再用自己的任务自动改进 prompt 与 skill。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
+## News · 项目动态
+
+- **2026-11-03 · v0.1.5** · 新增 [RAI manipulation (EvoSprig)](examples/rai-manipulation/) 多模态机器人操纵；Cowork 加入验收与定向返工，并提供 [CoworkRSI](examples/cowork/#coworkrsi) 自进化入口。
+- **2026-11-03** · 上线 [CoworkOS (EvoSprig)](examples/cowork/)：专家协作、共享文档、定时跟进；[VideoClaw (EvoSprig)](examples/video-studio/)新增三部短片；支持通过[插件接入自进化算法](docs/optimizer-plugins.md)。
+- **2026-11-02** · EvoSprig 开源：代码与画布开发、可控自进化、持久记忆、独立导出；支持 **14 种策略、12 个方法家族**。
+
+使用 Python 或可视化画布开发智能体，再用自己的任务推动智能体持续改进。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
 <img src="docs/assets/studio.png" alt="EvoSprig Studio 软件开发团队画布" width="100%" />
 
 ## 你可以开发什么？
 
 <table><tr>
-<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw 复刻：月球花园、最后的图书馆、云上面包房" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw 复刻</a></b><br>从故事想法到一部短片。</td>
-<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS 复刻：团队协作完成上线计划" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS 复刻</a></b><br>会规划、写作并与你协作的智能体团队。</td>
+<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)：月球花园、最后的图书馆、云上面包房" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>从故事想法到一部短片。</td>
+<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS (EvoSprig)：团队协作完成上线计划" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS (EvoSprig)</a></b><br>会规划、写作并与你协作的智能体团队。</td>
 </tr></table>
 
 | 想做什么 | 从这里开始 |
 | --- | --- |
-| 把故事拍成短片 | [VideoClaw 复刻](examples/video-studio/)：角色、分镜和成片 |
-| 与智能体团队一起完成项目 | [CoworkOS 复刻](examples/cowork/)：任务分工、共享文档和后续跟进 |
+| 把故事拍成短片 | [VideoClaw (EvoSprig)](examples/video-studio/)：角色、分镜和成片 |
+| 与智能体团队一起完成项目 | [CoworkOS (EvoSprig)](examples/cowork/)：任务分工、共享文档和后续跟进 |
+| 看懂场景并操纵机械臂 | [RAI manipulation (EvoSprig)](examples/rai-manipulation/)：视觉规划、抓取放置和任务检查 |
 | 准备求职材料并练习面试 | [求职教练](examples/career-coach/)：岗位匹配、简历要点和练习反馈 |
 | 把一份公告改写成多个渠道的内容 | [内容工作室](examples/content-studio/)：并行写作、共享文风和事实核对技能 |
 | 讲解知识并根据回答安排练习 | [学习教练](examples/study-coach/)：课程、互动练习与针对性反馈 |

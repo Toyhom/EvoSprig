@@ -1,4 +1,4 @@
-# CoworkOS, built with EvoSprig
+# CoworkOS (EvoSprig)
 
 ![Cowork workflow in EvoSprig Studio](canvas.png)
 
@@ -29,8 +29,8 @@ For the workflow editor, replace `--studio-dir apps/cowork` with `--studio-dir a
 
 ## Make it your team
 
-- **Main agent:** plans specialist assignments and assembles their work.
-- **Coordinator:** maps assignments to checkpointed subflows with bounded concurrency.
+- **Main agent:** plans assignments, checks each wave and sends specific corrections back to the responsible specialists.
+- **Coordinator:** dispatches each wave to checkpointed subflows with bounded concurrency; up to three waves by default.
 - **Specialists:** use shared documents and project memory, then save their deliverables.
 - **Shared workspace:** people and agents edit through the same revision checks.
 - **Follow-up:** a persisted wake-up resumes the task and reads the latest documents.
@@ -38,3 +38,22 @@ For the workflow editor, replace `--studio-dir apps/cowork` with `--studio-dir a
 Edit the roles and prompts in [build_agent.py](build_agent.py). Attach your own tools, or replace the supplied request with a project brief. Select `plan`, `specialist` and `collaboration` in **Improve** to optimize the team's instructions against your tasks.
 
 [Shared document API](../../docs/shared-workspaces.md) · [Build applications](../../docs/build-applications.md) · [Original CoworkOS](https://github.com/RUC-NLPIR/CoworkOS)
+
+## CoworkRSI
+
+**CoworkOS (EvoSprig)** is the collaborative application. **CoworkRSI** adds a retrospective after your review. It saves reusable lessons to shared memory; later planners and specialists retrieve them. Use your team's tasks to improve planning, specialist instructions, acceptance checks and collaboration skills.
+
+```bash
+evosprig serve --project examples/cowork/rsi-agent.yaml \
+  --studio-dir apps/cowork --workspace .evosprig/cowork-rsi
+```
+
+Open **http://127.0.0.1:18766/?project=cowork-rsi**. For instruction search, use `--studio-dir apps/studio/dist`.
+
+Open this project in Studio, then **Improve**:
+
+1. Import an [evaluation suite](../../docs/evaluation.md#bring-your-own-task-suite) with project briefs and responses for the human review step.
+2. Select `plan`, `specialist`, `acceptance` and `collaboration`; choose an algorithm and a budget.
+3. Compare resource changes and generated documents. Enable the selected version in **Versions**.
+
+Your review criteria stay fixed while the team instructions change. [Choose an algorithm](../../docs/evolution.md) · [Add your own optimizer](../../docs/optimizer-plugins.md).

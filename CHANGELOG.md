@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Add RAI tabletop manipulation: a visual controller, Franka simulation tools, durable action receipts and independent physical goal checks.
+- Let the Cowork main agent review completed work and delegate targeted corrections; add the CoworkRSI edition with retrospective memory and task-based instruction optimization.
+- Use application names throughout the Cowork workbench and VideoClaw gallery. Add homepage News and compact, side-by-side film previews.
+
+
 ## 0.1.4
 
 - Add shared, revisioned team documents, conflict-aware agent edits and durable scheduled wake-ups.

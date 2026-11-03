@@ -2,14 +2,15 @@
 
 Start with a working application pattern, connect your model and tools, then make it your own.
 
-[![VideoClaw reproduction: three short films](video-studio/assets/gallery.png)](video-studio/)
+[![VideoClaw (EvoSprig): three short films](video-studio/assets/gallery.png)](video-studio/)
 
 ## Build something useful
 
 | I want an agent that… | Application | What you can customize |
 | --- | --- | --- |
-| Turns a story into a short film | [VideoClaw reproduction](video-studio/) | Characters, scenes, prompts and editing |
-| Works with a team on shared documents | [CoworkOS reproduction](cowork/) | Specialist roles, project tools and follow-ups |
+| Turns a story into a short film | [VideoClaw (EvoSprig)](video-studio/) | Characters, scenes, prompts and editing |
+| Works with a team on shared documents | [CoworkOS (EvoSprig)](cowork/) | Specialist roles, project tools and follow-ups |
+| Sees a scene and rearranges objects | [RAI manipulation (EvoSprig)](rai-manipulation/) | Visual controller, robot tools and physical goal checks |
 | Tailors an application and helps me practice | [Career coach](career-coach/) | Resume facts, job requirements and interview skills |
 | Adapts an announcement for several channels | [Content studio](content-studio/) | Source facts, channels, brand voice and editing skills |
 | Teaches a topic and reviews my answers | [Study coach](study-coach/) | Course material, learning preferences and feedback |

@@ -14,7 +14,13 @@
 
 </div>
 
-Build agents with Python or a visual canvas, then improve their prompts and skills automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate resources, evaluate the running application, compare results and enable a version. Export your application to run independently.
+## News
+
+- **2026-11-03 · v0.1.5** · [RAI manipulation (EvoSprig)](examples/rai-manipulation/) brings visual robot control. Cowork reviews team outputs and assigns corrections; [CoworkRSI](examples/cowork/#coworkrsi) adds experience memory and self-evolution.
+- **2026-11-03** · [CoworkOS (EvoSprig)](examples/cowork/) brings specialist teams, shared documents and scheduled follow-ups. [VideoClaw (EvoSprig)](examples/video-studio/) adds three new short films. [Custom optimizers](docs/optimizer-plugins.md) can plug into the evaluation and version pipeline.
+- **2026-11-02** · EvoSprig is open source: Python and canvas authoring, self-evolution, persistent memory and standalone export. **14 strategies across 12 method families.**
+
+Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate resources, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
 <img src="docs/assets/studio.png" alt="EvoSprig Studio: workflow canvas, node settings and execution history" width="100%" />
 
@@ -22,15 +28,16 @@ Build agents with Python or a visual canvas, then improve their prompts and skil
 
 <table>
 <tr>
-<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw reproduction: Moon Garden, The Last Library and Cloud Bakery" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw, built with EvoSprig</a></b><br>A story idea becomes a short film.</td>
-<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS reproduction: a team creates a launch pack" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS, built with EvoSprig</a></b><br>A team that plans, writes and works with you.</td>
+<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig): Moon Garden, The Last Library and Cloud Bakery" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>A story idea becomes a short film.</td>
+<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS (EvoSprig): a team creates a launch pack" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS (EvoSprig)</a></b><br>A team that plans, writes and works with you.</td>
 </tr>
 </table>
 
 | Build an agent that… | Start here |
 | --- | --- |
-| Turns a story into a film | **[VideoClaw reproduction](examples/video-studio/)** — characters, scenes and a finished cut |
-| Works with you on a project | **[CoworkOS reproduction](examples/cowork/)** — specialist teams and shared documents |
+| Turns a story into a film | **[VideoClaw (EvoSprig)](examples/video-studio/)** — characters, scenes and a finished cut |
+| Works with you on a project | **[CoworkOS (EvoSprig)](examples/cowork/)** — specialist teams and shared documents |
+| Sees a scene and controls a robot arm | **[RAI manipulation (EvoSprig)](examples/rai-manipulation/)** — visual planning, pick-and-place and task checks |
 | Tailors a resume and runs interview practice | **[Career coach](examples/career-coach/)** — job fit, application materials and feedback |
 | Turns one announcement into a content campaign | **[Content studio](examples/content-studio/)** — parallel channels and shared editing skills |
 | Teaches a topic and reviews your answers | **[Study coach](examples/study-coach/)** — lessons, exercises and personal feedback |

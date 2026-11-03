@@ -6,7 +6,7 @@
           "collapsed": false,
           "direction": "DOWN",
           "id": "group:team",
-          "label": "Build the team",
+          "label": "Delegate, review and revise",
           "members": [
             "context",
             "plan",
@@ -19,7 +19,6 @@
           "id": "group:deliver",
           "label": "Create and review",
           "members": [
-            "assemble",
             "review",
             "publish"
           ]
@@ -39,41 +38,37 @@
     }
   },
   "layout": {
-    "assemble": {
-      "x": 494,
-      "y": 132
-    },
     "context": {
       "x": 87,
-      "y": 170
+      "y": 132
     },
     "follow_up": {
       "x": 924,
-      "y": 523
+      "y": 485
     },
     "plan": {
       "x": 64,
-      "y": 332
+      "y": 294
     },
     "publish": {
       "x": 494,
-      "y": 590
+      "y": 418
     },
     "remember": {
       "x": 947,
-      "y": 199
+      "y": 161
     },
     "review": {
       "x": 515,
-      "y": 400
+      "y": 228
     },
     "team": {
       "x": 75,
-      "y": 600
+      "y": 562
     },
     "wake": {
       "x": 947,
-      "y": 361
+      "y": 323
     }
   }
 }

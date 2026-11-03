@@ -1,0 +1,8 @@
+{
+  "request": "Put the red cube and the yellow cube inside the tray. Keep the blue cube where it is.",
+  "goals": [
+    {"object": "red", "kind": "in_tray", "target": "blue"},
+    {"object": "yellow", "kind": "in_tray", "target": "blue"},
+    {"object": "blue", "kind": "unchanged", "target": "blue"}
+  ]
+}

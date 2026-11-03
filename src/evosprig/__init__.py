@@ -1,3 +1,3 @@
 """EvoSprig: a small runtime for portable agent specifications."""
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"

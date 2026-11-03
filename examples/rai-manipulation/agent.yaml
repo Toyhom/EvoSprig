@@ -1,0 +1,350 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 16
+  max_output_tokens: 1200
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 100
+  max_total_tokens: 40000
+  timeout_seconds: 900.0
+graph:
+  edges:
+  - source: manipulate
+    target: check
+    when: null
+  - source: start
+    target: manipulate
+    when: null
+  entry: start
+  nodes:
+    check:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        episode:
+          default: null
+          optional: false
+          ref: nodes.start.output.episode
+        goals:
+          default: null
+          optional: false
+          ref: input.goals
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: check
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    manipulate:
+      body:
+        edges:
+        - source: decide
+          target: act
+          when: null
+        - source: observe
+          target: decide
+          when: null
+        entry: observe
+        nodes:
+          act:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              action:
+                default: null
+                optional: false
+                ref: nodes.decide.output.action
+              episode:
+                default: null
+                optional: false
+                ref: input.episode
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: act
+            tool_errors: raise
+            tools: []
+            type: tool
+            until: null
+          decide:
+            body: null
+            branches: {}
+            condition: null
+            image_inputs:
+            - images
+            inputs:
+              images:
+                default: null
+                optional: false
+                ref: nodes.observe.output.images
+              last_action:
+                default: null
+                optional: false
+                ref: input.last_action
+              objects:
+                default: null
+                optional: false
+                ref: nodes.observe.output.objects
+              request:
+                default: null
+                optional: false
+                ref: input.request
+              tray:
+                default: null
+                optional: false
+                ref: nodes.observe.output.tray
+            instructions:
+              resource: controller
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            max_output_retries: 2
+            max_output_tokens: 1200
+            model: controller
+            output_errors: feedback
+            output_schema:
+              additionalProperties: false
+              properties:
+                action:
+                  additionalProperties: false
+                  properties:
+                    kind:
+                      enum:
+                      - move
+                      - finish
+                    object:
+                      enum:
+                      - red
+                      - blue
+                      - yellow
+                    position:
+                      items:
+                        type: number
+                      maxItems: 3
+                      minItems: 3
+                      type: array
+                  required:
+                  - kind
+                  - object
+                  - position
+                  type: object
+                reasoning:
+                  minLength: 1
+                  type: string
+              required:
+              - action
+              - reasoning
+              type: object
+            response_format: json
+            skills:
+            - manipulation
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: model
+            until: null
+          observe:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              episode:
+                default: null
+                optional: false
+                ref: input.episode
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: observe
+            tool_errors: raise
+            tools: []
+            type: tool
+            until: null
+        output:
+          episode:
+            default: null
+            optional: false
+            ref: input.episode
+          kind:
+            default: null
+            optional: false
+            ref: nodes.decide.output.action.kind
+          last_action:
+            default: null
+            optional: false
+            ref: nodes.act.output
+          request:
+            default: null
+            optional: false
+            ref: input.request
+      branches: {}
+      condition: null
+      inputs:
+        episode:
+          default: null
+          optional: false
+          ref: nodes.start.output.episode
+        last_action:
+          value: {}
+        request:
+          default: null
+          optional: false
+          ref: input.request
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 8
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: loop
+      until:
+        left:
+          default: null
+          optional: false
+          ref: input.kind
+        op: eq
+        right:
+          value: finish
+    start:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        scene:
+          value: tabletop
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: start
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+  output:
+    episode:
+      default: null
+      optional: false
+      ref: nodes.start.output.episode
+    last_action:
+      default: null
+      optional: false
+      ref: nodes.manipulate.output.last_action
+    result:
+      default: null
+      optional: false
+      ref: nodes.check.output
+id: rai-manipulation
+input_schema:
+  additionalProperties: false
+  properties:
+    goals:
+      items:
+        additionalProperties: false
+        properties:
+          kind:
+            enum:
+            - in_tray
+            - 'on'
+            - unchanged
+          object:
+            enum:
+            - red
+            - blue
+            - yellow
+          target:
+            enum:
+            - red
+            - blue
+            - yellow
+        required:
+        - object
+        - kind
+        - target
+        type: object
+      minItems: 1
+      type: array
+    request:
+      minLength: 1
+      type: string
+  required:
+  - request
+  - goals
+  type: object
+models:
+  controller:
+    binding: vision
+    requires:
+    - vision
+    - structured_output
+    - text
+output_schema:
+  additionalProperties: false
+  properties:
+    episode:
+      minLength: 1
+      type: string
+    last_action:
+      type: object
+    result:
+      type: object
+  required:
+  - result
+  - episode
+  - last_action
+  type: object
+resources:
+  controller:
+    path: prompts/controller.md
+    role: prompt
+  manipulation:
+    path: skills/manipulation.md
+    role: skill
+spec_version: '0.3'
+tools:
+  act:
+    plugin: robot.act
+    version: '1'
+  check:
+    plugin: robot.check
+    version: '1'
+  observe:
+    plugin: robot.observe
+    version: '1'
+  start:
+    plugin: robot.start
+    version: '1'

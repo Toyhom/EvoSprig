@@ -2,7 +2,7 @@
 <rect width="960" height="270" rx="18" fill="#fafafa"/>
 <rect x="1" y="1" width="958" height="268" rx="17" fill="none" stroke="#e4e4e7"/>
 <g transform="translate(60 54)" fill="none" stroke="#292b30" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 66V27M22 48C3 48 1 32 4 20c18 1 23 12 18 28M22 34C44 33 48 16 44 4 27 8 20 20 22 34"/></g>
-<g font-family="Inter,Segoe UI,Arial,sans-serif" fill="#202126"><text x="126" y="108" font-size="48" font-weight="700" letter-spacing="-2">EvoSprig</text><text x="62" y="155" font-size="22" fill="#62646c">Build self-evolving agents. Improve prompts and skills.</text></g>
+<g font-family="Inter,Segoe UI,Arial,sans-serif" fill="#202126"><text x="126" y="108" font-size="48" font-weight="700" letter-spacing="-2">EvoSprig</text><text x="62" y="155" font-size="22" fill="#62646c">Build agents. Turn experience into better behavior.</text></g>
 <path d="M136 214H824" stroke="#d4d4d8" stroke-width="1.5"/>
 <g font-family="Inter,Segoe UI,Arial,sans-serif" text-anchor="middle" font-size="14" font-weight="600">
 <rect x="62" y="194" width="142" height="40" rx="8" fill="white" stroke="#d4d4d8"/><text x="133" y="219" fill="#3f3f46">Build</text>

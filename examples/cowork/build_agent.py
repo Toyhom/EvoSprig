@@ -21,15 +21,15 @@ TASK = obj(role=TEXT, task=TEXT, document=TEXT)
 PLAN = obj(title=TEXT, tasks={"type": "array", "items": TASK, "minItems": 1, "maxItems": 6})
 
 
-def build():
+def build(*, rsi=False):
     b = Builder(
-        "cowork",
+        "cowork-rsi" if rsi else "cowork",
         obj(request=TEXT),
         obj(report={"type": "object"}, team={"type": "object"}, follow_up=TEXT),
         spec_version="0.3",
     )
     b.model("main", "main", ["text", "tool_calling", "structured_output"])
-    for name in ["plan", "specialist", "editor", "follow_up"]:
+    for name in ["plan", "specialist", "editor", "follow_up", "acceptance"]:
         b.resource(name, "prompts/" + name + ".md")
     b.skill("collaboration", "prompts/collaboration.md")
     for name in ["list", "read", "write", "history", "wait"]:
@@ -113,26 +113,67 @@ def build():
         max_items=6,
         output_schema={"type": "object"},
     )
+    # Main reviews each wave and can delegate targeted follow-up assignments.
+    dispatch = b.data["graph"]["nodes"].pop("team")
+    dispatch["items"] = {"ref": "input.tasks"}
+    dispatch["inputs"] = {"request": {"ref": "input.request"}}
+    verdict = obj(
+        content=TEXT,
+        accepted={"type": "boolean"},
+        tasks={"type": "array", "items": TASK, "maxItems": 6},
+    )
+    verdict["allOf"] = [
+        {
+            "if": {"properties": {"accepted": {"const": False}}},
+            "then": {"properties": {"tasks": {"minItems": 1}}},
+            "else": {"properties": {"tasks": {"maxItems": 0}}},
+        }
+    ]
     b.node(
-        "assemble",
-        "agent",
-        model="main",
-        instructions="Read each completed team document. Produce a concise decision-ready Markdown report with actions, owners, dates and the supplied numbers. Include links to workspace document names. Return JSON with content.",
-        skills=["collaboration"],
-        tools=["read", "list"],
-        parallel_tool_calls=True,
-        tool_errors="feedback",
-        max_tool_rounds=10,
-        response_format="json",
-        output_errors="feedback",
-        inputs={"request": {"ref": "input.request"}, "team": {"ref": "nodes.team.output"}},
-        output_schema=obj(content=TEXT),
+        "team",
+        "loop",
+        inputs={"request": {"ref": "input.request"}, "tasks": {"ref": "nodes.plan.output.tasks"}},
+        max_iterations=3,
+        until={"left": {"ref": "input.accepted"}, "op": "truthy"},
+        body={
+            "entry": "dispatch",
+            "nodes": {
+                "dispatch": dispatch,
+                "acceptance": {
+                    "type": "agent",
+                    "model": "main",
+                    "instructions": {"resource": "acceptance"},
+                    "skills": ["collaboration"],
+                    "tools": ["read", "list"],
+                    "parallel_tool_calls": True,
+                    "tool_errors": "feedback",
+                    "max_tool_rounds": 10,
+                    "response_format": "json",
+                    "output_errors": "feedback",
+                    "max_output_retries": 2,
+                    "inputs": {
+                        "request": {"ref": "input.request"},
+                        "wave": {"ref": "nodes.dispatch.output"},
+                    },
+                    "output_schema": verdict,
+                },
+            },
+            "edges": [{"source": "dispatch", "target": "acceptance"}],
+            "output": {
+                "request": {"ref": "input.request"},
+                "tasks": {"ref": "nodes.acceptance.output.tasks"},
+                "accepted": {"ref": "nodes.acceptance.output.accepted"},
+                "content": {"ref": "nodes.acceptance.output.content"},
+                "last_wave": {"ref": "nodes.dispatch.output"},
+            },
+        },
+        output_schema={"type": "object"},
     )
     b.node(
         "review",
         "human",
         inputs={
-            "draft": {"ref": "nodes.assemble.output.content"},
+            "draft": {"ref": "nodes.team.output.content"},
             "team": {"ref": "nodes.team.output"},
         },
         output_schema=obj(content=TEXT),
@@ -195,13 +236,43 @@ def build():
         "context",
         "plan",
         "team",
-        "assemble",
         "review",
         "publish",
         "remember",
         "wake",
         "follow_up",
     ]
+    if rsi:
+        b.node(
+            "lessons",
+            "tool",
+            tool="memory_search",
+            inputs={"query": {"ref": "input.request"}, "limit": {"value": 5}},
+            output_schema={"type": "object"},
+        )
+        seq.insert(seq.index("plan"), "lessons")
+        b.data["graph"]["nodes"]["plan"]["inputs"]["lessons"] = {"ref": "nodes.lessons.output"}
+        b.resource("retrospective", "prompts/retrospective.md")
+        b.node(
+            "retrospective",
+            "model",
+            model="main",
+            instructions={"resource": "retrospective"},
+            response_format="json",
+            output_errors="feedback",
+            max_output_retries=2,
+            inputs={
+                "request": {"ref": "input.request"},
+                "team_review": {"ref": "nodes.team.output"},
+                "approved_document": {"ref": "nodes.review.output.content"},
+            },
+            output_schema=obj(memory=TEXT),
+            max_output_tokens=1200,
+        )
+        seq.insert(seq.index("remember"), "retrospective")
+        b.data["graph"]["nodes"]["remember"]["inputs"]["content"] = {
+            "ref": "nodes.retrospective.output.memory"
+        }
     for left, right in zip(seq, seq[1:]):
         b.edge(left, right)
     b.output(
@@ -211,9 +282,9 @@ def build():
     )
     b.execution(
         allow_side_effects=True,
-        max_steps=240,
-        max_model_calls=64,
-        max_total_tokens=300000,
+        max_steps=640,
+        max_model_calls=128,
+        max_total_tokens=500000,
         max_output_tokens=4096,
         max_parallel_nodes=3,
         max_parallel_tools=3,
@@ -224,3 +295,4 @@ def build():
 
 if __name__ == "__main__":
     save_spec(build(), Path(__file__).with_name("agent.yaml"))
+    save_spec(build(rsi=True), Path(__file__).with_name("rsi-agent.yaml"))

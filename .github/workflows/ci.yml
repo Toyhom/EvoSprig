@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.lock
       - run: python -m pip install --no-deps -e .
-      - run: ruff check src tests examples scripts apps/media-service
+      - run: ruff check src tests examples scripts apps/media-service apps/robot-service
       - run: pytest -q
       - run: python -m build
       - run: python scripts/release/audit.py --artifacts dist --git-history
@@ -55,3 +55,12 @@ jobs:
         working-directory: apps/toolbox
       - run: npm test
         working-directory: apps/toolbox
+  robot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --only-binary=:all: -r apps/robot-service/requirements.txt pytest==8.4.2
+      - run: python -m pytest apps/robot-service/tests -q -c /dev/null

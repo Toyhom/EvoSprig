@@ -1,0 +1,133 @@
+models:
+  vision:
+    base_url: https://api.moonshot.cn/v1
+    model: kimi-k3.1-pro
+    api_key_env: MOONSHOT_API_KEY
+    capabilities:
+    - text
+    - vision
+    - structured_output
+    timeout_seconds: 180
+    token_limit_field: max_completion_tokens
+    send_sampling_parameters: false
+    options:
+      reasoning_effort: low
+tools:
+  robot.start:
+    kind: http
+    name: robot.start
+    description: Create a Franka tabletop scene
+    endpoint: http://127.0.0.1:18890/start
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        scene:
+          const: tabletop
+      required:
+      - scene
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: write
+    idempotent: true
+    timeout_seconds: 90
+  robot.observe:
+    kind: http
+    name: robot.observe
+    description: Read camera and object poses
+    endpoint: http://127.0.0.1:18890/observe
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        episode: &id001
+          type: string
+          minLength: 1
+      required:
+      - episode
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: read_only
+    idempotent: false
+    timeout_seconds: 90
+  robot.act:
+    kind: http
+    name: robot.act
+    description: Move one cube or finish
+    endpoint: http://127.0.0.1:18890/act
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        episode: *id001
+        action:
+          type: object
+          properties:
+            kind:
+              enum:
+              - move
+              - finish
+            object: &id002
+              enum:
+              - red
+              - blue
+              - yellow
+            position:
+              type: array
+              items:
+                type: number
+              minItems: 3
+              maxItems: 3
+          required:
+          - kind
+          - object
+          - position
+          additionalProperties: false
+      required:
+      - episode
+      - action
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: write
+    idempotent: true
+    timeout_seconds: 90
+  robot.check:
+    kind: http
+    name: robot.check
+    description: Check the final physical state
+    endpoint: http://127.0.0.1:18890/check
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        episode: *id001
+        goals:
+          type: array
+          items:
+            type: object
+            properties:
+              object: *id002
+              kind:
+                enum:
+                - in_tray
+                - 'on'
+                - unchanged
+              target: *id002
+            required:
+            - object
+            - kind
+            - target
+            additionalProperties: false
+          minItems: 1
+      required:
+      - episode
+      - goals
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: read_only
+    idempotent: false
+    timeout_seconds: 90

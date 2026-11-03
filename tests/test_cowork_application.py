@@ -3,14 +3,18 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from evosprig.config import make_tools
 from evosprig.core.journal import Scope
+from evosprig.core.memory import MemoryScope
 from evosprig.core.protocols import ModelResponse, ToolCall
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import load_spec
 from evosprig.core.version import compile_agent
 from evosprig.plugins.mock import MockProvider
 from evosprig.plugins.sqlite_journal import SQLiteJournal
+from evosprig.plugins.sqlite_memory import SQLiteMemory
 from evosprig.plugins.workspace_tools import WorkspaceStore
 
 
@@ -64,8 +68,14 @@ class OfficeModel(MockProvider):
                     }
                 )
             )
+        if "Extract a reusable lesson" in prompt:
+            return ModelResponse(
+                text=json.dumps({"memory": "Keep the agreed launch date in every document."})
+            )
         if "Read each completed team document" in prompt:
-            return ModelResponse(text=json.dumps({"content": "Draft brief"}))
+            return ModelResponse(
+                text=json.dumps({"content": "Draft brief", "accepted": True, "tasks": []})
+            )
         if request.messages[-1]["role"] != "tool":
             return ModelResponse(
                 tool_calls=(ToolCall("read", "read", {"name": "deliverables/brief.md"}),)
@@ -73,9 +83,10 @@ class OfficeModel(MockProvider):
         return ModelResponse(text="Next: " + json.loads(request.messages[-1]["content"])["content"])
 
 
-async def test_native_cowork_resumes_and_reads_human_edits(tmp_path, monkeypatch):
+@pytest.mark.parametrize("file", ["agent.yaml", "rsi-agent.yaml"])
+async def test_native_cowork_resumes_and_reads_human_edits(tmp_path, monkeypatch, file):
     root = Path(__file__).resolve().parents[1] / "examples/cowork"
-    spec = load_spec(root / "agent.yaml")
+    spec = load_spec(root / file)
     version = compile_agent(spec, root)
     scope = Scope(spec.id)
     model = OfficeModel()
@@ -95,6 +106,11 @@ async def test_native_cowork_resumes_and_reads_human_edits(tmp_path, monkeypatch
     journal.respond(run.run_id, run.waiting[0]["path"], {"content": "User-approved launch plan"})
     run = await runtime().resume(run.run_id)
     assert run.status == "waiting_external", run.error
+    if file == "rsi-agent.yaml":
+        lessons = SQLiteMemory(tmp_path / "memory.sqlite").search(
+            MemoryScope(scope), "agreed launch date"
+        )
+        assert any("Keep the agreed launch date" in item["content"] for item in lessons)
     store = WorkspaceStore(tmp_path / "documents.sqlite")
     item = store.read(scope, "deliverables/brief.md")
     store.write(
@@ -115,3 +131,46 @@ async def test_native_cowork_resumes_and_reads_human_edits(tmp_path, monkeypatch
     before = len(model.requests)
     assert (await runtime().resume(run.run_id)).status == "succeeded"
     assert len(model.requests) == before
+
+
+async def test_main_redelegates_only_rejected_work(tmp_path):
+    class ReviewingModel(OfficeModel):
+        waves = 0
+
+        async def complete(self, request):
+            if "Read each completed team document" in request.messages[0]["content"]:
+                self.waves += 1
+                if self.waves == 1:
+                    return ModelResponse(
+                        text=json.dumps(
+                            {
+                                "content": "Budget needs correction",
+                                "accepted": False,
+                                "tasks": [
+                                    {
+                                        "role": "Analyst",
+                                        "task": "Fix the total",
+                                        "document": "team/budget.md",
+                                    }
+                                ],
+                            }
+                        )
+                    )
+            return await super().complete(request)
+
+    root = Path(__file__).resolve().parents[1] / "examples/cowork"
+    spec = load_spec(root / "agent.yaml")
+    model = ReviewingModel()
+    scope = Scope(spec.id)
+    result = await Runtime(
+        {"main": model},
+        make_tools(tmp_path, scope),
+        allow_writes=True,
+        journal=SQLiteJournal(tmp_path / "runs.sqlite"),
+    ).run(compile_agent(spec, root), {"request": "Prepare a budget and email"})
+    assert result.status == "waiting_input", result.error
+    assert model.waves == 2
+    store = WorkspaceStore(tmp_path / "documents.sqlite")
+    assert store.read(scope, "team/budget.md")["revision"] == 2
+    assert store.read(scope, "team/email.md")["revision"] == 1
+    assert result.waiting[0]["input"]["team"]["accepted"] is True
