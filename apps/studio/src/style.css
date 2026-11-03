@@ -1,5 +1,7 @@
+@import url('/fonts/fonts.css');
+
 :root {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  font-family: "Manrope", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #202124;
   background: #fff;
   font-synthesis: none;
@@ -162,14 +164,14 @@ h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.2px; overfl
 .inspector-empty strong { color: #62646d; font-size: 12px; font-weight: 500; }
 .inspector-empty p { color: #737680; font-size: 12px; line-height: 1.7; margin: 8px 0; }
 .inspector > select { width: 100%; }
-.node-json { height: 150px; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.node-json { height: 150px; font: 12px/1.6 "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace; }
 .divider { height: 1px; background: var(--border); margin: 24px 0; }
 .section-label { color: #64666e; font-size: 12px; font-weight: 500; }
 .input-heading { display: flex; align-items: center; gap: 8px; }
 .run { width: 100%; margin-top: 10px; }
 .hint { color: #737680; font-size: 11px; line-height: 1.8; }
 .muted { color: var(--muted); font-size: 13px; line-height: 1.8; }
-.source-editor { border: 0; border-radius: 0; width: 100%; height: 100%; margin: 0; padding: 24px; font: 12px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace; resize: none; background: #fcfcfd; }
+.source-editor { border: 0; border-radius: 0; width: 100%; height: 100%; margin: 0; padding: 24px; font: 12px/1.8 "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace; resize: none; background: #fcfcfd; }
 .code-view { overflow: auto; white-space: pre; }
 .results { padding: 21px 26px; background: #fff; min-height: 140px; }
 .results-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: #595b64; }
@@ -200,9 +202,9 @@ footer { display: flex; align-items: center; justify-content: space-between; gap
 .inline-form input { flex: 1; min-width: 120px; }
 .inline-form button { flex-shrink: 0; }
 .panel-empty { color: #8a8c94; font-size: 13px; line-height: 1.8; padding: 22px 0; }
-.resource-editor, .suite-editor { width: 100%; min-height: 220px; font: 12px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace; background: #fcfcfd; }
+.resource-editor, .suite-editor { width: 100%; min-height: 220px; font: 12px/1.8 "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace; background: #fcfcfd; }
 .suite-editor { min-height: 280px; margin: 14px 0; }
-.mono { font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.mono { font: 12px/1.7 "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace; }
 .record { padding: 16px 0; border-top: 1px solid #ededf0; overflow-wrap: anywhere; }
 .record p { font-size: 13px; line-height: 1.7; margin: 3px 0 10px; }
 .record small { display: block; color: #8a8c94; font-size: 11px; margin: 8px 0; }
@@ -215,8 +217,8 @@ footer { display: flex; align-items: center; justify-content: space-between; gap
 .history-list strong { font-size: 12px; font-weight: 500; }
 .history-list small { display: block; font-size: 11px; color: #737680; }
 .history-list .selected-record { border-color: #dcdde2; background: #f0f0f3; }
-.metrics { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: #7e8089; font: 12px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace; margin: 16px 0; }
-.json-block { font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 440px; overflow: auto; background: #f8f8fa; border: 1px solid #eeeef1; border-radius: 6px; padding: 15px; color: #555964; }
+.metrics { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: #7e8089; font: 12px/1.8 "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace; margin: 16px 0; }
+.json-block { font: 12px/1.7 "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 440px; overflow: auto; background: #f8f8fa; border: 1px solid #eeeef1; border-radius: 6px; padding: 15px; color: #555964; }
 .panel details { margin: 16px 0; }
 .check { display: flex; align-items: center; gap: 8px; line-height: 1.5; }
 .check input { width: auto !important; flex: 0 0 auto; margin: 0; }
@@ -339,7 +341,7 @@ th { background: #fafafa; color: #767983; font-size: 11px; font-weight: 500; }
 .always-dot { width:4px; height:4px; border-radius:50%; background:#9f8cb0; }
 .kind-transform { background:#fafbfc; border-radius:7px; box-shadow:none; }
 .kind-transform .node-symbol { background:#eef0f3; }
-.kind-transform .node-summary { height:18px; margin:7px 16px 0 61px; font-family:ui-monospace,monospace; font-size:10px; }
+.kind-transform .node-summary { height:18px; margin:7px 16px 0 61px; font-family:"IBM Plex Mono", ui-monospace,monospace; font-size:10px; }
 .kind-join { border-radius:32px; box-shadow:none; }
 .kind-join .workflow-node-heading { padding:12px 17px; }
 .kind-join .node-symbol { background:transparent; width:24px; }
@@ -411,3 +413,16 @@ th { background: #fafafa; color: #767983; font-size: 11px; font-weight: 500; }
 .media-grid figcaption { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; font-size: 11px; }
 .media-grid figcaption span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .media-grid figcaption a { flex-shrink: 0; }
+
+/* Titles, reading text and identifiers have separate typographic roles. */
+:root { --font-title: "Plus Jakarta Sans", "Noto Sans SC", sans-serif; --font-code: "IBM Plex Mono", ui-monospace, monospace; }
+h1,h2,h3,.brand,.workflow-node-heading strong,.group-heading strong { font-family:var(--font-title); }
+.brand { font-weight:750; letter-spacing:-.65px; }
+.workflow-node-heading strong { font-weight:650; font-size:13px; letter-spacing:-.25px; }
+.node-type { font-size:9px; font-weight:600; letter-spacing:.9px; color:#707986; }
+.node-summary { color:#596575; letter-spacing:.03px; }
+.node-meta { font-family:var(--font-code); font-size:8.5px; color:#727e8d; }
+.group-heading strong { font-weight:650; letter-spacing:-.15px; }
+.kind-transform .node-summary { font-family:var(--font-code); }
+.node-skills>span { font-size:9px; font-weight:500; }
+.project.active .project-name { font-weight:650; }

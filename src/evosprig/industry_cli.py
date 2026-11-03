@@ -119,6 +119,15 @@ def synthesis_project(out, *, template_root, scene):
         ("api", "SOP_API_Generation"),
         ("implementation", "SOP_API_Function_Code"),
     ]
+    objectives = {
+        "context": "Define the business setting, participants and operating constraints.",
+        "schema": "Design the records, fields, relationships and business states.",
+        "sop": "Write the decision rules, operating steps and approval paths.",
+        "api_graph": "Connect business operations with their dependencies and preconditions.",
+        "dataset": "Create records that exercise the procedures and decision branches.",
+        "api": "Specify callable tools, argument schemas and expected results.",
+        "implementation": "Draft the tool implementations with explicit state transitions.",
+    }
     templates = Path(template_root).resolve()
     if scene not in {
         "loan",
@@ -143,6 +152,7 @@ def synthesis_project(out, *, template_root, scene):
             )
         prompts[name] = (
             (
+                objectives[name] + "\n\n"
                 "The task input contains the requested scenario and outputs from earlier stages. "
                 "Resolve template placeholders using those fields; retain explicit business constraints.\n\n"
                 + "\n\n".join(text_parts)

@@ -12,7 +12,7 @@ An EvoSprig reproduction of [CoworkOS](https://github.com/RUC-NLPIR/CoworkOS): g
 
 ![A customer invitation drafted by the team](assets/document.png)
 
-The team turns the brief into a budget analysis, launch plan, customer email and final decision brief. You can edit any document, inspect earlier revisions and download the result. A scheduled follow-up reads the latest edits before recommending the next actions.
+Conversations sit on the left, the working session in the center, and the team and its documents on the right. The team creates a budget analysis, launch plan, customer email and final decision brief. Open a document to edit it, inspect revisions or download the result. A scheduled follow-up reads your latest edits before recommending next actions.
 
 ## Try it
 
@@ -23,7 +23,7 @@ evosprig serve --project examples/cowork/agent.yaml \
   --studio-dir apps/cowork --workspace .evosprig/cowork
 ```
 
-Open **http://127.0.0.1:18766**, paste your request and start the team. The [sample brief](request.json) includes a pilot budget, customer funnel, owners and dates. Review or edit the final brief, then choose **Save and continue**.
+Open **http://127.0.0.1:18766**, paste your request and start the team. The [sample brief](request.json) includes a pilot budget, customer funnel, owners and dates. Review or edit the final brief, then choose **Save and continue**. Switch between light and dark themes in the top bar; collapse either side panel to focus on the work.
 
 For the workflow editor, replace `--studio-dir apps/cowork` with `--studio-dir apps/studio/dist`.
 

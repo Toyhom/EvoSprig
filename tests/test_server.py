@@ -50,6 +50,7 @@ async def test_api_edit_run_events_export_and_conflict(app, spec):
                 break
             await asyncio.sleep(0.01)
         assert result["status"] == "succeeded"
+        assert result["input"] == {"question": "hi"}
         events = await client.get(f"/api/runs/{run_id}/events", headers={"Last-Event-ID": "2"})
         assert "id: 1\n" not in events.text
         assert "id: 3\n" in events.text

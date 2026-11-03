@@ -16,6 +16,7 @@
 
 ## News · 项目动态
 
+- **2026-11-03 · v0.1.6** · Cowork 三栏工作台、[行业环境构造与评估指南](docs/industry-environments.md)，以及四个重点应用展示。
 - **2026-11-03 · v0.1.5** · 新增 [RAI manipulation (EvoSprig)](examples/rai-manipulation/) 多模态机器人操纵；Cowork 加入验收与定向返工，并提供 [CoworkRSI](examples/cowork/#coworkrsi) 自进化入口。
 - **2026-11-03** · 上线 [CoworkOS (EvoSprig)](examples/cowork/)：专家协作、共享文档、定时跟进；[VideoClaw (EvoSprig)](examples/video-studio/)新增三部短片；支持通过[插件接入自进化算法](docs/optimizer-plugins.md)。
 - **2026-11-02** · EvoSprig 开源：代码与画布开发、可控自进化、持久记忆、独立导出；支持 **14 种策略、12 个方法家族**。
@@ -26,16 +27,23 @@
 
 ## 你可以开发什么？
 
-<table><tr>
-<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)：月球花园、最后的图书馆、云上面包房" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>从故事想法到一部短片。</td>
-<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS (EvoSprig)：团队协作完成上线计划" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS (EvoSprig)</a></b><br>会规划、写作并与你协作的智能体团队。</td>
-</tr></table>
+<table>
+<tr>
+<td width="50%" valign="top"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>从一句故事到一部短片。<br><sub>原项目：<a href="https://github.com/HITsz-TMG/VideoClaw">VideoClaw</a></sub></td>
+<td width="50%" valign="top"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS (EvoSprig)" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS (EvoSprig)</a></b><br>与专家团队一起完成项目。<br><sub>原项目：<a href="https://github.com/RUC-NLPIR/CoworkOS">CoworkOS</a></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="examples/rai-manipulation/"><img src="examples/rai-manipulation/assets/sorting.webp" alt="RAI manipulation (EvoSprig)" width="100%" /></a><br><b><a href="examples/rai-manipulation/">RAI manipulation (EvoSprig)</a></b><br>看见场景，操纵机械臂，检查结果。<br><sub>原项目：<a href="https://github.com/RobotecAI/rai">RAI</a></sub></td>
+<td width="50%" valign="top"><a href="examples/industry-environment-builder/"><img src="examples/industry-environment-builder/assets/overview.svg" alt="行业环境构造" width="100%" /></a><br><b><a href="examples/industry-environment-builder/">行业环境构造</a></b><br>构造业务世界，让行业智能体在其中学习。<br><sub><a href="docs/industry-environments.md">行业环境指南</a></sub></td>
+</tr>
+</table>
 
 | 想做什么 | 从这里开始 |
 | --- | --- |
-| 把故事拍成短片 | [VideoClaw (EvoSprig)](examples/video-studio/)：角色、分镜和成片 |
-| 与智能体团队一起完成项目 | [CoworkOS (EvoSprig)](examples/cowork/)：任务分工、共享文档和后续跟进 |
-| 看懂场景并操纵机械臂 | [RAI manipulation (EvoSprig)](examples/rai-manipulation/)：视觉规划、抓取放置和任务检查 |
+| 把故事拍成短片 | [VideoClaw (EvoSprig)](examples/video-studio/)：角色、分镜和成片（[VideoClaw 原项目](https://github.com/HITsz-TMG/VideoClaw)） |
+| 与智能体团队一起完成项目 | [CoworkOS (EvoSprig)](examples/cowork/)：任务分工、共享文档和后续跟进（[CoworkOS 原项目](https://github.com/RUC-NLPIR/CoworkOS)） |
+| 看懂场景并操纵机械臂 | [RAI manipulation (EvoSprig)](examples/rai-manipulation/)：视觉规划、抓取放置和任务检查（[RAI 原项目](https://github.com/RobotecAI/rai)） |
+| 构造业务模拟环境并改进行业智能体 | **[行业环境构造](examples/industry-environment-builder/)** — 业务规则、工具、数据与状态评估 |
 | 准备求职材料并练习面试 | [求职教练](examples/career-coach/)：岗位匹配、简历要点和练习反馈 |
 | 把一份公告改写成多个渠道的内容 | [内容工作室](examples/content-studio/)：并行写作、共享文风和事实核对技能 |
 | 讲解知识并根据回答安排练习 | [学习教练](examples/study-coach/)：课程、互动练习与针对性反馈 |
@@ -55,7 +63,7 @@
 - **可控自进化**：14 种无需模型训练的策略，覆盖 12 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
 - **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
 - **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核，以及多层分组、折叠展开和子流程编辑。
-- **行业环境接入**：金融、政务与制造业沙箱，用真实业务状态检查评估操作结果，再接入自进化；也可构建带人工审核的行业环境设计流程。[使用方法](docs/industry-environments.md)。
+- **连同业务环境一起构建**：从金融、政务或制造业场景生成数据结构、SOP、工具与数据草稿，将验证后的业务沙箱接入评估和自进化。[使用方法](docs/industry-environments.md)。
 - **可用的长期记忆**：作用域隔离、混合检索、上下文块、时序关系、关联经验和保留来源的摘要。
 - **面向实际工作的工具**：视觉输入、HTTP、MCP、SQL 与 Python 插件，可选代码执行、浏览器和 OCR 服务，以及只读并发与错误反馈。
 - **恢复和独立部署**：持久检查点、外部任务回执、版本比较与回滚；导出 Python、HTTP 服务或容器构建工程。
@@ -64,7 +72,6 @@
 
 <img src="docs/assets/architecture.svg" alt="EvoSprig 框架架构" width="100%" />
 
-[下载可编辑架构图 PPT](docs/assets/architecture.pptx)。
 
 ## 快速开始
 

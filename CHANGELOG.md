@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Redesign the Cowork workbench around conversations, team activity and shared outputs, with light/dark themes and mobile panels.
+- Bundle open-licensed typefaces for Studio and Cowork; refresh the architecture and capability diagrams.
+- Feature video, team collaboration, robot manipulation and industry environments on the homepage and application gallery.
+- Expand the industry environment construction, evaluation and evolution guides.
+
 ## 0.1.5
 
 - Add RAI tabletop manipulation: a visual controller, Franka simulation tools, durable action receipts and independent physical goal checks.

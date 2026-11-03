@@ -4,3 +4,7 @@ Copyright 2026 EvoSprig contributors
 Robot simulation media uses Franka Panda assets distributed with Bullet Physics
 under Apache-2.0:
 https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_data/franka_panda
+
+Interface webfonts: Manrope, Plus Jakarta Sans, IBM Plex Mono and Noto Sans SC,
+under the SIL Open Font License 1.1. Copyright notices and licenses are included
+with the fonts in apps/studio/public/fonts and apps/cowork/fonts.

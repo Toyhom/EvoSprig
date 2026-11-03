@@ -346,6 +346,7 @@ def create_app(
             "run_id": run_id,
             "project_id": record["scope"]["project"],
             "agent_version": record["version"]["version_id"],
+            "input": record["input"],
             "status": record["status"],
             "output": checkpoint["output"],
             "error": checkpoint["error"],

@@ -16,6 +16,7 @@
 
 ## News
 
+- **2026-11-03 · v0.1.6** · A new Cowork workbench, expanded [industry environment guide](docs/industry-environments.md), and four featured applications.
 - **2026-11-03 · v0.1.5** · [RAI manipulation (EvoSprig)](examples/rai-manipulation/) brings visual robot control. Cowork reviews team outputs and assigns corrections; [CoworkRSI](examples/cowork/#coworkrsi) adds experience memory and self-evolution.
 - **2026-11-03** · [CoworkOS (EvoSprig)](examples/cowork/) brings specialist teams, shared documents and scheduled follow-ups. [VideoClaw (EvoSprig)](examples/video-studio/) adds three new short films. [Custom optimizers](docs/optimizer-plugins.md) can plug into the evaluation and version pipeline.
 - **2026-11-02** · EvoSprig is open source: Python and canvas authoring, self-evolution, persistent memory and standalone export. **14 strategies across 12 method families.**
@@ -28,16 +29,21 @@ Build agents with Python or a visual canvas, then improve their behavior automat
 
 <table>
 <tr>
-<td width="50%"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig): Moon Garden, The Last Library and Cloud Bakery" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>A story idea becomes a short film.</td>
-<td width="50%"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS (EvoSprig): a team creates a launch pack" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS (EvoSprig)</a></b><br>A team that plans, writes and works with you.</td>
+<td width="50%" valign="top"><a href="examples/video-studio/"><img src="examples/video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)" width="100%" /></a><br><b><a href="examples/video-studio/">VideoClaw (EvoSprig)</a></b><br>A story idea becomes a short film.<br><sub>Original: <a href="https://github.com/HITsz-TMG/VideoClaw">VideoClaw</a></sub></td>
+<td width="50%" valign="top"><a href="examples/cowork/"><img src="examples/cowork/assets/workspace.png" alt="CoworkOS (EvoSprig)" width="100%" /></a><br><b><a href="examples/cowork/">CoworkOS (EvoSprig)</a></b><br>A team that plans, writes and works with you.<br><sub>Original: <a href="https://github.com/RUC-NLPIR/CoworkOS">CoworkOS</a></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="examples/rai-manipulation/"><img src="examples/rai-manipulation/assets/sorting.webp" alt="RAI manipulation (EvoSprig)" width="100%" /></a><br><b><a href="examples/rai-manipulation/">RAI manipulation (EvoSprig)</a></b><br>See the scene. Move the objects. Check the result.<br><sub>Original: <a href="https://github.com/RobotecAI/rai">RAI</a></sub></td>
+<td width="50%" valign="top"><a href="examples/industry-environment-builder/"><img src="examples/industry-environment-builder/assets/overview.svg" alt="Industry environment builder" width="100%" /></a><br><b><a href="examples/industry-environment-builder/">Industry environment builder</a></b><br>Build a business world for your agent to learn in.<br><sub><a href="docs/industry-environments.md">Environment guide</a></sub></td>
 </tr>
 </table>
 
 | Build an agent that… | Start here |
 | --- | --- |
-| Turns a story into a film | **[VideoClaw (EvoSprig)](examples/video-studio/)** — characters, scenes and a finished cut |
-| Works with you on a project | **[CoworkOS (EvoSprig)](examples/cowork/)** — specialist teams and shared documents |
-| Sees a scene and controls a robot arm | **[RAI manipulation (EvoSprig)](examples/rai-manipulation/)** — visual planning, pick-and-place and task checks |
+| Turns a story into a film | **[VideoClaw (EvoSprig)](examples/video-studio/)** — characters, scenes and a finished cut ([original VideoClaw](https://github.com/HITsz-TMG/VideoClaw)) |
+| Works with you on a project | **[CoworkOS (EvoSprig)](examples/cowork/)** — specialist teams and shared documents ([original CoworkOS](https://github.com/RUC-NLPIR/CoworkOS)) |
+| Sees a scene and controls a robot arm | **[RAI manipulation (EvoSprig)](examples/rai-manipulation/)** — visual planning, pick-and-place and task checks ([original RAI](https://github.com/RobotecAI/rai)) |
+| Builds a business sandbox for agent development | **[Industry environment builder](examples/industry-environment-builder/)** — procedures, tools, data and business-state checks |
 | Tailors a resume and runs interview practice | **[Career coach](examples/career-coach/)** — job fit, application materials and feedback |
 | Turns one announcement into a content campaign | **[Content studio](examples/content-studio/)** — parallel channels and shared editing skills |
 | Teaches a topic and reviews your answers | **[Study coach](examples/study-coach/)** — lessons, exercises and personal feedback |
@@ -57,7 +63,7 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 - **Self-evolving agents, under your control.** 14 training-free strategies across 12 method families: prompt search, joint instruction/demo search, populations, reflections and experience playbooks. Choose the resources, budget and release criteria.
 - **Evaluation that fits your application.** Start with task inputs and an LLM judge, or bring reference answers, business checks and a sandbox. Score outputs, steps, tools and environment outcomes.
 - **Code and canvas, one application.** Build typed workflows with parallel agents, dynamic map, loops and human approvals. Organize large teams with nested groups and edit executable subflows.
-- **Industry environments.** Connect business sandboxes for finance, government and manufacturing; evaluate real action outcomes and improve against the same environment. [Get started](docs/industry-environments.md).
+- **Build the environment as well as the agent.** Turn a finance, government or manufacturing scenario into schemas, procedures, tools and data drafts. Connect the validated business sandbox to task evaluation and self-evolution. [Get started](docs/industry-environments.md).
 - **Memory agents can use.** Scoped facts, hybrid retrieval, context blocks, temporal relations, linked experiences and source-aware summaries.
 - **Tools for real work.** Vision inputs, MCP, HTTP, SQL and Python plugins; optional code execution, browser checks and OCR; read-only concurrency and recoverable tool feedback.
 - **Run, recover and ship.** Checkpoints and external job receipts preserve progress. Export standalone Python, HTTP applications or container build projects.
@@ -66,7 +72,6 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 
 <img src="docs/assets/architecture.svg" alt="EvoSprig architecture: authoring, AgentSpec, durable runtime, tools and memory, evaluation, controlled evolution and release" width="100%" />
 
-[Download the editable architecture slide](docs/assets/architecture.pptx).
 
 ## Get started
 

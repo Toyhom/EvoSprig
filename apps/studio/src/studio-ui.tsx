@@ -64,7 +64,7 @@ const icons: Record<NodeKind, IconName> = {
 };
 export type WorkflowData = { label: string; config: NodeSpec; lang?: Lang; direction?:'RIGHT'|'DOWN'; busy?:boolean; promptPreview?:string; toolPlugins?:Record<string,{plugin:string}>; onOpen?:(path:string[])=>void };
 export type WorkflowFlowNode = Node<WorkflowData>;
-const readable=(name:string)=>name.replaceAll('_',' ').replaceAll('-',' ').replace(/^./,c=>c.toUpperCase());
+const readable=(name:string)=>name.replaceAll('_',' ').replaceAll('-',' ').replace(/^./,c=>c.toUpperCase()).replace(/\b(api|sop|ocr|sql|llm|http|mcp|json)\b/gi,word=>word.toUpperCase());
 function capabilityIcon(name:string):IconName{
   return /ocr|scan/.test(name)?'scan':/receipt|invoice|expense/.test(name)?'receipt':/python|code|build|execute/.test(name)?'terminal':/sql|database|memory|recall/.test(name)?'database':/search|browse|fetch|research/.test(name)?'globe':/video|image|render|shot/.test(name)?'film':/mail|message/.test(name)?'mail':/resume|interview|career|fit_review/.test(name)?'briefcase':/quiz|learn|lesson|teach/.test(name)?'graduate':/chapter|outline|book/.test(name)?'book':/review|check|verify/.test(name)?'check':/write|draft|editor|content/.test(name)?'pen':/travel|trip|plan|day/.test(name)?'compass':/meeting|calendar/.test(name)?'calendar':/support|customer/.test(name)?'headset':'tool';
 }

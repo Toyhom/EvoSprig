@@ -2,7 +2,16 @@
 
 Start with a working application pattern, connect your model and tools, then make it your own.
 
-[![VideoClaw (EvoSprig): three short films](video-studio/assets/gallery.png)](video-studio/)
+<table>
+<tr>
+<td width="50%" valign="top"><a href="video-studio/"><img src="video-studio/assets/gallery.png" alt="VideoClaw (EvoSprig)" width="100%" /></a><br><b><a href="video-studio/">VideoClaw (EvoSprig)</a></b><br>A story idea becomes a short film.<br><sub>Original: <a href="https://github.com/HITsz-TMG/VideoClaw">VideoClaw</a></sub></td>
+<td width="50%" valign="top"><a href="cowork/"><img src="cowork/assets/workspace.png" alt="CoworkOS (EvoSprig)" width="100%" /></a><br><b><a href="cowork/">CoworkOS (EvoSprig)</a></b><br>A team that plans, writes and works with you.<br><sub>Original: <a href="https://github.com/RUC-NLPIR/CoworkOS">CoworkOS</a></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="rai-manipulation/"><img src="rai-manipulation/assets/sorting.webp" alt="RAI manipulation (EvoSprig)" width="100%" /></a><br><b><a href="rai-manipulation/">RAI manipulation (EvoSprig)</a></b><br>See the scene. Move the objects. Check the result.<br><sub>Original: <a href="https://github.com/RobotecAI/rai">RAI</a></sub></td>
+<td width="50%" valign="top"><a href="industry-environment-builder/"><img src="industry-environment-builder/assets/overview.svg" alt="Industry environment builder" width="100%" /></a><br><b><a href="industry-environment-builder/">Industry environment builder</a></b><br>Build a business world for your agent to learn in.<br><sub><a href="../docs/industry-environments.md">Environment guide</a></sub></td>
+</tr>
+</table>
 
 ## Build something useful
 
@@ -11,6 +20,7 @@ Start with a working application pattern, connect your model and tools, then mak
 | Turns a story into a short film | [VideoClaw (EvoSprig)](video-studio/) | Characters, scenes, prompts and editing |
 | Works with a team on shared documents | [CoworkOS (EvoSprig)](cowork/) | Specialist roles, project tools and follow-ups |
 | Sees a scene and rearranges objects | [RAI manipulation (EvoSprig)](rai-manipulation/) | Visual controller, robot tools and physical goal checks |
+| Builds a business sandbox for agent development | [Industry environment builder](industry-environment-builder/) | Scenario, schemas, procedures, tools, data and business checks |
 | Tailors an application and helps me practice | [Career coach](career-coach/) | Resume facts, job requirements and interview skills |
 | Adapts an announcement for several channels | [Content studio](content-studio/) | Source facts, channels, brand voice and editing skills |
 | Teaches a topic and reviews my answers | [Study coach](study-coach/) | Course material, learning preferences and feedback |
@@ -24,7 +34,6 @@ Start with a working application pattern, connect your model and tools, then mak
 | Builds a trip that fits the budget | [Travel planner](travel-planner/) | Traveler constraints, available activities and cost checks |
 | Answers questions about business data | [SQL analyst](data-analyst/) | SQLite databases, CSV imports and business questions |
 | Handles an industry business process | [Industry assistant](industry-assistant/) | SOPs, sandbox tools and business-state evaluation |
-| Drafts a new evaluation environment | [Environment builder](industry-environment-builder/) | Scenario, schemas, procedures, datasets and reviewed implementation drafts |
 | Knows the team handbook | [Chat with your documents](document-chat/) | Handbooks, policies, product notes and citations |
 | Helps customers with orders | [Customer support](customer-support/) | Order services, refund policies and human approval |
 | Remembers preferences across sessions | [Personal assistant](personal-memory/) | Scoped facts, linked recall and source-aware summaries |

@@ -1,6 +1,209 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CoworkOS (EvoSprig)</title><link rel="stylesheet" href="style.css"></head>
-<body><aside><a class="brand" href="/"><span id="brand-icon"></span><span id="brand-name">CoworkOS <small>(EvoSprig)</small></span></a><div class="workspace-label" id="workspace-label">WORKSPACE</div><h2 id="workspace-name">Launch room</h2><button class="nav active" id="overview">Team workspace</button><div class="workspace-label"><span id="documents-label">DOCUMENTS</span> <button id="refresh" aria-label="Refresh documents">↻</button></div><nav id="documents"></nav><div class="sidebar-bottom">CoworkRSI · Self-evolving teams<br><a id="workflow-link" href="https://github.com/Toyhom/EvoSprig/tree/main/examples/cowork">Open the workflow</a></div></aside>
-<main><header><span><span id="workspace-title">My workspace</span> <span class="muted">/</span> <strong id="application-name">CoworkOS (EvoSprig)</strong></span><div><select id="language" aria-label="Language"><option value="en">English</option><option value="zh">中文</option></select><span class="status" id="status">Ready</span></div></header>
-<section id="team-view"><div class="eyebrow" id="eyebrow">YOUR TEAM, ONE WORKSPACE</div><h1 id="headline">From a brief to finished work.</h1><p class="intro" id="intro">Plan the work. Bring in specialists. Edit the result together.</p><form id="request-form"><label for="request" id="request-label">What are we working on?</label><textarea id="request" rows="4" required placeholder="Prepare a launch plan, budget and customer emails for our new pilot…"></textarea><div class="form-footer"><label class="delay-label"><span id="delay-before">Follow up in</span> <input id="delay" type="number" min="0" max="10080" value="0"> <span id="delay-after">minutes</span></label><button class="primary" type="submit" id="start">Start working ↗</button></div></form><div class="section-title"><h2 id="activity-title">Team activity</h2><button id="cancel" hidden>Stop run</button></div><div id="activity" class="activity"><p class="muted">Your team’s progress will appear here.</p></div><section id="approval" hidden><h2 id="approval-title">Review the brief</h2><textarea id="review-text" rows="10" aria-label="Review draft"></textarea><button id="approve" class="primary">Save and continue</button></section><section id="followup" hidden><h2 id="followup-title">Next actions</h2><pre id="next-actions"></pre></section></section>
-<section id="document-view" hidden><div class="section-title"><div><div class="eyebrow" id="document-label">SHARED DOCUMENT</div><h1 id="document-title"></h1><span class="muted" id="revision"></span></div><div><a id="download">Download ↓</a> <button id="edit">Edit</button><button class="primary" id="save" hidden>Save changes</button></div></div><div id="document-content"></div><textarea id="document-editor" rows="24" hidden aria-label="Edit document"></textarea><div class="section-title"><h2 id="history-title">Revision history</h2></div><div id="history"></div></section>
-<div id="error" role="alert" hidden></div></main><script type="module" src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CoworkOS (EvoSprig)</title>
+    <link
+      rel="preload"
+      href="fonts/manrope.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="fonts/fonts.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <button
+        id="sidebar-toggle"
+        class="icon-button"
+        aria-label="Toggle sidebar"
+        aria-expanded="true"
+        aria-controls="sidebar"
+      ></button>
+      <div class="topbar-context">
+        <span id="workspace-title">My workspace</span
+        ><span class="separator">/</span
+        ><strong id="application-name">CoworkOS (EvoSprig)</strong>
+      </div>
+      <div class="topbar-actions">
+        <span class="status" id="status">Ready</span
+        ><button
+          id="theme"
+          class="icon-button"
+          aria-label="Switch color theme"
+        ></button
+        ><select id="language" aria-label="Language">
+          <option value="en">English</option>
+          <option value="zh">中文</option></select
+        ><button
+          id="panel-toggle"
+          class="icon-button"
+          aria-label="Toggle task panel"
+          aria-expanded="true"
+          aria-controls="task-panel"
+        ></button>
+      </div>
+    </header>
+    <div class="app-layout">
+      <aside id="sidebar" class="sidebar">
+        <a class="brand" href="/"
+          ><span id="brand-icon"></span
+          ><span id="brand-name">CoworkOS <small>(EvoSprig)</small></span></a
+        >
+        <button class="new-task" id="new-task">New conversation</button>
+        <button class="nav active" id="overview">Workspace</button>
+        <div class="sidebar-heading">
+          <span id="workspace-label">PROJECT</span>
+        </div>
+        <div class="project-name">
+          <span class="project-dot"></span
+          ><span id="workspace-name">Launch room</span>
+        </div>
+        <div class="sidebar-heading">
+          <span id="conversations-label">RECENT TASKS</span>
+        </div>
+        <nav id="conversations" aria-label="Recent tasks"></nav>
+        <div class="sidebar-bottom">
+          <a
+            id="workflow-link"
+            href="https://github.com/Toyhom/EvoSprig/tree/main/examples/cowork"
+            >Open the workflow</a
+          ><span class="powered">Built with EvoSprig</span>
+        </div>
+      </aside>
+      <main>
+        <section id="team-view">
+          <div id="welcome">
+            <div class="welcome-mark" id="welcome-icon"></div>
+            <h1 id="headline">What are we working on?</h1>
+            <p id="intro">Bring your team a task.</p>
+          </div>
+          <div id="conversation" hidden>
+            <div class="user-message">
+              <span class="message-author" id="request-heading">You</span>
+              <p id="submitted-request"></p>
+            </div>
+            <div class="assistant-message">
+              <span class="agent-avatar">M</span>
+              <div class="assistant-body">
+                <div class="message-heading">
+                  <strong id="main-label">Main agent</strong
+                  ><span id="run-summary"></span>
+                </div>
+                <div id="activity" class="activity"></div>
+              </div>
+            </div>
+          </div>
+          <section id="approval" hidden>
+            <h2 id="approval-title">Review the brief</h2>
+            <textarea
+              id="review-text"
+              rows="10"
+              aria-label="Review draft"
+            ></textarea
+            ><button id="approve" class="primary">Save and continue</button>
+          </section>
+          <details id="followup" hidden>
+            <summary id="followup-title">Next actions</summary>
+            <pre id="next-actions"></pre>
+          </details>
+          <form id="request-form">
+            <label for="request" id="request-label" class="sr-only"
+              >Task request</label
+            >
+            <textarea
+              id="request"
+              rows="3"
+              required
+              placeholder="Ask your team to plan, research or create…"
+            ></textarea>
+            <div class="form-footer">
+              <label class="delay-label"
+                ><span id="delay-before">Follow up in</span>
+                <input id="delay" type="number" min="0" max="10080" value="0" />
+                <span id="delay-after">minutes</span></label
+              >
+              <div class="composer-actions">
+                <button id="cancel" type="button" hidden>Stop run</button
+                ><button class="primary" type="submit" id="start">
+                  Start working
+                </button>
+              </div>
+            </div>
+          </form>
+        </section>
+        <section id="document-view" hidden>
+          <div class="document-toolbar">
+            <button
+              id="close-document"
+              class="icon-button"
+              aria-label="Back to conversation"
+            ></button
+            ><span id="document-label">SHARED DOCUMENT</span>
+            <div>
+              <a id="download">Download ↓</a
+              ><button id="edit">Edit latest</button
+              ><button class="primary" id="save" hidden>Save changes</button>
+            </div>
+          </div>
+          <div class="document-sheet">
+            <h1 id="document-title"></h1>
+            <span id="revision" class="muted"></span>
+            <div id="document-content"></div>
+            <textarea
+              id="document-editor"
+              rows="24"
+              hidden
+              aria-label="Edit document"
+            ></textarea>
+            <h2 id="history-title">Revision history</h2>
+            <div id="history"></div>
+          </div>
+        </section>
+        <div id="error" role="alert" hidden></div>
+      </main>
+      <aside id="task-panel" class="task-panel">
+        <div class="panel-header">
+          <h2 id="panel-title">Task workspace</h2>
+          <button
+            id="refresh"
+            class="icon-button"
+            aria-label="Refresh documents"
+          ></button>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">
+            <h3 id="documents-label">Outputs</h3>
+            <span id="document-count">0</span>
+          </div>
+          <nav id="documents" aria-label="Shared documents"></nav>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">
+            <h3 id="team-label">Agent team</h3>
+            <span id="member-count">0</span>
+          </div>
+          <div id="team-map" class="team-map"></div>
+          <div id="team-members"></div>
+        </div>
+        <div class="panel-section run-details" id="run-details" hidden>
+          <h3 id="run-details-label">Run overview</h3>
+          <dl>
+            <div>
+              <dt id="steps-label">Completed steps</dt>
+              <dd id="step-count">0</dd>
+            </div>
+            <div>
+              <dt id="tools-label">Tool calls</dt>
+              <dd id="tool-count">0</dd>
+            </div>
+          </dl>
+        </div>
+      </aside>
+    </div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

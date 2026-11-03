@@ -1,19 +1,38 @@
-# Industry agents and evaluation environments
+# Build industry agents with their own working environment
 
-Connect an IndustryBench installation to develop agents for finance, government services and manufacturing. Every evaluation task gets a fresh sandbox, an operating procedure and discoverable business tools. The evaluator replays the recorded actions against the environment's frozen business criteria.
+An industry agent needs more than a question and an answer. It may need to read an application, check a policy, update a record and request approval. EvoSprig connects environment construction, business tools and outcome-based evaluation so you can develop that whole workflow.
 
-## Prepare an application
+![Industry environment construction and agent development](../examples/industry-environment-builder/assets/overview.svg)
 
-Install your IndustryBench distribution, or point `INDUSTRYBENCH_ROOT` at its local package root. The installation must provide `industrybench.session`, `industrybench.registry` and `industrybench.evaluation`, along with its domain engines and frozen cases.
+Choose your starting point:
+
+- **You have a validated IndustryBench environment:** [prepare an agent and task suite](#use-an-existing-environment).
+- **You need a new business process:** [draft its environment](#construct-a-new-environment), implement and validate it, then prepare the agent.
+- **You have another simulator:** implement the [evaluation environment protocol](evaluation.md#connect-a-scorer-or-environment).
+
+## Use an existing environment
+
+Install your IndustryBench distribution, or set `INDUSTRYBENCH_ROOT` to its package root. It supplies `industrybench.session`, `industrybench.registry`, `industrybench.evaluation`, the domain engines and frozen cases.
 
 ```bash
 export INDUSTRYBENCH_ROOT=/path/to/industry-agent
 evosprig industry prepare --industry government --limit 12 --out my-industry-agent
 ```
 
-This creates a native agent, editable procedure instructions, a deployment profile and disjoint search/selection/release tasks. The default split uses approximately half the cases for search and reserves two for release. The generated business agent allows up to 192 tool rounds and 200 model calls within its shared token/time budget; lower these limits for small tasks. Use a larger representative suite for release decisions. The generated allowlist confines evaluation to those cases.
+Choose `finance`, `government` or `manufacturing`. The command creates:
 
-Set the model credential referenced by `deployment.yaml`, then evaluate or improve:
+| File | Purpose |
+| --- | --- |
+| `agent.yaml` | Native tool-using agent |
+| `prompts/procedure.md` | Operating instructions you can edit and evolve |
+| `suite.yaml` | Disjoint search, selection and release tasks |
+| `deployment.yaml` | Model, business tools and environment settings |
+
+The agent sees the case, public procedure and tool schemas. Reference answers stay with the evaluator. A fresh sandbox is created for each task; recorded actions are replayed against fixed business checks.
+
+## Evaluate, then improve
+
+Set the model credential referenced in `deployment.yaml`:
 
 ```bash
 evosprig evaluate my-industry-agent/agent.yaml \
@@ -21,36 +40,71 @@ evosprig evaluate my-industry-agent/agent.yaml \
   --profile my-industry-agent/deployment.yaml
 
 evosprig improve my-industry-agent/agent.yaml \
-  --suite my-industry-agent/suite.yaml --profile my-industry-agent/deployment.yaml \
+  --suite my-industry-agent/suite.yaml \
+  --profile my-industry-agent/deployment.yaml \
   --method reflexion --resource procedure --rounds 2 \
   --max-evaluations 100 --timeout 1800
 ```
 
-The same profile enables industry evaluation in Studio's Improve tab. Ordinary `run` does not allocate an evaluation sandbox; use `evaluate` to execute the business agent in this environment.
+The optimizer proposes instruction changes, executes the agent and uses the environment's outcomes to select candidates. Compare edits and results before enabling a version. [Choose another evolution method](evolution.md).
 
-## What the agent can see
+For the canvas, start the same project and profile:
 
-- `industry.materials`: public task observation and operating procedure.
-- `industry.search`: relevant tool schemas, with a default limit of eight.
-- `industry.invoke`: a discovered tool, executed in the active sandbox with a journaled idempotency key.
+```bash
+evosprig serve --project my-industry-agent/agent.yaml \
+  --profile my-industry-agent/deployment.yaml \
+  --studio-dir apps/studio/dist --workspace .evosprig/industry
+```
 
-Reference answers are kept inside the evaluator. A claimed success in the final message cannot replace a successful business-state check. Each session owns its engine thread, including creation and cleanup, to support thread-affine database implementations.
+Use **Improve** with the generated suite. Industry sandboxes are allocated by evaluation; ordinary **Run** executes the workflow without an evaluation session.
 
-`evaluation.industry` configures `root_env`, `allowed_cases`, `search_limit`, `max_calls` (256 by default) and tool `timeout_seconds` (30). `evaluation.environment.max_concurrent_samples` defaults to one and can be increased for independent cases. This environment permits its own simulated writes; it does not grant permission to unrelated write tools.
+## Construct a new environment
 
-## Draft a new industry environment
+The [environment builder](../examples/industry-environment-builder/) turns a business brief into seven connected outputs:
 
-Use the local system's synthesis templates to create a normal EvoSprig workflow:
+**Context → schema → procedures → tool graph → data → APIs → implementation drafts → human review.**
 
 ```bash
 evosprig industry synthesis --templates /path/to/industry-agent/synthesis \
   --scene government --out environment-builder
-evosprig run environment-builder/agent.yaml \
-  --input '{"brief":"Design a permit-processing environment with explicit eligibility rules"}'
+
+evosprig serve --project environment-builder/agent.yaml \
+  --studio-dir apps/studio/dist --workspace .evosprig/industry-builder
 ```
 
-The workflow produces context, schemas, SOPs, an API graph, data, API definitions and implementation drafts, followed by a human review node. Each stage is an editable model node with bounded output and total budgets. Running it uses your configured model API.
+Submit, for example:
 
-After review, integrate the drafts into your environment engine, run its reference/validation tools and freeze the business answers. Connect that validated installation with `industry prepare`. Draft generation does not automatically execute generated Python or certify a new environment.
+```json
+{"brief":"Build a benefits application process with eligibility checks, exception review and a recorded final decision."}
+```
 
-For another simulator, implement the [evaluation environment protocol](evaluation.md#connect-a-scorer-or-environment) or expose a deployment-owned scorer. Your application, evaluator and resource search continue to use the same EvoSprig runtime.
+Template scenes include `loan`, `account`, `credit_cards`, `deposit`, `invest`, `government` and `manufacturing`. Each stage is a model node with an editable prompt and bounded output. The generated project defaults to seven model calls, 8,192 output tokens per call and a 200,000-token total budget; adjust these in the project for your domain.
+
+After review, integrate the implementation drafts with the environment engine. Run its reference and validation tools, then freeze the cases and business answers. This validated installation becomes the input to `industry prepare`.
+
+## Business tool interface
+
+| Tool | Agent operation |
+| --- | --- |
+| `industry.materials` | Read the case and operating procedure |
+| `industry.search` | Discover relevant tool schemas |
+| `industry.invoke` | Call a discovered tool in the active sandbox |
+
+Invocations use journaled idempotency keys. Each session owns its engine thread for creation, calls and cleanup, including thread-affine databases. Final checks use the recorded business outcome.
+
+## Tune task size and budgets
+
+`industry prepare` assigns approximately half the cases to search and reserves two for release; the rest select candidates. At least four cases are required. Use a representative task suite for your release decision.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| Agent `max_tool_rounds` | 192 | Tool-use rounds per case |
+| Agent `max_model_calls` | 200 | Model-call cap within the shared budget |
+| `evaluation.industry.search_limit` | 8 | Schemas returned by a tool search |
+| `evaluation.industry.max_calls` | 256 | Business-tool call cap |
+| `evaluation.industry.timeout_seconds` | 30 | Timeout per business-tool call |
+| `evaluation.environment.max_concurrent_samples` | 1 | Independent evaluation sessions |
+
+`evaluation.industry.allowed_cases` restricts the accessible cases. Sandbox write permission applies to simulated business operations. The generated profile contains all selected case IDs, and the suite keeps the three evaluation splits separate.
+
+[Industry assistant](../examples/industry-assistant/) · [Environment builder](../examples/industry-environment-builder/) · [Evaluation guide](evaluation.md)

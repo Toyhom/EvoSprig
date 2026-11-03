@@ -1,3 +1,4 @@
+import { version as studioVersion } from '../package.json';
 import { AgentSettings } from './agent-settings';
 import { edgeTypes } from './workflow-edge';
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
@@ -296,7 +297,7 @@ function App() {
       <div className="sidebar-bottom"><details className="connection-settings"><summary><Icon name="settings"/>{t.settings}</summary>
         <input aria-label={t.token} placeholder={t.token} type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} />
         <button disabled={busy || !!runId} onClick={() => replaceProject(() => refresh().then(items => { if (items.length) load(items[0]); }).catch(error))}>{t.reload}</button>
-      </details><div className="sidebar-meta"><span>v0.1.2</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
+      </details><div className="sidebar-meta"><span>v{studioVersion}</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
     </aside>
     <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty || nodeDraftDirty?' is-dirty':''}`}>{dirty || nodeDraftDirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
       <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => replaceProject(async () => { if (doc) await api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error); })} disabled={!doc || !!runId || busy}><Icon name="refresh"/></button>
