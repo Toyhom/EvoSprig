@@ -16,14 +16,9 @@
 
 ## News
 
-- **2026-11-03 · v0.1.7** · **23 evolution strategies**: search agent harnesses, workflows, code, model routes and memory settings. [CoworkOS](examples/cowork/) agents can message each other directly.
+- **2026-11-02** · EvoSprig is open source: a platform for building and evolving agent applications with Python or a visual canvas.
 
-- **2026-11-03 · v0.1.6** · A new Cowork workbench, expanded [industry environment guide](docs/industry-environments.md), and four featured applications.
-- **2026-11-03 · v0.1.5** · [RAI manipulation (EvoSprig)](examples/rai-manipulation/) brings visual robot control. Cowork reviews team outputs and assigns corrections; [CoworkRSI](examples/cowork/#coworkrsi) adds experience memory and self-evolution.
-- **2026-11-03** · [CoworkOS (EvoSprig)](examples/cowork/) brings specialist teams, shared documents and scheduled follow-ups. [VideoClaw (EvoSprig)](examples/video-studio/) adds three new short films. [Custom optimizers](docs/optimizer-plugins.md) can plug into the evaluation and version pipeline.
-- **2026-11-02** · EvoSprig is open source: Python and canvas authoring, self-evolution, persistent memory and standalone export. **14 strategies across 12 method families.**
-
-Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate resources, evaluate the running application, compare results and enable a version. Export your application to run independently.
+Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate versions, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
 <img src="docs/assets/studio.png" alt="EvoSprig Studio: workflow canvas, node settings and execution history" width="100%" />
 

@@ -16,10 +16,14 @@ test('input-only tasks use judge scoring and expose all registered strategies',a
   await expect(page.getByLabel('Task inputs JSON')).toBeVisible();
   await page.getByLabel('Task inputs JSON').fill(JSON.stringify(['pricing','roadmap','support','launch'].map(question=>({question}))));
   await page.getByLabel('Judge rubric').fill('Answer the user request clearly.');
+  const createdSuite=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname===`/api/projects/${id}/suites/from-inputs`);
   await page.getByRole('button',{name:'Create task suite',exact:true}).click();
-  await expect(page.getByLabel('Evaluation suite',{exact:true})).not.toHaveValue('');
+  const response=await createdSuite;
+  expect(response.status()).toBe(201);
+  const suiteId=(await response.json()).suite_id;
+  await expect(page.getByLabel('Evaluation suite',{exact:true})).toHaveValue(suiteId);
   const suites=await(await request.get(`/api/projects/${id}/suites`)).json();
-  expect(suites[0].suite.metric.kind).toBe('llm_judge');
+  expect(suites.find((suite:{suite_id:string})=>suite.suite_id===suiteId)?.suite.metric.kind).toBe('llm_judge');
   await page.getByRole('button',{name:'Start improvement',exact:true}).click();
   await expect(page.locator('.history-list')).toContainText('completed',{timeout:30000});
   await page.getByRole('button',{name:'Compare prompts, skills and outputs',exact:true}).click();

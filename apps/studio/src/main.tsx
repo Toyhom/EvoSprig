@@ -51,6 +51,8 @@ function App() {
   const [importId,setImportId]=useState('');
   const [projects, setProjects] = useState<Document[]>([]);
   const [doc, setDoc] = useState<Document | null>(null);
+  const projectLoaded = useRef(false);
+  const projectListRequest = useRef(0);
   const [nodes, setNodes] = useState<FlowNode[]>([]); const [edges, setEdges] = useState<Edge[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('canvas');
@@ -140,6 +142,7 @@ function App() {
   }, [lang, token]);
   const error = (e: unknown) => setStatus(e instanceof Error ? e.message : String(e));
   const load = (next: Document, path:string[] = []) => {
+    projectLoaded.current = true;
     setSidebarOpen(false); setDoc(next);setCanvas({groups:next.canvas?.groups??{}});
     try{graphAt(next.spec,path);}catch{path=[];}
     loadGraph(next.spec,path,next.layout);
@@ -147,9 +150,18 @@ function App() {
     setSpecText(JSON.stringify(next.spec, null, 2));setDirty(false);setResult(null);
   };
   const refresh = useCallback(async () => {
-    const items: Document[] = await (await api('/projects')).json(); setProjects(items); return items;
+    const request = ++projectListRequest.current;
+    const items: Document[] = await (await api('/projects')).json();
+    if (request === projectListRequest.current) setProjects(items);
+    return items;
   }, [api]);
-  useEffect(() => { refresh().then(items => { if (items.length) load(items[0]); }).catch(error); }, []);
+  useEffect(() => {
+    let active = true;
+    refresh().then(items => {
+      if (active && !projectLoaded.current && items.length) load(items[0]);
+    }).catch(e => { if (active) error(e); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => () => { if (poll.current) clearTimeout(poll.current); }, []);
   const currentSpec = (): Spec => {
     if (!doc) throw new Error('Select a project');

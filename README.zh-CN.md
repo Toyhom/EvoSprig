@@ -16,12 +16,7 @@
 
 ## News · 项目动态
 
-- **2026-11-03 · v0.1.7** · 新增九种自进化方法；支持[每个 Agent 的 harness、代码与流程搜索](docs/harness-search.md)，以及 Cowork 专家间直接通信。
-
-- **2026-11-03 · v0.1.6** · Cowork 三栏工作台、[行业环境构造与评估指南](docs/industry-environments.md)，以及四个重点应用展示。
-- **2026-11-03 · v0.1.5** · 新增 [RAI manipulation (EvoSprig)](examples/rai-manipulation/) 多模态机器人操纵；Cowork 加入验收与定向返工，并提供 [CoworkRSI](examples/cowork/#coworkrsi) 自进化入口。
-- **2026-11-03** · 上线 [CoworkOS (EvoSprig)](examples/cowork/)：专家协作、共享文档、定时跟进；[VideoClaw (EvoSprig)](examples/video-studio/)新增三部短片；支持通过[插件接入自进化算法](docs/optimizer-plugins.md)。
-- **2026-11-02** · EvoSprig 开源：代码与画布开发、可控自进化、持久记忆、独立导出；支持 **14 种策略、12 个方法家族**。
+- **2026-11-02** · EvoSprig 初版开源：自进化智能体共性开发平台，支持代码与画布开发、任务评估和持续改进。
 
 使用 Python 或可视化画布开发智能体，再用自己的任务推动智能体持续改进。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
