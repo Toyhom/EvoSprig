@@ -73,6 +73,12 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
     from evosprig.plugins.workspace_tools import WorkspaceStore, register_workspace_tools
 
     register_workspace_tools(registry, WorkspaceStore(Path(workspace) / "documents.sqlite"), scope)
+    from evosprig.plugins.python_tool import python_tool
+
+    registry.register(python_tool())
+    from evosprig.plugins.message_tools import MessageStore, register_message_tools
+
+    register_message_tools(registry, MessageStore(Path(workspace) / "messages.sqlite"), scope)
     if bindings is None:
         raw = yaml.safe_load(Path(profile).read_text()) if profile else {}
         bindings = raw.get("tools", {})

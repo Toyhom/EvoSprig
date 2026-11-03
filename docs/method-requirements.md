@@ -23,12 +23,12 @@ Use the same fixed evaluation criterion to compare candidate versions.
 
 ## Skills and harness evolution
 
-The [coverage table](evolution-components.md#coverage-of-the-flashrsi-method-list) tracks nine pending methods from FlashRSI. Their evaluation inputs extend the existing task contract:
+The [coverage table](evolution-components.md#coverage-of-the-flashrsi-method-list) includes nine skill/harness methods. Their evaluation inputs extend the task contract:
 
 - **SkillOpt / Evo-Harness:** task streams, execution traces, skill discovery and separate validation tasks.
 - **AHE / Meta-Harness / RRSI:** editable harness files, reproducible task environments, execution traces, outcome scores and token or monetary costs.
 - **ADAS / DarwinX:** runnable candidate designs, a design or branch archive, and repeatable fitness measurements.
-- **ModularRSI:** explicit module boundaries, per-module tasks and whole-application integration tasks.
+- **ModularRSI:** explicit module ownership, repeated same-task trajectories and whole-application integration checks.
 - **Arbor:** train/validation task execution, hypothesis-linked changes and experiment outcomes for insight propagation.
 
 An LLM judge can score qualitative outputs. For actions or code changes, supply the environment and its observable outcomes as well.
@@ -41,7 +41,6 @@ Planned integrations:
 | --- | --- | --- |
 | [TextGrad](https://github.com/zou-group/textgrad) | Task inputs, a textual loss/evaluator and a graph of editable variables | Route feedback to the responsible component |
 | Full [DSPy MIPROv2](https://github.com/stanfordnlp/dspy/blob/main/dspy/teleprompt/mipro_optimizer_v2.py) | Train/validation tasks, a callable metric, instruction and demonstration candidates | Native resource search is available; upstream DSPy program bindings, teacher bootstrapping and minibatch allocation remain to integrate |
-| [ADAS](https://github.com/ShengranHu/ADAS) | Task data, an execution environment for generated agent code, a task fitness function | Generated architectures require bounded execution and behavioral checks |
 | [AFlow](https://github.com/geekan/MetaGPT/tree/main/examples/aflow) | Executable workflow operators, task inputs and an evaluation environment | Search changes orchestration, so topology and resource costs must be validated |
 | [Darwin Gödel Machine](https://github.com/jennyzzt/dgm) | Repository tasks, an isolated execution environment, tests and an archive of agent variants | Modifying the agent implementation requires code-level validation and recoverable candidate execution |
 | [AlphaEvolve](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/) | Executable programs, a verifiable objective and inexpensive candidate evaluation | Program evolution needs sandboxed execution and domain-specific correctness checks |

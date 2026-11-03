@@ -14,6 +14,7 @@ from evosprig.evaluation.runner import Evaluator
 from .context import EvolutionContext
 from .gate import ReleaseGate
 from .registry import custom_method, require_method
+from .space import SearchSpace
 
 
 class StudyConfig(Contract):
@@ -25,7 +26,8 @@ class StudyConfig(Contract):
     def installed_method(cls, value):
         return require_method(value)
 
-    allowed_resources: list[str] = Field(min_length=1, max_length=32)
+    allowed_resources: list[str] = Field(default_factory=list, max_length=32)
+    search_space: SearchSpace | None = None
     budget: ExperimentBudget = Field(default_factory=ExperimentBudget)
     gate: ReleaseGate = Field(default_factory=ReleaseGate)
     rounds: int = Field(default=3, ge=1, le=100)
@@ -39,6 +41,82 @@ class StudyConfig(Contract):
 
     @model_validator(mode="after")
     def unique_resources(self):
+        option_names = {
+            "skillopt": {
+                "edit_budget",
+                "edit_chars",
+                "slow_every",
+                "batch_size",
+                "success_threshold",
+            },
+            "evo_harness": {"batch_size", "success_threshold", "general_min_tasks", "max_skills"},
+            "ahe": set(),
+            "meta_harness": set(),
+            "adas": set(),
+            "rrsi": {
+                "repetitions",
+                "proposals",
+                "delta",
+                "beta0",
+                "beta1",
+                "score_weight",
+                "cost_weight",
+                "novelty_weight",
+                "min_edits",
+                "max_edits",
+            },
+            "darwinx": {
+                "repetitions",
+                "screen_size",
+                "merge_every",
+                "exploration_probability",
+                "solved_threshold",
+                "regression_tolerance",
+                "screen_regression_tolerance",
+            },
+            "modular_rsi": {"repetitions", "integration_rounds"},
+            "arbor": {"max_depth", "coordinator_actions"},
+        }
+        if self.method in option_names:
+            if unknown := set(self.options) - option_names[self.method]:
+                raise ValueError(f"unsupported {self.method} options: {', '.join(sorted(unknown))}")
+            if self.method in {"skillopt", "evo_harness"}:
+                from .skill_search import SkillOptions
+
+                SkillOptions.model_validate(self.options)
+            else:
+                from .harness_common import HarnessOptions
+
+                policy = HarnessOptions.model_validate(self.options)
+                if self.method == "rrsi" and (
+                    policy.min_edits > policy.max_edits
+                    or (policy.delta is None and policy.repetitions < 2)
+                ):
+                    raise ValueError(
+                        "RRSI needs ordered edit bounds and repeated noise calibration"
+                    )
+                if self.method == "modular_rsi" and policy.repetitions < 2:
+                    raise ValueError("ModularRSI requires repeated contrasts")
+        if not self.allowed_resources and not (self.search_space and self.search_space.fields):
+            raise ValueError("choose editable resources or structured fields")
+        if (
+            self.search_space
+            and self.method
+            not in {
+                "ahe",
+                "meta_harness",
+                "rrsi",
+                "adas",
+                "darwinx",
+                "modular_rsi",
+                "arbor",
+                "opro",
+            }
+            and not (custom_method(self.method) and custom_method(self.method).supports_structured)
+        ):
+            raise ValueError(
+                "this method accepts text resources; choose a harness method for structured search"
+            )
         if len(self.allowed_resources) != len(set(self.allowed_resources)):
             raise ValueError("editable resource names must be unique")
         return self
@@ -105,7 +183,6 @@ async def execute_study(
                 return
             await asyncio.sleep(0.05)
 
-    watcher = asyncio.create_task(monitor_cancel())
     evaluator = Evaluator(
         workspace,
         models,
@@ -126,12 +203,26 @@ async def execute_study(
         scope=scope,
         job_id=job_id,
         method=config.method,
+        search_space=config.search_space,
         on_event=on_event,
     )
+    watcher = asyncio.create_task(monitor_cancel())
     try:
         plugin = custom_method(config.method)
         if plugin:
             method_result = await plugin.optimize(context, config=config)
+        elif config.method in {"skillopt", "evo_harness"}:
+            from . import skill_search
+
+            method_result = await getattr(skill_search, config.method)(context, config=config)
+        elif config.method in {"ahe", "meta_harness", "rrsi", "adas", "modular_rsi"}:
+            from . import harness_search
+
+            method_result = await getattr(harness_search, config.method)(context, config=config)
+        elif config.method in {"darwinx", "arbor"}:
+            from . import branch_search
+
+            method_result = await getattr(branch_search, config.method)(context, config=config)
         elif config.method == "opro":
             from .opro import optimize
 

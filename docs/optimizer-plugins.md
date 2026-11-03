@@ -87,3 +87,15 @@ Use the context model and evaluation methods so calls count toward the study bud
 ## Validate a method
 
 Cover invalid candidates, budget exhaustion, cancellation, selection behavior and a complete `execute_study` run. Add the original paper to [references](references.md) and describe the implemented mechanism in the [method table](evolution.md). Use a small application task set to demonstrate its changes and resulting outputs.
+
+## Structured candidate plugins
+
+Register `supports_structured=True` for an optimizer that accepts `StudyConfig.search_space`.
+Then `context.seed` and every proposal have the shape `{"resources": {...}, "fields": {...}}`.
+Use `context.version(candidate)` to validate bounds, graph structure and tool authority;
+`context.evaluate(candidate, split)` runs that exact snapshot. Resource-only plugins keep
+their existing name-to-text mapping. Module ownership is available as
+`context.search_space.modules`; `resource:name` targets identify resources and JSON pointers identify fields.
+
+Keep method state separate from target resources. `context.emit("method.checkpoint", ...)`
+stores progress, while the returned `selected` candidate controls release evaluation.

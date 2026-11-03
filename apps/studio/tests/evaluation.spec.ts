@@ -12,7 +12,7 @@ test('input-only tasks use judge scoring and expose all registered strategies',a
   await page.getByRole('button',{name:'Save',exact:true}).click();
   await expect(page.getByRole('status')).toContainText('Saved');
   await page.getByRole('button',{name:'Improve',exact:true}).click();
-  await expect(page.getByLabel('Evolution method').locator('option')).toHaveCount(14);
+  await expect(page.getByLabel('Evolution method').locator('option')).toHaveCount(23);
   await expect(page.getByLabel('Task inputs JSON')).toBeVisible();
   await page.getByLabel('Task inputs JSON').fill(JSON.stringify(['pricing','roadmap','support','launch'].map(question=>({question}))));
   await page.getByLabel('Judge rubric').fill('Answer the user request clearly.');

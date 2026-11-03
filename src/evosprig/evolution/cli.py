@@ -63,7 +63,12 @@ def add_commands(commands):
                 choices=list(METHODS),
                 required=True,
             )
-            parser.add_argument("--resource", action="append", required=True)
+            parser.add_argument("--resource", action="append", default=[])
+            parser.add_argument(
+                "--search-space", type=Path, help="YAML/JSON structured search space"
+            )
+            parser.add_argument("--method-options", type=Path, help="YAML/JSON method settings")
+            parser.add_argument("--proposer-binding", help="Model binding used to propose changes")
             parser.add_argument("--rounds", type=int, default=3)
             parser.add_argument("--population-size", type=int, default=4)
             parser.add_argument("--instruction-candidates", type=int, default=3)
@@ -231,6 +236,10 @@ def run_command(args):
         config = StudyConfig(
             method=args.method,
             allowed_resources=args.resource,
+            search_space=yaml.safe_load(args.search_space.read_text())
+            if args.search_space
+            else None,
+            options=yaml.safe_load(args.method_options.read_text()) if args.method_options else {},
             budget=budget,
             rounds=args.rounds,
             population_size=args.population_size,
@@ -242,7 +251,13 @@ def run_command(args):
             seed=args.seed,
             gate=ReleaseGate(min_gain=args.min_gain, min_samples=args.min_samples),
         )
-        proposer = MockProvider() if args.mock else next(iter(models.values()), None)
+        proposer = (
+            MockProvider()
+            if args.mock
+            else models.get(args.proposer_binding)
+            if args.proposer_binding
+            else next(iter(models.values()), None)
+        )
         if proposer is None:
             raise ValueError("improvement needs a model binding for its proposer")
         metadata = Runtime(models)._engine.model_metadata()

@@ -93,6 +93,10 @@ class VersionStore:
         if not changes or set(changes) - set(allowed) or set(allowed) - set(base.resources):
             raise ValueError("candidate attempted to edit undeclared or protected resources")
         version = compile_snapshot(base.spec, {**base.resources, **changes})
+        return self.snapshot_candidate(scope, base, version, method=method, job_id=job_id)
+
+    def snapshot_candidate(self, scope, base, version, *, method, job_id):
+        """Archive a validated SDK snapshot, including graph and code changes."""
         self.put(scope, base)
         self.put(scope, version)
         identifier = uuid.uuid4().hex
@@ -103,7 +107,7 @@ class VersionStore:
             "job_id": job_id,
             "method": method,
             "created_at": time.time(),
-            "changes": sorted(changes),
+            "changes": sorted(self.diff(base, version)),
             "diff": self.diff(base, version),
             "data_contract": DATA_CONTRACT,
         }
@@ -116,7 +120,7 @@ class VersionStore:
 
     @staticmethod
     def diff(base, candidate):
-        return {
+        changes = {
             name: "".join(
                 difflib.unified_diff(
                     [line + "\n" for line in base.resources.get(name, "").splitlines()],
@@ -128,6 +132,13 @@ class VersionStore:
             for name, text in candidate.resources.items()
             if text != base.resources.get(name)
         }
+        if base.spec_json != candidate.spec_json:
+            changes["agent.json"] = "".join(difflib.unified_diff(
+                (json.dumps(json.loads(base.spec_json), indent=2) + "\n").splitlines(True),
+                (json.dumps(json.loads(candidate.spec_json), indent=2) + "\n").splitlines(True),
+                fromfile="base/agent.json", tofile="candidate/agent.json",
+            ))
+        return changes
 
     def candidates(self, scope):
         with self.connect(False) as db:

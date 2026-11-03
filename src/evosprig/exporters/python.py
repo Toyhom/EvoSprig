@@ -16,6 +16,7 @@ from evosprig.core.spec import canonical_json, save_spec
 from evosprig.core.version import AgentVersion, check_public_text
 from evosprig.plugins.builtin_tools import BUILTIN_NAMES
 from evosprig.plugins.memory_tools import MEMORY_TOOL_NAMES
+from evosprig.plugins.message_tools import MESSAGE_TOOL_NAMES
 from evosprig.plugins.workspace_tools import WORKSPACE_TOOL_NAMES
 
 MODULES = (
@@ -34,6 +35,8 @@ MODULES = (
     "core/expressions.py",
     "core/memory.py",
     "core/tool_policy.py",
+    "core/tool_context.py",
+    "core/skills.py",
     "sdk/__init__.py",
     "sdk/builder.py",
     "plugins/__init__.py",
@@ -49,6 +52,8 @@ MODULES = (
     "plugins/embeddings.py",
     "plugins/memory_tools.py",
     "plugins/workspace_tools.py",
+    "plugins/message_tools.py",
+    "plugins/python_tool.py",
     "plugins/documents.py",
     "plugins/retrieval.py",
     "plugins/http_tools.py",
@@ -167,7 +172,15 @@ def compatibility_report(
                 and config.get("version", "1") == binding.version
             ):
                 continue
-        if binding.plugin not in BUILTIN_NAMES | MEMORY_TOOL_NAMES | WORKSPACE_TOOL_NAMES or binding.version != "1":
+        if (
+            binding.plugin
+            not in BUILTIN_NAMES
+            | MEMORY_TOOL_NAMES
+            | WORKSPACE_TOOL_NAMES
+            | MESSAGE_TOOL_NAMES
+            | {"code.python"}
+            or binding.version != "1"
+        ):
             missing.append(
                 {"tool": name, "plugin": binding.plugin, "reason": "plugin has no bundled exporter"}
             )

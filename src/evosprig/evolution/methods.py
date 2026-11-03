@@ -17,9 +17,72 @@ Method = Literal[
     "reflexion",
     "expel",
     "mipro",
+    "skillopt",
+    "evo_harness",
+    "ahe",
+    "meta_harness",
+    "rrsi",
+    "adas",
+    "darwinx",
+    "modular_rsi",
+    "arbor",
 ]
 
 METHODS = {
+    "skillopt": {
+        "name": "SkillOpt",
+        "family": "bounded fast/slow skill updates",
+        "feedback": "scored trajectories and validation gains",
+        "source": "https://arxiv.org/abs/2605.23904",
+    },
+    "evo_harness": {
+        "name": "Evo-Harness",
+        "family": "task-stream skill compilation",
+        "feedback": "failure memories and skill provenance",
+        "source": "https://arxiv.org/abs/2608.15071",
+    },
+    "ahe": {
+        "name": "AHE",
+        "family": "attributed harness edits",
+        "feedback": "diagnoses, predicted fixes and task deltas",
+        "source": "https://arxiv.org/abs/2604.25850",
+    },
+    "meta_harness": {
+        "name": "Meta-Harness",
+        "family": "implementation archive synthesis",
+        "feedback": "historical code, traces, scores and costs",
+        "source": "https://arxiv.org/abs/2603.28052",
+    },
+    "rrsi": {
+        "name": "RRSI",
+        "family": "regularized harness search",
+        "feedback": "repeated outcomes, token cost and edit history",
+        "source": "https://arxiv.org/abs/2609.24972",
+    },
+    "adas": {
+        "name": "ADAS",
+        "family": "agent design archive",
+        "feedback": "design descriptions, critiques and task scores",
+        "source": "https://arxiv.org/abs/2408.08435",
+    },
+    "darwinx": {
+        "name": "DarwinX",
+        "family": "preserve-and-extend branches",
+        "feedback": "repeated task outcomes and solved-task preservation",
+        "source": "https://arxiv.org/abs/2608.07545",
+    },
+    "modular_rsi": {
+        "name": "ModularRSI",
+        "family": "module branches and integration",
+        "feedback": "same-task contrasts, diff review and execution checks",
+        "source": "https://arxiv.org/abs/2609.14857",
+    },
+    "arbor": {
+        "name": "Arbor",
+        "family": "hypothesis tree",
+        "feedback": "experiments and upward insight synthesis",
+        "source": "https://github.com/RUC-NLPIR/Arbor",
+    },
     "mipro": {
         "name": "MIPRO resource search",
         "family": "joint instruction and demonstration search",

@@ -1,4 +1,4 @@
-# Shared documents and wake-ups
+# Shared documents, peer messages and wake-ups
 
 Agents and people can edit the same project documents. EvoSprig stores content, revision history and write receipts in `documents.sqlite`, scoped by tenant, user and project.
 
@@ -42,3 +42,38 @@ All routes use the current authenticated project scope:
 | `GET /download?name=` | Download the document |
 
 A conflicting browser save returns HTTP 409 and preserves its draft. The [Cowork workbench](../apps/cowork/) uses these routes to display, edit and download team deliverables.
+
+## Peer-to-peer messages
+
+Any agent with a mailbox can message another agent in the same run. Give fixed roles
+names such as `analyst` and `writer`, or use `mailbox={"ref":"input.item.role"}` in a map body.
+The runtime supplies the sender identity; model arguments contain only the recipient and content.
+
+```python
+builder.tool("send", "messages.send")
+builder.tool("inbox", "messages.receive")
+builder.tool("wait_for_reply", "messages.wait")
+builder.node("analyst", "agent", model="main", mailbox="analyst",
+             tools=["send", "inbox", "wait_for_reply"],
+             instructions="Share findings with writer; answer peer questions.",
+             inputs={"request": {"ref": "input.request"}},
+             output_schema={"type": "object"})
+```
+
+| Plugin | Arguments | Behavior |
+| --- | --- | --- |
+| `messages.send` | `recipient`, `content`, optional `reply_to` | Idempotent delivery; returns ID and sequence |
+| `messages.receive` | Optional `after`, `limit` | Read this agent's unacknowledged messages |
+| `messages.ack` | `ids` | Mark handled messages; accepts only this inbox's IDs |
+| `messages.wait` | Optional `after`, `timeout_seconds` | Persist a wait, resume on arrival or timeout |
+
+Agents with `messages.receive` get new arrivals between model/tool turns. Explicit reads
+and waits can retrieve replies during a task. A completed specialist reads queued messages
+when the workflow schedules its next wave; keep its mailbox name stable across waves.
+Sending and waiting require the same durable storage and write permissions as shared documents.
+Messages are scoped to tenant, user, project and run. Message IDs, cursors, original wait
+deadlines and acknowledgements survive worker restarts. Replies link to a message actually
+received by the replying agent.
+
+[CoworkOS (EvoSprig)](../examples/cowork/) combines direct peer messages with shared documents,
+lead-agent review and targeted follow-up waves.

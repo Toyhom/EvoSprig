@@ -4,12 +4,17 @@ import { Icon } from './studio-ui';
 
 type Changes={resources?:Document['resources']; definitions?:Spec['resources']; tools?:Spec['tools']};
 type Props={id:string;node:NodeSpec;doc:Document;lang:Lang;onChange:(node:NodeSpec,changes?:Changes)=>void};
-export function AgentSettings({id,node,doc,lang,onChange}:Props){
+export function AgentSettings({id,node:originalNode,doc,lang,onChange}:Props){
+  const node={...originalNode,...Object.fromEntries(Object.entries(originalNode.harness??{}).filter(([key,value])=>key!=='memory'&&value!==null))} as NodeSpec;
   const say=(zh:string,en:string)=>lang==='zh'?zh:en;
   const [newSkill,setNewSkill]=useState('');
   const resource=typeof node.instructions==='object'?node.instructions.resource:'';
   const content=resource?doc.resources?.[resource]??'':String(node.instructions??'');
-  const change=(patch:Partial<NodeSpec>)=>onChange({...node,...patch});
+  const change=(patch:Partial<NodeSpec>)=>{
+    const next={...node,...patch};
+    if(node.harness&&!('harness' in patch)) next.harness={...node.harness,...Object.fromEntries(Object.entries(patch).filter(([key])=>['max_tool_rounds','tool_selection','tool_limit','parallel_tool_calls','tool_errors','output_errors','max_output_retries','max_output_tokens'].includes(key)))};
+    onChange(next);
+  };
   function create(role:'prompt'|'skill'){
     const stem=(role==='skill'?newSkill.trim():id+'_prompt').replace(/[^A-Za-z0-9_-]/g,'_').slice(0,55);
     if(!/^[A-Za-z]/.test(stem))return;
@@ -28,6 +33,9 @@ export function AgentSettings({id,node,doc,lang,onChange}:Props){
   }
   function toolList(items:typeof tools){return items.map(([name,tool])=><label className="check setting-option" key={name}><input aria-label={`Tool ${name}`} type="checkbox" checked={node.tools?.includes(name)??false} onChange={e=>change({tools:e.target.checked?[...(node.tools??[]),name]:(node.tools??[]).filter(t=>t!==name)})}/><span>{name}<small>{tool.plugin}</small></span></label>);}
   return <div className="agent-settings">
+    {node.type==='agent'&&<section className="setting-section"><h4><Icon name="settings"/>Harness</h4><label className="check"><input aria-label="Structured harness" type="checkbox" checked={!!node.harness} onChange={e=>change({harness:e.target.checked?{max_tool_rounds:node.max_tool_rounds??8,tool_selection:node.tool_selection??'all',tool_limit:node.tool_limit??8,parallel_tool_calls:node.parallel_tool_calls??false,tool_errors:node.tool_errors??'raise',output_errors:node.output_errors??'raise',max_output_retries:node.max_output_retries??1,max_output_tokens:node.max_output_tokens??512}:null})}/>{say('使用独立 harness 配置','Use a per-agent harness')}</label><p className="hint">{say('下面的工具与恢复设置保存到该智能体的 harness，可在改进页指定搜索范围。','Tool and recovery settings below belong to this agent’s harness. Set their search bounds in Improve.')}</p><label>{say('消息收件箱','Peer mailbox')}<input aria-label="Peer mailbox" value={typeof node.mailbox==='string'?node.mailbox:''} placeholder="analyst" onChange={e=>change({mailbox:e.target.value||null})}/></label>
+    {node.harness&&<><label>{say('自动检索记忆','Retrieve memory before each task')}<select aria-label="Harness memory tool" value={node.harness.memory?.tool??''} onChange={e=>change({harness:{...node.harness,memory:e.target.value?{tool:e.target.value,query_input:Object.keys(node.inputs)[0]??'',limit:5,max_chars:4000}:null}})}><option value="">{say('关闭','Off')}</option>{memory.filter(([alias,t])=>node.tools?.includes(alias)&&['memory.search','memory.recall','documents.search'].includes(t.plugin)).map(([alias])=><option key={alias}>{alias}</option>)}</select></label>{node.harness.memory&&<><label>{say('查询输入','Query input')}<select aria-label="Memory query input" value={node.harness.memory.query_input} onChange={e=>change({harness:{...node.harness,memory:{...node.harness!.memory!,query_input:e.target.value}}})}>{Object.keys(node.inputs).map(name=><option key={name}>{name}</option>)}</select></label><label>{say('检索条数','Retrieved records')}<input aria-label="Harness memory limit" type="number" min={1} max={20} value={node.harness.memory.limit} onChange={e=>change({harness:{...node.harness,memory:{...node.harness!.memory!,limit:Number(e.target.value)}}})}/></label><label>{say('记忆字符预算','Memory character budget')}<input aria-label="Harness memory characters" type="number" min={128} max={16000} value={node.harness.memory.max_chars} onChange={e=>change({harness:{...node.harness,memory:{...node.harness!.memory!,max_chars:Number(e.target.value)}}})}/></label></>}</>}
+    </section>}
     <section className="setting-section"><h4><Icon name="file"/>{say('提示词','Prompt')}</h4>
       <select aria-label="Instruction source" value={resource} onChange={e=>change({instructions:e.target.value?{resource:e.target.value}:content})}><option value="">{say('节点内编辑','Inline instruction')}</option>{Object.entries(doc.spec.resources).filter(([,r])=>r.role==='prompt').map(([name])=><option key={name} value={name}>{name}</option>)}</select>
       <textarea aria-label={say('指令','Instructions')} className="prompt-input" value={content} onChange={e=>resource?onChange(node,{resources:{...doc.resources,[resource]:e.target.value}}):change({instructions:e.target.value})}/>

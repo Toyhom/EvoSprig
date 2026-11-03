@@ -4,7 +4,7 @@ Automatically improve the prompts and skills your agent uses. Choose editable re
 
 The self-improvement loop revises application resources, reruns the same tasks and uses feedback for further candidates. You control which resources can change, the budget and version adoption.
 
-EvoSprig offers **14 training-free strategies across 12 method families**. They share the same application runtime, evaluator, candidate archive and release gate. GEPA uses its official library; the other strategies are native resource-level adaptations with the mechanisms below.
+EvoSprig offers **23 training-free strategies across 21 method families**. They share the same application runtime, evaluator, candidate archive and release gate. GEPA uses its official library; the other strategies are native adaptations for resources and application harnesses with the mechanisms below.
 
 ## Choose a strategy
 
@@ -24,6 +24,8 @@ EvoSprig offers **14 training-free strategies across 12 method families**. They 
 | [PromptBreeder](https://arxiv.org/abs/2309.16797) `promptbreeder` | Task and mutation instructions | Population fitness and feedback | Coevolves bounded task/mutator populations; a reduced operator set |
 | [Reflexion](https://arxiv.org/abs/2303.11366) `reflexion` | Episodic reflections | Failure trajectories and environment/judge feedback | Appends bounded reflections while keeping the base instruction fixed |
 | [ExpeL](https://arxiv.org/abs/2308.10144) `expel` | Reusable insight rules | Successful and failed experiences with feedback | Contrasts observations and updates rules citing actual search samples |
+
+For **SkillOpt, Evo-Harness, AHE, Meta-Harness, RRSI, ADAS, DarwinX, ModularRSI and Arbor**, see [harness search and method policies](harness-search.md). These methods extend evolution to skills, structured settings, executable code and workflow graphs.
 
 Explore [component coverage and upcoming algorithms](evolution-components.md), or [add your own optimizer](optimizer-plugins.md).
 
@@ -48,7 +50,7 @@ Demonstration methods need at least one successful search execution. A judge can
 
 ## From agent to improved version
 
-In Studio, configure a task set, select prompt or skill resources, and choose an algorithm. EvoSprig proposes edits and evaluates the running application automatically. The result view shows resource changes and paired outputs together. Review and enable the version in **Versions**.
+In Studio, configure a task set, select resources and optional structured fields, and choose an algorithm. EvoSprig proposes edits and evaluates the running application automatically. The result view shows resource changes and paired outputs together. Review and enable the version in **Versions**.
 
 Attach reusable skills with `Builder.skill(...)` and `node(..., skills=[...])`. See [agent configuration](agent-resources.md) for the full setup.
 
@@ -65,7 +67,7 @@ evosprig improve my-agent/agent.yaml \
 
 Install `pip install 'evosprig[evolution]'` for GEPA. Native strategies need no extra optimization dependency. Studio lists the same methods from the backend registry and can create input-only suites, inspect paired application outputs and compare resource diffs.
 
-Each candidate is a content-addressed snapshot. The AgentSpec, tools, permissions, evaluator and partition assignment remain fixed. `search` inputs guide proposals; `selection` ranks candidates; `release` validates the selected version; optional `test` inputs stay sealed until reporting. The baseline remains selected if no candidate improves its selection score.
+Each candidate is a content-addressed snapshot of its resources and AgentSpec. The declared search space controls editable behavior. Deployment permissions, evaluator and task partitions remain fixed. `search` tasks guide proposals; `selection` supplies validation; `release` checks the selected version; optional `test` tasks stay sealed until reporting. Selection follows the chosen method’s policy.
 
 ## Joint instruction and demonstration search
 

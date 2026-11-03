@@ -19,6 +19,18 @@ Original research behind EvoSprig’s [evolution methods](evolution.md), [memory
 | Reflexion | Shinn et al. (2023), [Reflexion: Language Agents with Verbal Reinforcement Learning](https://arxiv.org/abs/2303.11366) | Bounded reflections from failed trajectories |
 | ExpeL | Zhao et al. (2023), [ExpeL: LLM Agents Are Experiential Learners](https://arxiv.org/abs/2308.10144) | Rules derived from successful and failed experiences |
 
+| SkillOpt | [SkillOpt](https://arxiv.org/abs/2605.23904) | Bounded anchored edits, strict skill validation and slow guidance |
+| Evo-Harness | [Evo-Harness: Context-to-Harness Skill Compilation for Self-Evolving Agents](https://arxiv.org/abs/2608.15071) | Failure-memory compilation and topic/general skill discovery |
+| AHE | [Agentic Harness Engineering: Observability-Driven Automatic Evolution of Coding-Agent Harnesses](https://arxiv.org/abs/2604.25850) | Diagnosis, edit manifests, measured attribution and rollback |
+| Meta-Harness | [Meta-Harness: End-to-End Optimization of Model Harnesses](https://arxiv.org/abs/2603.28052) | Implementation/trace archive and score/token frontier |
+| RRSI | [RRSI: Regularized Recursive Self-Improvement of Agent Harnesses](https://arxiv.org/abs/2609.24972) | Repeated score/cost admission and regularized revision history |
+| ADAS | [Automated Design of Agentic Systems](https://arxiv.org/abs/2408.08435) | Design archive, self-critique and executable candidates |
+| DarwinX | [DarwinX: Evolving Agent Harnesses Through Natural Selection](https://arxiv.org/abs/2608.07545) | Branch recombination and repeated preserve-and-extend checks |
+| ModularRSI | [ModularRSI: Modular and Generalizable Recursive Harness Self-Improvement](https://arxiv.org/abs/2609.14857) | Independent target-owned branches, contrastive diagnosis and integration |
+| Arbor | [RUC-NLPIR/Arbor](https://github.com/RUC-NLPIR/Arbor), hypothesis-tree coordinator and executor | Tree expansion, pruning, trunk experiments and upward insight synthesis |
+
+Implementation policies and settings: [Harness search](harness-search.md#method-policies).
+
 ## Memory, retrieval and tool use
 
 | Mechanism | Reference | EvoSprig use |

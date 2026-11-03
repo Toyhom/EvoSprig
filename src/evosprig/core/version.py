@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import re
@@ -83,6 +84,11 @@ def compile_snapshot(spec: AgentSpec, resources: dict[str, str]) -> AgentVersion
         if not isinstance(text, str) or len(text.encode()) > 1_000_000:
             raise ValueError("snapshot resources must be text of at most 1 MB")
         check_public_text(text)
+        if spec.resources[name].role == "code":
+            try:
+                ast.parse(text)
+            except (SyntaxError, RecursionError, ValueError) as exc:
+                raise ValueError(f"code resource {name} has invalid Python syntax") from exc
         # Validate portable paths even though no file is opened.
         resource_path(Path.cwd(), spec.resources[name].path)
         hashes[name] = hashlib.sha256(text.encode()).hexdigest()

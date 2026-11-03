@@ -16,6 +16,8 @@
 
 ## News · 项目动态
 
+- **2026-11-03 · v0.1.7** · 新增九种自进化方法；支持[每个 Agent 的 harness、代码与流程搜索](docs/harness-search.md)，以及 Cowork 专家间直接通信。
+
 - **2026-11-03 · v0.1.6** · Cowork 三栏工作台、[行业环境构造与评估指南](docs/industry-environments.md)，以及四个重点应用展示。
 - **2026-11-03 · v0.1.5** · 新增 [RAI manipulation (EvoSprig)](examples/rai-manipulation/) 多模态机器人操纵；Cowork 加入验收与定向返工，并提供 [CoworkRSI](examples/cowork/#coworkrsi) 自进化入口。
 - **2026-11-03** · 上线 [CoworkOS (EvoSprig)](examples/cowork/)：专家协作、共享文档、定时跟进；[VideoClaw (EvoSprig)](examples/video-studio/)新增三部短片；支持通过[插件接入自进化算法](docs/optimizer-plugins.md)。
@@ -60,7 +62,7 @@
 
 <img src="docs/assets/capabilities.svg" alt="自进化算法、记忆、工具与评测能力" width="100%" />
 
-- **可控自进化**：14 种无需模型训练的策略，覆盖 12 个方法家族，包括提示搜索、种群搜索、示范选择、反思与经验手册；资源、预算和发布条件由你控制。
+- **可控自进化**：23 种无需训练模型的策略、21 个方法家族，包括 SkillOpt、ADAS、ModularRSI、DarwinX 和 Arbor，支持提示词、技能、harness、流程与代码进化；资源、预算和发布条件由你控制。
 - **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
 - **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核，以及多层分组、折叠展开和子流程编辑。
 - **连同业务环境一起构建**：从金融、政务或制造业场景生成数据结构、SOP、工具与数据草稿，将验证后的业务沙箱接入评估和自进化。[使用方法](docs/industry-environments.md)。

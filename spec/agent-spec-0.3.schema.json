@@ -146,6 +146,174 @@
       "title": "Graph",
       "type": "object"
     },
+    "Harness": {
+      "additionalProperties": false,
+      "description": "Optional per-agent overrides; omitted values retain the node's settings.",
+      "properties": {
+        "max_tool_rounds": {
+          "anyOf": [
+            {
+              "maximum": 256,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tool Rounds"
+        },
+        "tool_selection": {
+          "anyOf": [
+            {
+              "enum": [
+                "all",
+                "relevant"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Selection"
+        },
+        "tool_limit": {
+          "anyOf": [
+            {
+              "maximum": 64,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Limit"
+        },
+        "parallel_tool_calls": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parallel Tool Calls"
+        },
+        "tool_errors": {
+          "anyOf": [
+            {
+              "enum": [
+                "raise",
+                "feedback"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Errors"
+        },
+        "output_errors": {
+          "anyOf": [
+            {
+              "enum": [
+                "raise",
+                "feedback"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Errors"
+        },
+        "max_output_retries": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Retries"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "maximum": 32768,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "memory": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MemoryPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Harness",
+      "type": "object"
+    },
+    "MemoryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "query_input": {
+          "title": "Query Input",
+          "type": "string"
+        },
+        "limit": {
+          "default": 5,
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "max_chars": {
+          "default": 4000,
+          "maximum": 16000,
+          "minimum": 128,
+          "title": "Max Chars",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tool",
+        "query_input"
+      ],
+      "title": "MemoryPolicy",
+      "type": "object"
+    },
     "ModelRequirement": {
       "additionalProperties": false,
       "properties": {
@@ -188,7 +356,8 @@
             "loop",
             "parallel",
             "map",
-            "human"
+            "human",
+            "code"
           ],
           "title": "Type",
           "type": "string"
@@ -460,6 +629,44 @@
           ],
           "default": null,
           "title": "Max Output Tokens"
+        },
+        "harness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Harness"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mailbox": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mailbox"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
         }
       },
       "required": [
@@ -554,7 +761,8 @@
           "default": "prompt",
           "enum": [
             "prompt",
-            "skill"
+            "skill",
+            "code"
           ],
           "title": "Role",
           "type": "string"

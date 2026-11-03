@@ -31,7 +31,7 @@ For the workflow editor, replace `--studio-dir apps/cowork` with `--studio-dir a
 
 - **Main agent:** plans assignments, checks each wave and sends specific corrections back to the responsible specialists.
 - **Coordinator:** dispatches each wave to checkpointed subflows with bounded concurrency; up to three waves by default.
-- **Specialists:** use shared documents and project memory, then save their deliverables.
+- **Specialists:** use shared documents and project memory, message any teammate directly, and save their deliverables.
 - **Shared workspace:** people and agents edit through the same revision checks.
 - **Follow-up:** a persisted wake-up resumes the task and reads the latest documents.
 
@@ -48,7 +48,7 @@ evosprig serve --project examples/cowork/rsi-agent.yaml \
   --studio-dir apps/cowork --workspace .evosprig/cowork-rsi
 ```
 
-Open **http://127.0.0.1:18766/?project=cowork-rsi**. For instruction search, use `--studio-dir apps/studio/dist`.
+Open **http://127.0.0.1:18766/?project=cowork-rsi**. For evolution, use `--studio-dir apps/studio/dist`.
 
 Open this project in Studio, then **Improve**:
 
@@ -57,3 +57,7 @@ Open this project in Studio, then **Improve**:
 3. Compare resource changes and generated documents. Enable the selected version in **Versions**.
 
 Your review criteria stay fixed while the team instructions change. [Choose an algorithm](../../docs/evolution.md) · [Add your own optimizer](../../docs/optimizer-plugins.md).
+
+For harness evolution, use the supplied [search space](search-space.yaml) with `modular_rsi`,
+`meta_harness` or `adas`. It separates planning, collaboration and execution targets.
+[Configure your harness search](../../docs/harness-search.md) · [Peer messaging](../../docs/shared-workspaces.md#peer-to-peer-messages).

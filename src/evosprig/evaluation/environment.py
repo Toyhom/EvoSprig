@@ -19,6 +19,7 @@ class DocumentSeed(Contract):
 class EnvironmentConfig(Contract):
     max_concurrent_samples: int = Field(default=1, ge=1, le=32)
     memory_writes: bool = False
+    workspace_writes: bool = False
     documents: list[DocumentSeed] = Field(default_factory=list, max_length=128)
     facts: list[str] = Field(default_factory=list, max_length=128)
     max_resumes: int = Field(default=30, ge=0, le=1000)
@@ -41,12 +42,26 @@ class LocalEnvironment:
     def __init__(self, workspace, config=None):
         self.memory = SQLiteMemory(workspace / "memory.sqlite")
         self.config = config or EnvironmentConfig()
-        self.allow_writes = self.config.memory_writes
+        self.allow_writes = self.config.memory_writes or self.config.workspace_writes
 
     def permits(self, tool):
-        return tool.side_effect == "read_only" or (
-            self.allow_writes
-            and tool.name in {"memory.write", "memory.remember", "memory.summarize"}
+        return (
+            tool.side_effect == "read_only"
+            or (
+                self.config.memory_writes
+                and tool.name in {"memory.write", "memory.remember", "memory.summarize"}
+            )
+            or (
+                self.config.workspace_writes
+                and tool.name
+                in {
+                    "workspace.write",
+                    "workspace.wait",
+                    "messages.send",
+                    "messages.ack",
+                    "messages.wait",
+                }
+            )
         )
 
     async def prepare(self, scope, sample, tools):

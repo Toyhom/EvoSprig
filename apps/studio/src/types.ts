@@ -1,8 +1,10 @@
 export type Json = Record<string, unknown>;
 export type Binding = { ref: string; optional?: boolean; default?: unknown } | { value: unknown };
 export type Predicate = { left: Binding; op: 'eq'|'ne'|'lt'|'le'|'gt'|'ge'|'contains'|'truthy'; right?: Binding|null };
-export type NodeKind = 'model'|'agent'|'tool'|'transform'|'condition'|'join'|'loop'|'parallel'|'map'|'human';
+export type NodeKind = 'model'|'agent'|'tool'|'transform'|'condition'|'join'|'loop'|'parallel'|'map'|'human'|'code';
+export type Harness = {max_tool_rounds?:number|null; tool_selection?:'all'|'relevant'|null; tool_limit?:number|null; parallel_tool_calls?:boolean|null; tool_errors?:'raise'|'feedback'|null; output_errors?:'raise'|'feedback'|null; max_output_retries?:number|null; max_output_tokens?:number|null; memory?:{tool:string;query_input:string;limit:number;max_chars:number}|null};
 export type NodeSpec = {
+  code?:string|null; harness?:Harness|null; mailbox?:string|{ref:string}|null;
   type: NodeKind; inputs: Record<string, Binding>; output_schema: Json; model?: string | null;
   instructions?: string | { resource: string }; skills?:string[]; image_inputs?:string[]; temperature?:number|null; top_p?:number|null; tools?: string[]; tool?: string | null;
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;
@@ -17,7 +19,7 @@ export type Spec = {
   spec_version: '0.1'|'0.2'|'0.3'; id: string; input_schema: Json; output_schema: Json;
   models: Record<string, { binding: string; requires: string[] }>;
   tools: Record<string, { plugin: string; version: string }>;
-  resources: Record<string, { path: string; role: 'prompt'|'skill' }>;
+  resources: Record<string, { path: string; role: 'prompt'|'skill'|'code' }>;
   graph: Graph; execution?: Record<string, number|boolean>;
 };
 export type Document = { canvas?: import("./canvas").CanvasState; id: string; revision: number; spec: Spec; spec_hash: string; resources: Record<string,string>|null; layout: Record<string, { x: number; y: number }> };
@@ -46,6 +48,7 @@ export const starter = (id: string): Spec => ({
 });
 export function nodeTemplate(kind:NodeKind, model='main', tool='add'):NodeSpec {
   if (kind==='model'||kind==='agent') return {...structuredClone(starter('sample').graph.nodes.assistant), type:kind, model, ...(kind==='agent'?{tools:[]}:{} )};
+  if(kind==='code') return {type:kind,tool,code:'calculation',inputs:{},output_schema:{type:'object'}};
   if(kind==='tool') return {type:kind,tool,inputs:{},output_schema:{type:'object'}};
   if(kind==='condition') return {type:kind,inputs:{},condition:{left:{value:true},op:'truthy'},output_schema:{type:'object',properties:{value:{type:'boolean'}},required:['value']}};
   const inner:Graph={entry:'step',nodes:{step:{type:'transform',inputs:{text:{value:'example'}},output_schema:objectSchema('text')}},edges:[],output:{text:{ref:'nodes.step.output.text'}}};
@@ -70,6 +73,7 @@ export function usedResources(spec:Spec):Set<string> {
   const names=new Set<string>();
   function visit(graph:Graph){for(const node of Object.values(graph.nodes)){
     if(typeof node.instructions==='object')names.add(node.instructions.resource);
+    if(node.code)names.add(node.code);
     node.skills?.forEach(name=>names.add(name));
     if(node.body)visit(node.body);
     Object.values(node.branches??{}).forEach(visit);

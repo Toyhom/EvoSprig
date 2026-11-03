@@ -3,14 +3,14 @@
 | Area | Available |
 | --- | --- |
 | Authoring | Python Builder, YAML/JSON AgentSpec 0.1/0.2/0.3, Studio canvas, nested visual groups and subflow editor |
-| Execution | Model/tool/agent nodes, conditions, joins, bounded loops, parallel branches, dynamic map, human approvals |
+| Execution | Model/tool/agent/code nodes, conditions, joins, bounded loops, parallel branches, dynamic map, human approvals |
 | Persistence | SQLite checkpoints, lease fencing, external jobs, cancellation and operation reconciliation |
 | Models | OpenAI-compatible text, image inputs, structured output, tools and streaming; per-node temperature, top-p and output limits |
 | Agent resources | Main prompts and ordered reusable skills; independent resource search and shared-resource editing |
 | Tools | Python, JSON HTTP, asynchronous HTTP jobs, MCP Streamable HTTP, read-only SQLite; optional Python/WASM, browser, OCR and local image/video generation tools |
 | Memory | BM25, pluggable embeddings with rank fusion, context blocks, temporal relations, episodic/linked recall, source-aware summaries, multi-query retrieval, scoped deletion |
-| Shared workspace | Revisioned team documents, atomic conflict checks, edit history and durable wake-ups |
-| Evolution | 14 training-free strategies across 12 families; custom optimizer registration; [method matrix](evolution.md) |
+| Shared workspace | Revisioned documents, peer mailboxes, direct agent messages, resumable waits and durable wake-ups |
+| Evolution | 23 training-free strategies across 21 families; prompts, skills, harness parameters, graphs, code, routing and memory search; custom optimizer registration; [method matrix](evolution.md) |
 | Evaluation | Search/selection/release/test partitions; rules, JSON schema, LLM-as-judge, external/composite scorers; output/node/trajectory/environment targets, concurrent isolated samples, IndustryBench replay |
 | Versions | Candidate diffs, lineage, manual release, rollback and snapshot export |
 | Studio | English by default, persistent Chinese language option, workflow/resources/history/memory/improvement/releases |

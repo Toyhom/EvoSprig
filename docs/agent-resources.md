@@ -62,4 +62,4 @@ Model credentials and provider options stay in the deployment profile. Sampling 
 4. Start improvement. EvoSprig generates resource edits and runs the same application on the task set.
 5. Open **Compare prompts, skills and outputs**. Review the original and selected resource contents together with the paired answers. Enable your chosen version in **Versions**.
 
-Optimization changes only selected text resources. Tool implementations, graph structure, models, permissions and the task split remain fixed. The [evolution guide](evolution.md) covers methods and release checks.
+Choose text resources or a structured search space for per-agent harness settings, model routes, retrieval parameters, code and topology. Deployment permissions and task partitions remain fixed. See [harness search](harness-search.md) for configuration and [evolution](evolution.md) for methods and release checks.

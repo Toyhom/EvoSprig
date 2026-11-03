@@ -1,0 +1,15 @@
+fields:
+  /graph/nodes/team/body/nodes/dispatch/body/nodes/specialist/harness/max_tool_rounds:
+    kind: integer
+    minimum: 4
+    maximum: 12
+  /graph/nodes/team/body/nodes/acceptance/harness/max_tool_rounds:
+    kind: integer
+    minimum: 4
+    maximum: 12
+modules:
+  planning: [resource:plan]
+  collaboration: [resource:collaboration]
+  execution:
+    - /graph/nodes/team/body/nodes/dispatch/body/nodes/specialist/harness/max_tool_rounds
+    - /graph/nodes/team/body/nodes/acceptance/harness/max_tool_rounds

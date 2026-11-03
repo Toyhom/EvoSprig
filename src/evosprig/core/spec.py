@@ -74,7 +74,7 @@ class ResourceRef(Contract):
 
 class Resource(Contract):
     path: str
-    role: Literal["prompt", "skill"] = "prompt"
+    role: Literal["prompt", "skill", "code"] = "prompt"
 
 
 class ModelRequirement(Contract):
@@ -103,6 +103,27 @@ class Predicate(Contract):
         return self
 
 
+class MemoryPolicy(Contract):
+    tool: str
+    query_input: str
+    limit: int = Field(default=5, ge=1, le=20)
+    max_chars: int = Field(default=4000, ge=128, le=16000)
+
+
+class Harness(Contract):
+    """Optional per-agent overrides; omitted values retain the node's settings."""
+
+    max_tool_rounds: int | None = Field(default=None, ge=1, le=256)
+    tool_selection: Literal["all", "relevant"] | None = None
+    tool_limit: int | None = Field(default=None, ge=1, le=64)
+    parallel_tool_calls: bool | None = None
+    tool_errors: Literal["raise", "feedback"] | None = None
+    output_errors: Literal["raise", "feedback"] | None = None
+    max_output_retries: int | None = Field(default=None, ge=0, le=3)
+    max_output_tokens: int | None = Field(default=None, ge=1, le=32768)
+    memory: MemoryPolicy | None = None
+
+
 class Node(Contract):
     type: Literal[
         "model",
@@ -115,6 +136,7 @@ class Node(Contract):
         "parallel",
         "map",
         "human",
+        "code",
     ]
     inputs: dict[str, Ref | Value] = Field(default_factory=dict)
     output_schema: dict[str, Any]
@@ -143,10 +165,25 @@ class Node(Contract):
     output_errors: Literal["raise", "feedback"] = "raise"
     max_output_retries: int = Field(default=1, ge=0, le=3)
     max_output_tokens: int | None = Field(default=None, ge=1, le=32768)
+    harness: Harness | None = None
+    mailbox: str | Ref | None = None
+    code: str | None = None
 
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if self.harness is not None and self.type != "agent":
+            raise ValueError("structured harness belongs to an agent node")
+        if self.mailbox is not None and self.type != "agent":
+            raise ValueError("mailboxes belong to agent nodes")
+        if isinstance(self.mailbox, str) and not IDENTIFIER.fullmatch(self.mailbox):
+            raise ValueError("mailbox must be an identifier")
+        if self.harness and self.harness.memory:
+            memory = self.harness.memory
+            if memory.tool not in self.tools or memory.query_input not in self.inputs:
+                raise ValueError("harness memory needs an allowed tool and a node input")
+        if (self.type == "code") != (self.code is not None):
+            raise ValueError("code nodes require a code resource")
         if self.image_inputs and self.type not in {"model", "agent"}:
             raise ValueError("image inputs require a model or agent node")
         if len(set(self.image_inputs)) != len(self.image_inputs) or any(
@@ -163,7 +200,7 @@ class Node(Contract):
             raise ValueError("per-node output tokens require a model or agent node")
         if len(self.tools) != len(set(self.tools)):
             raise ValueError("agent tool aliases must be unique")
-        if self.type == "tool":
+        if self.type in {"tool", "code"}:
             if (
                 not self.tool
                 or self.model
@@ -215,6 +252,13 @@ class Node(Contract):
         if self.type == "parallel" and self.join != "all":
             raise ValueError("parallel branches use the all join strategy")
         return self
+
+    def effective(self):
+        if self.harness is None:
+            return self
+        return self.model_copy(
+            update=self.harness.model_dump(exclude_none=True, exclude={"memory"})
+        )
 
 
 class Edge(Contract):
@@ -298,7 +342,10 @@ class AgentSpec(Contract):
         for node_id in order:
             node = graph.nodes[node_id]
             if self.spec_version != "0.3" and (
-                node.parallel_tool_calls
+                node.harness is not None
+                or node.mailbox is not None
+                or node.code is not None
+                or node.parallel_tool_calls
                 or node.tool_selection != "all"
                 or node.tool_limit != 8
                 or node.max_tool_rounds is not None
@@ -310,6 +357,10 @@ class AgentSpec(Contract):
                 raise ValueError("map nodes and tool feedback require spec_version 0.3")
             if node.model and node.model not in self.models:
                 raise ValueError(f"{node_id}: unknown model {node.model}")
+            if node.code and (
+                node.code not in self.resources or self.resources[node.code].role != "code"
+            ):
+                raise ValueError(f"{node_id}: code must reference a declared code resource")
             if node.image_inputs and "vision" not in self.models[node.model].requires:
                 raise ValueError(f"{node_id}: image inputs require a vision-capable model")
             for tool in [node.tool] if node.tool else node.tools:
@@ -324,6 +375,8 @@ class AgentSpec(Contract):
                 if skill not in self.resources or self.resources[skill].role != "skill":
                     raise ValueError(f"{node_id}: skills must reference declared skill resources")
             self._check_refs(node.inputs, ancestors[node_id], node_id)
+            if isinstance(node.mailbox, Ref):
+                self._check_refs({"mailbox": node.mailbox}, ancestors[node_id], node_id)
             if node.items:
                 self._check_refs({"items": node.items}, ancestors[node_id], node_id)
             if node.condition:
@@ -394,6 +447,8 @@ class AgentSpec(Contract):
                 if isinstance(node.instructions, ResourceRef):
                     names.add(node.instructions.resource)
                 names.update(node.skills)
+                if node.code:
+                    names.add(node.code)
                 if node.body:
                     visit(node.body)
                 for branch in node.branches.values():
@@ -422,6 +477,9 @@ class AgentSpec(Contract):
                     ("image_inputs", []),
                     ("temperature", None),
                     ("top_p", None),
+                    ("harness", None),
+                    ("mailbox", None),
+                    ("code", None),
                 ):
                     if node[key] == default:
                         node.pop(key)

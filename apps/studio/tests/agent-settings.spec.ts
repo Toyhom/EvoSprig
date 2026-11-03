@@ -47,3 +47,52 @@ test('vision inputs are selectable and persist in the saved workflow',async({pag
  await page.locator('.react-flow__node[data-id="review"]').click();
  await expect(page.getByLabel('Image input frame',{exact:true})).toBeChecked();
 });
+
+test('per-agent harness and structured search are editable through Studio',async({page,request})=>{
+ const id='harness-'+Date.now().toString(36);
+ const spec={spec_version:'0.3',id,input_schema:{type:'object'},output_schema:{},models:{main:{binding:'main',requires:['text','tool_calling']}},tools:{recall:{plugin:'memory.search',version:'1'}},resources:{prompt:{path:'prompts/main.md',role:'prompt'}},graph:{entry:'assistant',nodes:{assistant:{type:'agent',model:'main',instructions:{resource:'prompt'},inputs:{question:{ref:'input.question'}},output_schema:{type:'object'},tools:['recall']}},edges:[],output:{answer:{ref:'nodes.assistant.output.text'}}}};
+ expect((await request.post('/api/projects',{data:{spec,resources:{prompt:'Answer the request.'}}})).status()).toBe(201);
+ await page.goto('/');await page.locator('.project[title="'+id+'"]').click();
+ await page.locator('.react-flow__node[data-id="assistant"]').click();
+ await page.getByLabel('Structured harness',{exact:true}).check();
+ await page.getByLabel('Tool rounds',{exact:true}).fill('4');
+ await page.getByLabel('Harness memory tool',{exact:true}).selectOption('recall');
+ await page.getByLabel('Harness memory limit',{exact:true}).fill('3');
+ await page.getByLabel('Peer mailbox',{exact:true}).fill('analyst');
+ await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('status')).toContainText('Saved');
+ const saved=await(await request.get('/api/projects/'+id)).json();
+ expect(saved.spec.graph.nodes.assistant.harness.max_tool_rounds).toBe(4);
+ expect(saved.spec.graph.nodes.assistant.harness.memory.limit).toBe(3);
+ expect(saved.spec.graph.nodes.assistant.mailbox).toBe('analyst');
+ const suite={id:'harness-tasks',search:[{id:'a',input:{question:'a'},expected:'a'}],selection:[{id:'b',input:{question:'b'},expected:'b'}],release:[{id:'c',input:{question:'c'},expected:'c'}],test:[{id:'d',input:{question:'d'},expected:'d'}]};
+ expect((await request.post(`/api/projects/${id}/suites`,{data:suite})).status()).toBe(201);
+ await page.getByRole('button',{name:'Improve',exact:true}).click();
+ await page.getByLabel('Evolution method').selectOption('meta_harness');
+ await page.getByText('Search space and method settings',{exact:true}).click();
+ await page.getByLabel('Structured search',{exact:true}).check();
+ const space={fields:{'/graph/nodes/assistant/harness/max_tool_rounds':{kind:'integer',minimum:2,maximum:8}},modules:{}};
+ await page.getByLabel('Search space JSON').fill(JSON.stringify(space));
+ await expect(page.getByLabel('Evaluation suite',{exact:true})).not.toHaveValue('');
+ const started=page.waitForRequest(r=>r.method()==='POST'&&r.url().endsWith(`/projects/${id}/studies`));
+ await page.getByRole('button',{name:'Start improvement',exact:true}).click();
+ expect((await started).postDataJSON().config.search_space).toEqual(space);
+ await expect(page.locator('.history-list')).toContainText('completed',{timeout:30000});
+});
+
+test('adding a code node creates its versioned resource and executor binding',async({page,request})=>{
+ await page.goto('/');
+ const creation=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/projects');
+ await page.getByRole('button',{name:'＋ New project'}).click();const id=(await(await creation).json()).id;
+ await page.getByLabel('New node type').selectOption('code');
+ await page.getByRole('button',{name:'Add node',exact:true}).click();
+ await page.getByRole('button',{name:'Spec',exact:true}).click();
+ const editor=page.getByLabel('AgentSpec JSON');const spec=JSON.parse(await editor.inputValue());
+ const entry=Object.entries(spec.graph.nodes).find(([,node]:[string,any])=>node.type==='code')!;
+ const [name,node]=entry as [string,any];
+ expect(spec.resources[node.code].role).toBe('code');
+ expect(spec.tools[node.tool].plugin).toBe('code.python');
+ spec.graph.edges.push({source:spec.graph.entry,target:name});
+ await editor.fill(JSON.stringify(spec));await page.getByRole('button',{name:'Save',exact:true}).click();
+ await expect(page.getByRole('status')).toContainText('Saved');
+ const saved=await(await request.get('/api/projects/'+id)).json();expect(saved.resources[node.code]).toContain('def run(inputs)');
+});

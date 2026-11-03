@@ -99,6 +99,11 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             raise HTTPException(422, "editable resources are absent from this version")
         if set(body.config.allowed_resources) - base.spec.used_resources():
             raise HTTPException(422, "attach editable resources to a node before improvement")
+        if body.config.search_space:
+            try:
+                body.config.search_space.validate_base(base, body.config.allowed_resources)
+            except (ValueError, KeyError, IndexError, TypeError) as exc:
+                raise HTTPException(422, "search space does not match the application") from exc
         if body.config.budget.max_evaluations <= 2 * (len(suite.release) + len(suite.test)):
             raise HTTPException(422, "budget must cover search plus paired validation")
         evaluation_config = (
@@ -130,8 +135,10 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
                     continue
                 tool = tools.resolve(binding.plugin, binding.version)
                 if tool.side_effect != "read_only" and not (
-                    evaluation.environment.memory_writes
-                    and tool.name in {"memory.write", "memory.remember", "memory.summarize"}
+                    (evaluation.environment.memory_writes
+                    and tool.name in {"memory.write", "memory.remember", "memory.summarize"})
+                    or (evaluation.environment.workspace_writes
+                    and tool.name in {"workspace.write", "workspace.wait", "messages.send", "messages.ack", "messages.wait"})
                 ):
                     raise ValueError("write tools need an SDK evaluation environment")
         except (ValueError, OSError):
@@ -187,6 +194,7 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             for name, content in after.resources.items()
             if before.resources[name] != content
         }
+        result["spec_diff"] = store.diff(before, after).get("agent.json")
         return result
 
     @app.post("/api/projects/{project_id}/studies/{study_id}/cancel", status_code=202)

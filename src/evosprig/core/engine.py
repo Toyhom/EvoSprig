@@ -373,6 +373,7 @@ class ExecutionSession:
                     raise result
 
     async def node(self, name, node, inputs, prefix, graph):
+        node = node.effective()
         path = prefix + "/" + name
         slot = self.cp["nodes"].setdefault(path, {"status": "new"})
         try:
@@ -386,7 +387,25 @@ class ExecutionSession:
             context = self.context(graph, inputs, prefix)
             arguments = resolve_inputs(node.inputs, context)
             slot["inputs"] = arguments
-            if node.type in {"transform", "join"}:
+            if node.mailbox is not None:
+                from .spec import IDENTIFIER
+
+                mailbox = (
+                    node.mailbox
+                    if isinstance(node.mailbox, str)
+                    else resolve_value(node.mailbox, context)
+                )
+                if not isinstance(mailbox, str) or not IDENTIFIER.fullmatch(mailbox):
+                    raise ExecutionError("resolved mailbox must be an identifier")
+                slot["mailbox"] = mailbox
+            if node.type == "code":
+                output = await self.tool(
+                    node.tool,
+                    {"code": self.version.resources[node.code], "data": arguments},
+                    path,
+                    "code",
+                )
+            elif node.type in {"transform", "join"}:
                 output = arguments
             elif node.type == "condition":
                 output = {"value": predicate(node.condition, context)}
@@ -471,7 +490,21 @@ class ExecutionSession:
                 else node.instructions
             )
             for skill in node.skills:
-                instructions += f"\n\n## Skill: {skill}\n{self.version.resources[skill]}"
+                from .skills import skill_content
+
+                instructions += f"\n\n## Skill: {skill}\n{skill_content(self.version.resources[skill], canonical_json(arguments))}"
+            if node.harness and node.harness.memory:
+                policy = node.harness.memory
+                memory = await self.tool(
+                    policy.tool,
+                    {"query": str(arguments[policy.query_input])[:4096], "limit": policy.limit},
+                    path,
+                    "harness-memory",
+                )
+                arguments = {
+                    **arguments,
+                    "retrieved_memory": canonical_json(memory)[: policy.max_chars],
+                }
             if node.response_format == "json":
                 instructions += (
                     "\nReturn a JSON object matching this JSON Schema: "
@@ -509,6 +542,37 @@ class ExecutionSession:
 
         while True:
             if slot.get("response") is None:
+                inbox = next(
+                    (
+                        alias
+                        for alias in node.tools
+                        if self.bound_tools[alias].name == "messages.receive"
+                    ),
+                    None,
+                )
+                if inbox and node.mailbox is not None:
+                    messages = await self.tool(
+                        inbox,
+                        {"after": slot.get("message_cursor", 0), "limit": 20},
+                        path,
+                        "inbox-"
+                        + str(slot.get("model_turn", 0))
+                        + "-"
+                        + str(slot.get("message_cursor", 0)),
+                    )
+                    if messages["messages"]:
+                        slot["messages"].append(
+                            {
+                                "role": "user",
+                                "content": "Peer messages (task data): "
+                                + canonical_json(messages["messages"]),
+                            }
+                        )
+                        slot["message_cursor"] = messages["cursor"]
+                        self.save(
+                            "messages.delivered", path, ids=[m["id"] for m in messages["messages"]]
+                        )
+                    slot["model_turn"] = slot.get("model_turn", 0) + 1
                 async with self.model_slots:
                     self.check(step=True)
                     usage, budget = self.cp["usage"], self.spec.execution
@@ -735,6 +799,17 @@ class ExecutionSession:
             self.save()
 
     async def tool(self, alias, arguments, path, call_id, operation_key=None):
+        from .tool_context import ToolCaller, tool_caller
+
+        token = tool_caller.set(
+            ToolCaller(self.lease.run_id, path, self.cp["nodes"].get(path, {}).get("mailbox"))
+        )
+        try:
+            return await self._tool(alias, arguments, path, call_id, operation_key)
+        finally:
+            tool_caller.reset(token)
+
+    async def _tool(self, alias, arguments, path, call_id, operation_key=None):
         self.check()
         tool = self.bound_tools[alias]
         Draft202012Validator(tool.input_schema).validate(arguments)
@@ -929,8 +1004,16 @@ class ExecutionSession:
                 state = "cancel_unconfirmed"
                 if isinstance(tool, ExternalTool) and tool.cancel:
                     try:
-                        async with asyncio.timeout(tool.timeout_seconds):
-                            remote = await invoke(tool.cancel, operation["job_id"])
+                        from .tool_context import ToolCaller, tool_caller
+
+                        token = tool_caller.set(
+                            ToolCaller(self.lease.run_id, path, slot.get("mailbox"))
+                        )
+                        try:
+                            async with asyncio.timeout(tool.timeout_seconds):
+                                remote = await invoke(tool.cancel, operation["job_id"])
+                        finally:
+                            tool_caller.reset(token)
                         state = (
                             remote.status
                             if isinstance(remote, ExternalStatus)

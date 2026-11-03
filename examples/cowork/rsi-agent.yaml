@@ -61,6 +61,16 @@ graph:
       body: null
       branches: {}
       condition: null
+      harness:
+        max_output_retries: 1
+        max_output_tokens: null
+        max_tool_rounds: 6
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: feedback
+        tool_limit: null
+        tool_selection: null
       inputs:
         request:
           default: null
@@ -125,6 +135,16 @@ graph:
       body: null
       branches: {}
       condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: null
+        max_tool_rounds: 6
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: feedback
+        tool_limit: null
+        tool_selection: null
       inputs:
         lessons:
           default: null
@@ -159,7 +179,7 @@ graph:
                   minLength: 1
                   type: string
                 role:
-                  minLength: 1
+                  pattern: ^[a-zA-Z][a-zA-Z0-9_-]{0,63}$
                   type: string
                 task:
                   minLength: 1
@@ -193,6 +213,16 @@ graph:
       body: null
       branches: {}
       condition: null
+      harness:
+        max_output_retries: 1
+        max_output_tokens: null
+        max_tool_rounds: 8
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: feedback
+        tool_limit: null
+        tool_selection: null
       inputs:
         draft:
           default: null
@@ -347,6 +377,16 @@ graph:
             body: null
             branches: {}
             condition: null
+            harness:
+              max_output_retries: 2
+              max_output_tokens: null
+              max_tool_rounds: 10
+              memory: null
+              output_errors: feedback
+              parallel_tool_calls: null
+              tool_errors: feedback
+              tool_limit: null
+              tool_selection: null
             inputs:
               request:
                 default: null
@@ -360,6 +400,7 @@ graph:
               resource: acceptance
             items: null
             join: all
+            mailbox: main
             max_items: 32
             max_iterations: 1
             max_output_retries: 2
@@ -395,7 +436,7 @@ graph:
                         minLength: 1
                         type: string
                       role:
-                        minLength: 1
+                        pattern: ^[a-zA-Z][a-zA-Z0-9_-]{0,63}$
                         type: string
                       task:
                         minLength: 1
@@ -421,6 +462,9 @@ graph:
             tools:
             - read
             - list
+            - peer_send
+            - peer_receive
+            - peer_ack
             type: agent
             until: null
           dispatch:
@@ -461,6 +505,16 @@ graph:
                   body: null
                   branches: {}
                   condition: null
+                  harness:
+                    max_output_retries: 1
+                    max_output_tokens: null
+                    max_tool_rounds: 8
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: feedback
+                    tool_limit: null
+                    tool_selection: null
                   inputs:
                     current:
                       default: null
@@ -512,6 +566,16 @@ graph:
                   body: null
                   branches: {}
                   condition: null
+                  harness:
+                    max_output_retries: 2
+                    max_output_tokens: null
+                    max_tool_rounds: 8
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: feedback
+                    tool_limit: null
+                    tool_selection: null
                   inputs:
                     assignment:
                       default: null
@@ -521,10 +585,18 @@ graph:
                       default: null
                       optional: false
                       ref: input.context.request
+                    roster:
+                      default: null
+                      optional: false
+                      ref: input.context.roster
                   instructions:
                     resource: specialist
                   items: null
                   join: all
+                  mailbox:
+                    default: null
+                    optional: false
+                    ref: input.item.role
                   max_items: 32
                   max_iterations: 1
                   max_output_retries: 2
@@ -551,6 +623,10 @@ graph:
                   - list
                   - read
                   - memory_search
+                  - peer_send
+                  - peer_receive
+                  - peer_ack
+                  - peer_wait
                   type: agent
                   until: null
               output:
@@ -569,6 +645,10 @@ graph:
                 default: null
                 optional: false
                 ref: input.request
+              roster:
+                default: null
+                optional: false
+                ref: input.tasks
             instructions: ''
             items:
               default: null
@@ -750,6 +830,18 @@ tools:
     version: '1'
   memory_write:
     plugin: memory.write
+    version: '1'
+  peer_ack:
+    plugin: messages.ack
+    version: '1'
+  peer_receive:
+    plugin: messages.receive
+    version: '1'
+  peer_send:
+    plugin: messages.send
+    version: '1'
+  peer_wait:
+    plugin: messages.wait
     version: '1'
   read:
     plugin: workspace.read

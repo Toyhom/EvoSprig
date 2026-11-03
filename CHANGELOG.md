@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7
+
+- Add native SkillOpt, Evo-Harness, AHE, Meta-Harness, RRSI, ADAS, DarwinX, ModularRSI and Arbor searches, bringing the catalog to 23 strategies across 21 families.
+- Search versioned code, workflow topology, per-agent harnesses, model routing and memory settings through developer-defined spaces.
+- Add code nodes with a bounded Python interpreter, structured candidate diffs and standalone exports.
+- Add persistent peer messages, acknowledgements and resumable waits; connect Cowork specialists through runtime-bound mailboxes.
+- Configure agent harnesses and structured searches in Studio, with guides for application developers and optimizer authors.
+
 ## 0.1.6
 
 - Redesign the Cowork workbench around conversations, team activity and shared outputs, with light/dark themes and mobile panels.

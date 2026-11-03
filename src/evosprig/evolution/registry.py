@@ -20,6 +20,7 @@ class Optimizer:
     family: str
     feedback: str
     source: str = ""
+    supports_structured: bool = False
 
 
 _PLUGINS: dict[str, Optimizer] = {}
@@ -27,7 +28,9 @@ _LOADED = False
 _LOCK = threading.RLock()
 
 
-def register_method(name, optimize, *, title, family, feedback, source=""):
+def register_method(
+    name, optimize, *, title, family, feedback, source="", supports_structured=False
+):
     """Register async optimize(context, *, config) once at application startup."""
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", name):
         raise ValueError("method name must be a lowercase identifier")
@@ -37,7 +40,7 @@ def register_method(name, optimize, *, title, family, feedback, source=""):
         raise TypeError("optimizer must be an async function")
     if not all(isinstance(value, str) and value.strip() for value in (title, family, feedback)):
         raise ValueError("method title, family and feedback are required")
-    _PLUGINS[name] = Optimizer(name, optimize, title, family, feedback, source)
+    _PLUGINS[name] = Optimizer(name, optimize, title, family, feedback, source, supports_structured)
     METHODS[name] = {"name": title, "family": family, "feedback": feedback, "source": source}
 
 

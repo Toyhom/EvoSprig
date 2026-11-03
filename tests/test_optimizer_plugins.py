@@ -65,6 +65,31 @@ def test_unknown_plugin_is_rejected():
         StudyConfig(method="unknown_plugin", allowed_resources=["prompt"])
 
 
+def test_structured_plugins_declare_candidate_support(monkeypatch):
+    from evosprig.evolution import registry
+    from evosprig.evolution.space import SearchSpace
+
+    monkeypatch.setattr(registry, "METHODS", dict(registry.METHODS))
+    monkeypatch.setattr(registry, "_PLUGINS", {})
+
+    async def optimize(context, *, config):
+        return {"selected": context.seed}
+
+    space = SearchSpace.model_validate({"fields": {"/graph": {"kind": "graph"}}})
+    for name, supported in [("graph_plugin", True), ("text_plugin", False)]:
+        register_method(
+            name,
+            optimize,
+            title=name,
+            family="test",
+            feedback="scores",
+            supports_structured=supported,
+        )
+    assert StudyConfig(method="graph_plugin", search_space=space).search_space == space
+    with pytest.raises(ValueError, match="text resources"):
+        StudyConfig(method="text_plugin", search_space=space)
+
+
 def test_package_discovery_rolls_back_failed_installation(tmp_path, monkeypatch):
     from types import SimpleNamespace
 

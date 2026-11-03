@@ -17,7 +17,7 @@ def obj(**props):
 
 TEXT = {"type": "string", "minLength": 1}
 DOC = obj(name=TEXT, content=TEXT)
-TASK = obj(role=TEXT, task=TEXT, document=TEXT)
+TASK = obj(role={"type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"}, task=TEXT, document=TEXT)
 PLAN = obj(title=TEXT, tasks={"type": "array", "items": TASK, "minItems": 1, "maxItems": 6})
 
 
@@ -36,6 +36,8 @@ def build(*, rsi=False):
         b.tool(name, "workspace." + name)
     for name in ["context", "search", "write"]:
         b.tool("memory_" + name, "memory." + name)
+    for name in ["send", "receive", "ack", "wait"]:
+        b.tool("peer_" + name, "messages." + name)
     b.node("context", "tool", tool="memory_context", inputs={}, output_schema={"type": "object"})
     b.node(
         "plan",
@@ -60,7 +62,8 @@ def build(*, rsi=False):
                 "model": "main",
                 "instructions": {"resource": "specialist"},
                 "skills": ["collaboration"],
-                "tools": ["list", "read", "memory_search"],
+                "tools": ["list", "read", "memory_search", "peer_send", "peer_receive", "peer_ack", "peer_wait"],
+                "mailbox": {"ref": "input.item.role"},
                 "tool_errors": "feedback",
                 "max_tool_rounds": 8,
                 "parallel_tool_calls": True,
@@ -70,6 +73,7 @@ def build(*, rsi=False):
                 "inputs": {
                     "assignment": {"ref": "input.item"},
                     "request": {"ref": "input.context.request"},
+                    "roster": {"ref": "input.context.roster"},
                 },
                 "max_output_tokens": 4096,
                 "output_schema": obj(content=TEXT),
@@ -116,7 +120,7 @@ def build(*, rsi=False):
     # Main reviews each wave and can delegate targeted follow-up assignments.
     dispatch = b.data["graph"]["nodes"].pop("team")
     dispatch["items"] = {"ref": "input.tasks"}
-    dispatch["inputs"] = {"request": {"ref": "input.request"}}
+    dispatch["inputs"] = {"request": {"ref": "input.request"}, "roster": {"ref": "input.tasks"}}
     verdict = obj(
         content=TEXT,
         accepted={"type": "boolean"},
@@ -144,7 +148,8 @@ def build(*, rsi=False):
                     "model": "main",
                     "instructions": {"resource": "acceptance"},
                     "skills": ["collaboration"],
-                    "tools": ["read", "list"],
+                    "tools": ["read", "list", "peer_send", "peer_receive", "peer_ack"],
+                    "mailbox": "main",
                     "parallel_tool_calls": True,
                     "tool_errors": "feedback",
                     "max_tool_rounds": 10,
@@ -290,6 +295,21 @@ def build(*, rsi=False):
         max_parallel_tools=3,
         timeout_seconds=1200,
     )
+    def configure_harness(graph):
+        for node in graph["nodes"].values():
+            if node["type"] == "agent":
+                node["harness"] = {
+                    "max_tool_rounds": node.get("max_tool_rounds", 8),
+                    "tool_errors": "feedback",
+                    "output_errors": "feedback",
+                    "max_output_retries": node.get("max_output_retries", 1),
+                }
+            if node.get("body"):
+                configure_harness(node["body"])
+            for branch in node.get("branches", {}).values():
+                configure_harness(branch)
+
+    configure_harness(b.data["graph"])
     return b.build_spec()
 
 
