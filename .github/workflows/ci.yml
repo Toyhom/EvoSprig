@@ -62,5 +62,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install --only-binary=:all: -r apps/robot-service/requirements.txt pytest==8.4.2
+      - run: |
+          python -m pip install --only-binary=:all: -r apps/robot-service/requirements.txt pytest==8.4.2
       - run: python -m pytest apps/robot-service/tests -q -c /dev/null
