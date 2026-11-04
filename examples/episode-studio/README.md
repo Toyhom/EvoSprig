@@ -49,7 +49,7 @@ From [Vera’s Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉�
 
 ![Automatic visual review restores the planned cast and composition](assets/retake.jpg)
 
-The visual editor checks generated frames against the cast and shot plan. When it finds a mismatch, it sends specific corrections to the shot director and requests another take. Here it corrected Sachi’s hairstyle and restored Vera in the background with the planned costume and position.
+The visual editor checks generated frames against the cast and shot plan. When it finds a mismatch, it sends specific corrections to the shot director and requests another take. Here the reviewer identified the wrong character; the next take restored Vera’s short hair and blue dress.
 
 ## Implementation
 
