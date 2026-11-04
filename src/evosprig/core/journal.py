@@ -132,6 +132,22 @@ def validate_response(record, path, response):
     Draft202012Validator(waiting.get("schema", {})).validate(response)
 
 
+def retry_failed_record(record):
+    """Queue an explicit retry while preserving work, budgets and failure history."""
+    if record["status"] != "failed" or record["owner"] is not None:
+        raise ValueError("only an unowned failed run can be retried")
+    checkpoint = record["checkpoint"]
+    event = {"type": "run.retry_requested", "data": {
+        "previous_error": copy.deepcopy(checkpoint["error"]),
+        "active_seconds": checkpoint["active_seconds"],
+        "usage": copy.deepcopy(checkpoint["usage"]),
+    }}
+    checkpoint["error"] = None
+    checkpoint["waiting"] = []
+    record.update(status="queued", cancel_requested=False, ready_at=time.time(), updated_at=time.time())
+    return event
+
+
 class RunJournal(Protocol):
     durable: bool
 
@@ -161,6 +177,7 @@ class RunJournal(Protocol):
         update: dict | None = None,
     ) -> dict | None: ...
     def cancel(self, run_id: str, scope: Scope | None = None) -> None: ...
+    def retry_failed(self, run_id: str, scope: Scope | None = None) -> None: ...
     def respond(
         self, run_id: str, path: str, response: dict, scope: Scope | None = None
     ) -> None: ...
@@ -280,6 +297,13 @@ class MemoryJournal:
             if record["status"] in TERMINAL:
                 return
             record["cancel_requested"] = True
+
+    def retry_failed(self, run_id, scope=None):
+        with self._lock:
+            self.get(run_id, scope)
+            record = self._runs[run_id]
+            event = retry_failed_record(record)
+            self._events[run_id].append(make_event(record, len(self._events[run_id]) + 1, event))
 
     def respond(self, run_id, path, response, scope=None):
         with self._lock:

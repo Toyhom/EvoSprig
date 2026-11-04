@@ -22,7 +22,7 @@
 
 Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate versions, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
-[![EvoSprig: canvas, code, debugging and self-improvement](docs/assets/evosprig-demo.webp)](docs/assets/evosprig-demo.mp4)
+[![Play: EvoSprig in 52 seconds — canvas, code and self-evolution](docs/assets/evosprig-demo.jpg)](docs/assets/evosprig-demo.mp4)
 
 **[Watch EvoSprig in 52 seconds · sound on](docs/assets/evosprig-demo.mp4)**
 
@@ -42,6 +42,14 @@ A production team turns a novel or one sentence into an animated film. Agents ch
 <tr>
 <td width="50%" valign="top"><a href="examples/rai-manipulation/"><img src="examples/rai-manipulation/assets/sorting.webp" alt="RAI manipulation (EvoSprig)" width="100%" /></a><br><b><a href="examples/rai-manipulation/">RAI manipulation (EvoSprig)</a></b><br>See the scene. Move the objects. Check the result.<br><sub>Original: <a href="https://github.com/RobotecAI/rai">RAI</a></sub></td>
 <td width="50%" valign="top"><a href="examples/industry-environment-builder/"><img src="examples/industry-environment-builder/assets/overview.svg" alt="Industry environment builder" width="100%" /></a><br><b><a href="examples/industry-environment-builder/">Industry environment builder</a></b><br>Build a business world for your agent to learn in.<br><sub><a href="docs/industry-environments.md">Environment guide</a></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="examples/comic-studio/"><img src="examples/comic-studio/assets/page.jpg" alt="Comic Studio: a complete four-panel story about a blue umbrella" width="100%" /></a><br><b><a href="examples/comic-studio/">Comic Studio</a></b><br>A story becomes a comic, with a shared cast and panel-by-panel review.<br><sub><a href="docs/tutorials/comic-studio.md">Build it in ten minutes</a></sub></td>
+<td width="50%" valign="top"><a href="examples/office-deliverables/"><img src="examples/office-deliverables/assets/result.png" alt="Office deliverables: the generated quarterly sales brief" width="100%" /></a><br><b><a href="examples/office-deliverables/">Office deliverables</a></b><br>One table becomes an editable spreadsheet, report and slide deck.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="examples/circuit-lab/"><img src="examples/circuit-lab/assets/rc.svg" alt="Circuit Lab: the simulated RC filter response and measured cutoff" width="100%" /></a><br><b><a href="examples/circuit-lab/">Circuit Lab</a></b><br>Describe a circuit. Get a netlist, a simulation and measured results.</td>
+<td width="50%" valign="top"><a href="examples/trade-followup/"><img src="examples/trade-followup/assets/result.png" alt="Trade follow-up: a customer-specific draft and next steps" width="100%" /></a><br><b><a href="examples/trade-followup/">Trade follow-up</a></b><br>Turn customer conversations and product facts into a useful reply.</td>
 </tr>
 </table>
 

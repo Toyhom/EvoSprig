@@ -22,7 +22,7 @@
 
 使用 Python 或可视化画布开发智能体，再用自己的任务推动智能体持续改进。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
-[![EvoSprig：画布、代码、调试与自进化](docs/assets/evosprig-demo.webp)](docs/assets/evosprig-demo.mp4)
+[![播放：52 秒了解 EvoSprig，画布、代码与自进化](docs/assets/evosprig-demo.jpg)](docs/assets/evosprig-demo.mp4)
 
 **[52 秒了解 EvoSprig · 带音乐与字幕](docs/assets/evosprig-demo.mp4)**
 
@@ -42,6 +42,14 @@
 <tr>
 <td width="50%" valign="top"><a href="examples/rai-manipulation/"><img src="examples/rai-manipulation/assets/sorting.webp" alt="RAI manipulation (EvoSprig)" width="100%" /></a><br><b><a href="examples/rai-manipulation/">RAI manipulation (EvoSprig)</a></b><br>看见场景，操纵机械臂，检查结果。<br><sub>原项目：<a href="https://github.com/RobotecAI/rai">RAI</a></sub></td>
 <td width="50%" valign="top"><a href="examples/industry-environment-builder/"><img src="examples/industry-environment-builder/assets/overview.svg" alt="行业环境构造" width="100%" /></a><br><b><a href="examples/industry-environment-builder/">行业环境构造</a></b><br>构造业务世界，让行业智能体在其中学习。<br><sub><a href="docs/industry-environments.md">行业环境指南</a></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="examples/comic-studio/README.zh-CN.md"><img src="examples/comic-studio/assets/page.jpg" alt="漫画工坊：雨中的蓝伞四格漫画成品" width="100%" /></a><br><b><a href="examples/comic-studio/README.zh-CN.md">漫画工坊</a></b><br>一句故事画成漫画，共用人设，逐格检查与重画。<br><sub><a href="docs/zh-CN/tutorials/comic-studio.md">十分钟跟着做</a></sub></td>
+<td width="50%" valign="top"><a href="examples/office-deliverables/README.zh-CN.md"><img src="examples/office-deliverables/assets/result.png" alt="办公交付助手：实际生成的季度销售简报" width="100%" /></a><br><b><a href="examples/office-deliverables/README.zh-CN.md">办公交付助手</a></b><br>给一张表，交付可编辑的 Excel、报告和 PPT。</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="examples/circuit-lab/README.zh-CN.md"><img src="examples/circuit-lab/assets/rc.svg" alt="电路实验室：实际仿真的 RC 滤波器波形与截止频率" width="100%" /></a><br><b><a href="examples/circuit-lab/README.zh-CN.md">电路实验室</a></b><br>描述电路需求，生成网表，运行仿真，再检查指标。</td>
+<td width="50%" valign="top"><a href="examples/trade-followup/README.zh-CN.md"><img src="examples/trade-followup/assets/result.png" alt="外贸跟进助手：客户回复草稿与下一步建议" width="100%" /></a><br><b><a href="examples/trade-followup/README.zh-CN.md">外贸跟进助手</a></b><br>结合客户往来和产品资料，写出有针对性的回复。</td>
 </tr>
 </table>
 

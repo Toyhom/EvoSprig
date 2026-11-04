@@ -16,6 +16,7 @@ from evosprig.core.journal import (
     check_lease,
     make_event,
     new_run,
+    retry_failed_record,
     validate_response,
 )
 from evosprig.core.spec import canonical_json
@@ -225,6 +226,19 @@ class SQLiteJournal:
                     "SELECT body FROM runtime_operations WHERE run_id=? ORDER BY rowid", (run_id,)
                 )
             ]
+
+    def retry_failed(self, run_id, scope=None):
+        with self._transaction() as db:
+            record = self._read(db, run_id, scope)
+            event = retry_failed_record(record)
+            sequence = db.execute(
+                "SELECT COALESCE(MAX(sequence),0) FROM runtime_events WHERE run_id=?", (run_id,)
+            ).fetchone()[0] + 1
+            body, blobs = sqlite_checkpoint.pack(record["checkpoint"])
+            sqlite_checkpoint.write(db, run_id, body, blobs)
+            self._write_control(db, control_record(record))
+            db.execute("INSERT INTO runtime_events VALUES (?, ?, ?)",
+                       (run_id, sequence, canonical_json(make_event(record, sequence, event))))
 
     def operation(self, lease, operation_id, intent=None, update=None):
         with self._transaction() as db:

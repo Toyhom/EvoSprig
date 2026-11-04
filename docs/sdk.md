@@ -70,6 +70,7 @@ A structured `harness` applies to agent nodes. Non-null harness values override 
 | `await runtime.run(version, inputs, *, run_id=None, scope=None, cancel=None, on_event=None, shutdown=None)` | Start/resume execution and return `RunResult` |
 | `runtime.create_run(version, inputs, *, run_id=None, scope=None, context=None)` | Persist a run for a worker to execute |
 | `await runtime.resume(run_id, *, scope=None, cancel=None, on_event=None, shutdown=None)` | Continue from its frozen version and checkpoint |
+| `runtime.retry_failed(run_id, *, scope=None)` | Queue an explicit retry; preserve completed work, budgets and failure events |
 | `runtime.get(run_id, scope=None)` | Read current state |
 | `await runtime.cancel_run(run_id, *, scope=None)` | Request cancellation and return current state |
 | `runtime.create_event_run(version, inputs, trigger, *, scope=None)` | Create an idempotent event-triggered run |

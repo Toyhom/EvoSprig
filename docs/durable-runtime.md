@@ -33,6 +33,22 @@ is 60 seconds; AgentSpec 0.3 allows up to 86,400 seconds for long applications.
 Time spent suspended for human input or an external job is excluded. Configure an
 external tool's `job_timeout_seconds` separately for its rendering or execution deadline.
 
+After downtime, the runtime polls an existing external job before applying its
+deadline. A completed result is collected; a job that is still pending or
+unreachable past its deadline reports `external_timeout`.
+
+After fixing a service or deployment issue, explicitly queue a failed run again:
+
+```python
+runtime.retry_failed(run_id)
+result = await runtime.resume(run_id)
+```
+
+The retry keeps the frozen version, completed nodes, external job IDs, operation
+receipts and consumed budgets. A `run.retry_requested` event records the previous
+error. Resolve failed or canceled jobs in their external service before retrying.
+To change the workflow or its budget, start a new run or debug a selected subflow.
+
 ```bash
 evosprig run agent.yaml --input '{"text":"draft"}' --mock --workspace ./workspace
 evosprig runs --workspace ./workspace

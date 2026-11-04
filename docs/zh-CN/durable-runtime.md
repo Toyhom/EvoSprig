@@ -14,6 +14,17 @@ CLI 和本地 API 将冻结版本、节点输出、模型消息、操作回执�
 
 `execution.timeout_seconds` 限制跨恢复的活跃 Worker 时间。默认值为 60 秒；AgentSpec 0.3 允许长时应用最多 86,400 秒。为人工输入或外部作业而挂起的时间不计入。请为外部工具的 `job_timeout_seconds` 单独配置其渲染或执行截止时间。
 
+停机恢复后，运行时先查询已有外部作业的状态，再判断等待期限。已完成的结果会直接取回；超过期限仍在等待或无法连接的作业返回 `external_timeout`。
+
+修复服务或部署问题后，可以显式重试失败的运行：
+
+```python
+runtime.retry_failed(run_id)
+result = await runtime.resume(run_id)
+```
+
+重试保留冻结版本、已完成节点、外部作业 ID、操作回执和已用预算。`run.retry_requested` 事件记录之前的错误。外部作业本身失败或取消时，先在对应服务中恢复作业；需要修改工作流或预算时，启动新运行或调试选定子流程。
+
 ```bash
 evosprig run agent.yaml --input '{"text":"draft"}' --mock --workspace ./workspace
 evosprig runs --workspace ./workspace

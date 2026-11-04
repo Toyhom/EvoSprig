@@ -36,6 +36,10 @@ class Suspended(Exception):
         self.status = status
 
 
+class ExternalDeadlineExceeded(ExecutionError):
+    code = "external_timeout"
+
+
 class LeaseHeartbeat:
     """Keep the lease alive while synchronous checkpoint work occupies the loop."""
 
@@ -248,7 +252,7 @@ class Engine:
                     "validation_error" if isinstance(exc, ValueError) else "execution_error",
                 ),
                 "message": str(exc)
-                if isinstance(exc, ToolFeedbackError) or (
+                if isinstance(exc, (ToolFeedbackError, ExternalDeadlineExceeded)) or (
                     isinstance(exc, BudgetExceeded)
                     and str(exc) in {
                     "step budget exhausted",
@@ -1006,9 +1010,12 @@ class ExecutionSession:
             self.save("tool.reconciled", path, operation_id=operation_id)
             return output
         if isinstance(tool, ExternalTool):
-            if time.time() - operation["intent"]["created_at"] > tool.job_timeout_seconds:
-                raise TimeoutError("external job deadline exceeded")
+            def check_deadline():
+                if time.time() - operation["intent"]["created_at"] > tool.job_timeout_seconds:
+                    raise ExternalDeadlineExceeded("external job deadline exceeded")
+
             if "job_id" not in operation:
+                check_deadline()
                 if not fresh:
                     self.check(step=True)
                     self.save("external.submit_retry", path, operation_id=operation_id)
@@ -1051,6 +1058,7 @@ class ExecutionSession:
                     self.check(force=True)
                     remote = await invoke(tool.poll, operation["job_id"])
             except (TimeoutError, OSError):
+                check_deadline()
                 self.suspend(
                     response_path,
                     "waiting_external",
@@ -1063,6 +1071,7 @@ class ExecutionSession:
             if not isinstance(remote, ExternalStatus):
                 raise ExecutionError("external poll must return ExternalStatus")
             if remote.status == "pending":
+                check_deadline()
                 self.suspend(
                     response_path,
                     "waiting_external",

@@ -74,6 +74,11 @@ class Runtime:
     def get(self, run_id, scope=None):
         return self._engine.result(run_id, scope)
 
+    def retry_failed(self, run_id, *, scope=None):
+        """Queue a failed run again; completed work and consumed budgets stay saved."""
+        self.journal.retry_failed(run_id, scope)
+        return self.get(run_id, scope)
+
     async def cancel_run(self, run_id, *, scope=None):
         self.journal.cancel(run_id, scope)
         record = self.journal.get(run_id, scope)

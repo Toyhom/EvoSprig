@@ -70,6 +70,7 @@
 | `await runtime.run(version, inputs, *, run_id=None, scope=None, cancel=None, on_event=None, shutdown=None)` | 执行并返回 `RunResult` |
 | `runtime.create_run(version, inputs, *, run_id=None, scope=None, context=None)` | 持久化运行，交给 worker 执行 |
 | `await runtime.resume(run_id, *, scope=None, cancel=None, on_event=None, shutdown=None)` | 从冻结版本和检查点继续 |
+| `runtime.retry_failed(run_id, *, scope=None)` | 显式重试失败运行，保留已完成工作、预算用量和失败事件 |
 | `runtime.get(run_id, scope=None)` | 读取当前状态 |
 | `await runtime.cancel_run(run_id, *, scope=None)` | 请求取消并返回当前状态 |
 | `runtime.create_event_run(version, inputs, trigger, *, scope=None)` | 创建幂等的事件触发运行 |

@@ -153,6 +153,92 @@ async def test_external_job_survives_restart_and_uses_original_job_id(tmp_path):
     assert len(submissions) == 1 and polls == ["video-job-17", "video-job-17"]
 
 
+@pytest.mark.parametrize("persistent", [False, True])
+async def test_completed_external_job_is_collected_after_downtime(tmp_path, monkeypatch, persistent):
+    from evosprig.core.journal import MemoryJournal
+
+    submissions, polls = [], []
+    ready = False
+
+    async def submit(*, idempotency_key):
+        submissions.append(idempotency_key)
+        return "finished-while-offline"
+
+    async def poll(job_id):
+        polls.append(job_id)
+        return ExternalStatus("succeeded", {"value": 17}) if ready else ExternalStatus("pending")
+
+    tool = ExternalTool("test.counter", "job", EMPTY, NUMBER, submit, poll,
+                        side_effect="read_only", job_timeout_seconds=60)
+    store = SQLiteJournal(tmp_path / "runs.sqlite") if persistent else MemoryJournal()
+    runtime = Runtime({}, registry(tool), journal=store, allow_writes=True)
+    first = await runtime.run(compile_agent(tool_spec()), {})
+    assert first.status == "waiting_external"
+    ready = True
+    later = time.time() + 120
+    monkeypatch.setattr(time, "time", lambda: later)
+    final = await runtime.resume(first.run_id)
+    assert final.status == "succeeded" and final.output == {"value": 17}
+    assert len(submissions) == 1 and polls == ["finished-while-offline"] * 2
+
+
+@pytest.mark.parametrize("persistent", [False, True])
+@pytest.mark.parametrize("unavailable", [False, True])
+async def test_external_deadline_retry_preserves_work_and_failure_history(
+    tmp_path, monkeypatch, persistent, unavailable
+):
+    from evosprig.core.journal import MemoryJournal, Scope
+
+    submissions = []
+    state = "pending"
+
+    async def submit(*, idempotency_key):
+        submissions.append(idempotency_key)
+        return "same-job"
+
+    async def poll(job_id):
+        assert job_id == "same-job"
+        if state == "unavailable":
+            raise OSError("service unavailable")
+        return ExternalStatus("succeeded", {"value": 23}) if state == "ready" else ExternalStatus("pending")
+
+    tool = ExternalTool("test.counter", "job", EMPTY, NUMBER, submit, poll,
+                        side_effect="read_only", job_timeout_seconds=60)
+    store = SQLiteJournal(tmp_path / "runs.sqlite") if persistent else MemoryJournal()
+    runtime = Runtime({}, registry(tool), journal=store, allow_writes=True)
+    first = await runtime.run(compile_agent(tool_spec()), {})
+    with pytest.raises(ValueError, match="failed run"):
+        runtime.retry_failed(first.run_id)
+    later = time.time() + 120
+    monkeypatch.setattr(time, "time", lambda: later)
+    if unavailable:
+        state = "unavailable"
+    failed = await runtime.resume(first.run_id)
+    assert failed.status == "failed" and failed.error["code"] == "external_timeout"
+    assert failed.error["message"] == "external job deadline exceeded"
+    original = store.get(first.run_id)
+    with pytest.raises(KeyError):
+        runtime.retry_failed(first.run_id, scope=Scope("recovery", user="another-user"))
+    queued = runtime.retry_failed(first.run_id)
+    assert queued.status == "queued" and queued.error is None
+    after = store.get(first.run_id)
+    assert after["checkpoint"]["usage"] == original["checkpoint"]["usage"]
+    assert after["checkpoint"]["active_seconds"] == original["checkpoint"]["active_seconds"]
+    assert after["checkpoint"]["nodes"] == original["checkpoint"]["nodes"]
+    assert after["version"] == original["version"] and after["metadata"] == original["metadata"]
+    assert queued.events[:-1] == failed.events
+    assert queued.events[-1]["type"] == "run.retry_requested"
+    assert queued.events[-1]["data"]["previous_error"] == failed.error
+    with pytest.raises(ValueError, match="failed run"):
+        runtime.retry_failed(first.run_id)
+    state = "ready"
+    final = await runtime.resume(first.run_id)
+    assert final.status == "succeeded" and final.output == {"value": 23}
+    assert len(submissions) == 1
+    with pytest.raises(ValueError, match="failed run"):
+        runtime.retry_failed(first.run_id)
+
+
 async def test_cancel_pending_external_job_propagates_and_records_result(tmp_path):
     canceled = []
 
