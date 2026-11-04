@@ -16,6 +16,7 @@
 
 ## News
 
+- **2026-11-04** · **[Episode Studio](examples/episode-studio/)** — a multi-agent production team that turns stories into animated films, with a recurring cast and automatic shot review.
 - **2026-11-02** · EvoSprig is open source: a platform for building and evolving agent applications with Python or a visual canvas.
 
 Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate versions, evaluate the running application, compare results and enable a version. Export your application to run independently.

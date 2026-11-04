@@ -1,3 +1,4 @@
+import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -6,6 +7,36 @@ import pytest
 from evosprig.core.journal import LeaseConflict, LeaseLost, MemoryJournal, Scope
 from evosprig.core.version import compile_agent
 from evosprig.plugins.sqlite_journal import SQLiteJournal
+
+
+def test_large_checkpoint_deduplicates_and_restores_literal_markers(tmp_path, spec, example_root):
+    journal = SQLiteJournal(tmp_path / "blobs.sqlite")
+    record = create(journal, spec, example_root)
+    lease = journal.claim("run", "worker", 60)
+    image = "data:image/png;base64," + "abcdefgh" * 40000
+    checkpoint = record["checkpoint"]
+    checkpoint["output"] = {"images": [image] * 10,
+                            "literal": {"$evosprig.blob": "user value", "$evosprig.object": [image]}}
+    journal.save(lease, checkpoint, "running", [])
+    journal.save(lease, checkpoint, "running", [])
+    with sqlite3.connect(journal.path) as db:
+        assert db.execute("SELECT COUNT(*) FROM runtime_checkpoint_blobs").fetchone()[0] == 1
+        assert db.execute("SELECT length(body) FROM runtime_checkpoints").fetchone()[0] < 4000
+    assert SQLiteJournal(journal.path).get("run")["checkpoint"] == checkpoint
+    with pytest.raises(KeyError):
+        journal.get("run", Scope("another-project"))
+
+
+def test_expired_checkpoint_save_does_not_insert_blobs(tmp_path, spec, example_root, advance_clock):
+    journal = SQLiteJournal(tmp_path / "fenced-blobs.sqlite")
+    record = create(journal, spec, example_root)
+    lease = journal.claim("run", "worker", 1)
+    record["checkpoint"]["output"] = {"image": "x" * 32000}
+    advance_clock(2)
+    with pytest.raises(LeaseLost):
+        journal.save(lease, record["checkpoint"], "running", [])
+    with sqlite3.connect(journal.path) as db:
+        assert db.execute("SELECT COUNT(*) FROM runtime_checkpoint_blobs").fetchone()[0] == 0
 
 
 @pytest.fixture(params=["memory", "sqlite"])
@@ -166,13 +197,13 @@ def test_expired_lease_is_rejected_after_checkpoint_serialization(spec, example_
     journal = SQLiteJournal(tmp_path / 'race.sqlite')
     record = create(journal, spec, example_root)
     lease = journal.claim('run', 'old')
-    encode = module.canonical_json
+    encode = module.sqlite_checkpoint.pack
     def slow_encode(value):
         if value is record['checkpoint']:
             advance_clock(31)
             journal.claim('run', 'new')
         return encode(value)
-    monkeypatch.setattr(module, 'canonical_json', slow_encode)
+    monkeypatch.setattr(module.sqlite_checkpoint, 'pack', slow_encode)
     with pytest.raises(LeaseLost):
         journal.save(lease, record['checkpoint'], 'succeeded', [{'type': 'run.succeeded'}])
     assert journal.control('run')['owner'] == 'new'

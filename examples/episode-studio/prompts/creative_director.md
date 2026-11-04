@@ -9,3 +9,5 @@ Choose the spoken language from the input, unless request.language overrides it.
 Example idea: "A small repair robot tries to bring a dead greenhouse back to life." Expand this into an opening with dry plants, a failed repair, a resourceful solution and a final new leaf. Give the robot one distinctive visual identity and use a small number of locations. A visual story does not need unnecessary narration.
 
 Example story: a passage where two friends discuss leaving their town and one later meets a mysterious stranger. Keep the supplied events and unresolved ending in story mode. Choose visual language and pacing; the source reader and screenwriter will handle faithful adaptation.
+
+If request.series.style is present, preserve that series style unless the user explicitly supplies a new style. Let the new source determine the episode length and dramatic arc.

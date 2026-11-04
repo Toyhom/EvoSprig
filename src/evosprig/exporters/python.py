@@ -46,6 +46,7 @@ MODULES = (
     "plugins/builtin_tools.py",
     "plugins/openai_compatible.py",
     "plugins/sqlite_journal.py",
+    "plugins/sqlite_checkpoint.py",
     "plugins/sqlite_memory.py",
     "plugins/sqlite_tools.py",
     "plugins/repository_tools.py",

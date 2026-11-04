@@ -2,19 +2,23 @@
   "layout": {
     "art_director": {
       "x": 494,
-      "y": 132
+      "y": 387.5
     },
     "assemble": {
-      "x": 1344,
-      "y": 547
+      "x": 506,
+      "y": 1209.5
     },
     "creative_director": {
       "x": 64,
-      "y": 221
+      "y": 132
+    },
+    "draft_schedule": {
+      "x": 1360,
+      "y": 652
     },
     "draft_timing": {
       "x": 1395,
-      "y": 759
+      "y": 1261
     },
     "graph/shots/body/accepted": {
       "x": 1258,
@@ -126,35 +130,63 @@
     },
     "producer": {
       "x": 99,
-      "y": 1009
+      "y": 1511
     },
     "production_brief": {
       "x": 75,
-      "y": 465
+      "y": 376
+    },
+    "production_notes": {
+      "x": 518,
+      "y": 915.5
+    },
+    "reference_catalog": {
+      "x": 4335,
+      "y": 459.5
     },
     "reference_library": {
-      "x": 505,
-      "y": 700
+      "x": 840,
+      "y": 1009.5
+    },
+    "reference_plan": {
+      "x": 3675,
+      "y": 459.5
     },
     "render_profile": {
-      "x": 517,
-      "y": 376
+      "x": 86,
+      "y": 832
     },
     "script_editor": {
       "x": 99,
-      "y": 1277
+      "y": 1779
+    },
+    "series_catalog": {
+      "x": 1178,
+      "y": 915.5
+    },
+    "shooting_plan": {
+      "x": 2350,
+      "y": 652
     },
     "shots": {
-      "x": 924,
-      "y": 416
+      "x": 86,
+      "y": 964
     },
     "source_reader": {
       "x": 99,
-      "y": 741
+      "y": 1243
+    },
+    "supplied_voices": {
+      "x": 816,
+      "y": 549.5
     },
     "timeline": {
-      "x": 1332,
-      "y": 343
+      "x": 494,
+      "y": 1005.5
+    },
+    "voice_catalog": {
+      "x": 848,
+      "y": 915.5
     }
   },
   "canvas": {
@@ -180,7 +212,9 @@
             "source_reader",
             "producer",
             "draft_timing",
-            "script_editor"
+            "script_editor",
+            "draft_schedule",
+            "shooting_plan"
           ]
         },
         {
@@ -190,8 +224,8 @@
           "label": "Cast & places",
           "members": [
             "art_director",
-            "render_profile",
-            "reference_library"
+            "group:library",
+            "supplied_voices"
           ]
         },
         {
@@ -200,6 +234,7 @@
           "id": "group:shots",
           "label": "Direct · render · review",
           "members": [
+            "render_profile",
             "shots"
           ]
         },
@@ -209,10 +244,31 @@
           "id": "group:edit",
           "label": "The finished episode",
           "members": [
+            "timeline",
+            "assemble",
+            "group:series"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:library",
+          "label": "Cast & location references",
+          "members": [
+            "reference_plan",
+            "reference_library",
+            "reference_catalog"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:series",
+          "label": "Keep for the next episode",
+          "members": [
             "production_notes",
             "voice_catalog",
-            "timeline",
-            "assemble"
+            "series_catalog"
           ]
         }
       ],

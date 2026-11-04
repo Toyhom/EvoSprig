@@ -282,10 +282,13 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=False, max_reference_t
     if any(not 1 <= limit <= 3 for limit in (max_takes, max_frame_takes, max_reference_takes)):
         raise ValueError("take limits must be between one and three")
     request = {**BRIEF, "required": ["source_text"]}
-    request["properties"] = {**BRIEF["properties"], "voices": {
+    request["properties"] = {**BRIEF["properties"], "series": {"type": "object", "properties": {
+        "characters": PLAN["properties"]["characters"], "locations": PLAN["properties"]["locations"],
+        "style": STRING, "references": {"type": "array", "maxItems": 8, "items": obj(id=TEXT, kind={"enum": ["character", "location"]}, asset=ASSET)},
+        "voices": {"type": "array", "maxItems": 5, "items": obj(id=TEXT, asset=ASSET)}}, "additionalProperties": False}, "voices": {
         "type": "array", "maxItems": 5, "items": obj(id=TEXT, asset=ASSET)}}
     b = Builder("episode-studio", request,
-                obj(film=ASSET, plan=PLAN, shots=ANY,
+                obj(film=ASSET, plan=PLAN, shots=ANY, series=ANY,
                     notes={"type": "array", "items": obj(stage=TEXT, id=TEXT, feedback=STRING)},
                     voices={"type": "array", "items": obj(id=TEXT, asset=ASSET)}), spec_version="0.3")
     b.model("main", "main", ["text", "structured_output"])
@@ -301,7 +304,7 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=False, max_reference_t
     for name in ["shot_context", "gather_references", "reference_names", "render_settings", "select_clip",
                  "review_images", "record_take", "selected_take", "timeline", "plan_valid", "art_valid",
                  "frame_settings", "frame_review_inputs", "selected_frame", "render_valid", "source_valid", "reference_prompt",
-                 "production_brief", "direction_valid", "reference_review_inputs", "voice_catalog", "production_notes"]:
+                 "production_brief", "direction_valid", "reference_review_inputs", "voice_catalog", "production_notes", "reference_plan", "reference_catalog", "series_catalog", "supplied_voices", "schedule_plan"]:
         b.resource(name, f"code/{name}.py", role="code")
     for name, plugin in {"python": "code.python", "image": "media.generate_image", "stage": "media.stage_reference",
                          "recipe": "film.recipe", "render_profile": "film.settings", "render": "film.render", "ingest": "media.ingest_comfy",
@@ -314,39 +317,55 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=False, max_reference_t
                                     tokens=6000, validator="direction_valid"),
         "production_brief": code("production_brief", {"request": ref("input"),
                                                         "direction": ref("nodes.creative_director.output")}, BRIEF),
-        "source_reader": model("source_reader", {"source_text": ref("nodes.production_brief.output.source_text")},
+        "source_reader": model("source_reader", {"source_text": ref("nodes.production_brief.output.source_text"),
+                               "cast": ref("input.series.characters", optional=True, default=[])},
                                SOURCE, tokens=6000, validator="source_valid"),
-        "producer": model("producer", {"brief": ref("nodes.production_brief.output"), "source": ref("nodes.source_reader.output")},
+        "producer": model("producer", {"brief": ref("nodes.production_brief.output"), "source": ref("nodes.source_reader.output"),
+                           "series": ref("input.series", optional=True, default={}), "schedule_by_tool": val(True)},
                           PLAN, tokens=12000, validator="plan_valid"),
-        "draft_timing": code("plan_valid", {"output": ref("nodes.producer.output"),
+        "draft_schedule": code("schedule_plan", {"plan": ref("nodes.producer.output"),
+                                "brief": ref("nodes.production_brief.output")}, PLAN),
+        "draft_timing": code("plan_valid", {"output": ref("nodes.draft_schedule.output"),
                                             "brief": ref("nodes.production_brief.output"),
                                             "source": ref("nodes.source_reader.output")}),
-        "script_editor": model("script_editor", {"brief": ref("nodes.production_brief.output"), "draft": ref("nodes.producer.output"),
+        "script_editor": model("script_editor", {"brief": ref("nodes.production_brief.output"), "draft": ref("nodes.draft_schedule.output"),
                                                    "timing": ref("nodes.draft_timing.output"),
-                                                   "source": ref("nodes.source_reader.output")},
+                                                   "source": ref("nodes.source_reader.output"), "series": ref("input.series", optional=True, default={}), "schedule_by_tool": val(True)},
                                PLAN, tokens=12000, validator="plan_valid"),
-        "art_director": model("art_director", {"plan": ref("nodes.script_editor.output"), "style": ref("nodes.production_brief.output.style")}, ART, tokens=6000, validator="art_valid"),
+        "shooting_plan": code("schedule_plan", {"plan": ref("nodes.script_editor.output"),
+                                "brief": ref("nodes.production_brief.output")}, PLAN),
+        "art_director": model("art_director", {"plan": ref("nodes.shooting_plan.output"), "style": ref("nodes.production_brief.output.style")}, ART, tokens=6000, validator="art_valid"),
         "render_profile": tool("render_profile", {}),
-        "reference_library": {"type": "map", "items": ref("nodes.art_director.output.assets"),
+        "reference_plan": code("reference_plan", {"assets": ref("nodes.art_director.output.assets"),
+                                "supplied": ref("input.series.references", optional=True, default=[])}),
+        "reference_library": {"type": "map", "items": ref("nodes.reference_plan.output.pending"),
                               "inputs": {},
                               "body": assets, "max_items": 8, "output_schema": ANY},
+        "reference_catalog": code("reference_catalog", {"reused": ref("nodes.reference_plan.output.reused"),
+                                "generated": ref("nodes.reference_library.output.items")}),
+        "supplied_voices": code("supplied_voices", {"series": ref("input.series.voices", optional=True, default=[]),
+                                "voices": ref("input.voices", optional=True, default=[])}),
         "shots": {"type": "map", "items": ref("nodes.script_editor.output.shots"),
-                  "inputs": {"plan": ref("nodes.script_editor.output"), "art": ref("nodes.art_director.output"),
-                             "assets": ref("nodes.reference_library.output.items"),
-                             "voices": ref("input.voices", optional=True, default=[]),
+                  "inputs": {"plan": ref("nodes.shooting_plan.output"), "art": ref("nodes.art_director.output"),
+                             "assets": ref("nodes.reference_catalog.output.items"),
+                             "voices": ref("nodes.supplied_voices.output.voices"),
                              "render_profile": ref("nodes.render_profile.output")},
                   "carry": val({"last_frame": None, "continuity": {}, "shot_id": ""}),
                   "body": shot_graph(max_takes, max_frame_takes), "max_items": 24, "output_schema": ANY},
         "production_notes": code("production_notes", {"shots": ref("nodes.shots.output.items"),
-                                                       "references": ref("nodes.reference_library.output.items")}),
+                                                       "references": ref("nodes.reference_catalog.output.items")}),
         "voice_catalog": code("voice_catalog", {"shots": ref("nodes.shots.output.items"),
-                                                 "supplied": ref("input.voices", optional=True, default=[])}),
+                                                 "supplied": ref("nodes.supplied_voices.output.voices")}),
+        "series_catalog": code("series_catalog", {"plan": ref("nodes.shooting_plan.output"),
+                                 "style": ref("nodes.art_director.output.style"),
+                                 "references": ref("nodes.reference_catalog.output.items"),
+                                 "voices": ref("nodes.voice_catalog.output.voices")}),
         "timeline": code("timeline", {"shots": ref("nodes.shots.output.items")}),
         "assemble": tool("compose", {"clips": ref("nodes.timeline.output.clips"), "preserve_audio": val(True)}, ASSET),
     }
     if enable_voice:
         voice_nodes = {
-            "voice_director": model("voice_director", {"plan": ref("nodes.script_editor.output"),
+            "voice_director": model("voice_director", {"plan": ref("nodes.shooting_plan.output"),
                 "language": ref("nodes.production_brief.output.language")}, VOICES, validator="voice_valid"),
             "voice_library": {"type": "map", "items": ref("nodes.voice_director.output.voices"),
                 "inputs": {}, "max_items": 5, "output_schema": ANY,
@@ -359,9 +378,10 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=False, max_reference_t
         position = list(nodes).index("reference_library")
         nodes = dict(list(nodes.items())[:position] + list(voice_nodes.items()) + list(nodes.items())[position:])
         nodes["shots"]["inputs"]["voices"] = ref("nodes.voice_library.output.items")
-    b.data["graph"] = graph(nodes, {"film": ref("nodes.assemble.output"), "plan": ref("nodes.script_editor.output"),
+    b.data["graph"] = graph(nodes, {"film": ref("nodes.assemble.output"), "plan": ref("nodes.shooting_plan.output"),
                                     "notes": ref("nodes.production_notes.output.notes"),
-                                    "shots": ref("nodes.shots.output"), "voices": ref("nodes.voice_catalog.output.voices")})
+                                    "shots": ref("nodes.shots.output"), "voices": ref("nodes.voice_catalog.output.voices"),
+                                    "series": ref("nodes.series_catalog.output")})
     if review_policy == "continue":
         def continue_after_limit(flow):
             for name, node in list(flow["nodes"].items()):

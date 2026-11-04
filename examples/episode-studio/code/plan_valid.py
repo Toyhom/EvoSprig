@@ -20,7 +20,16 @@ def run(inputs):
         issues = issues + ["The first shot must use cut; there is no preceding shot to continue."]
     target = context["brief"]["target_seconds"]
     total = sum([shot["duration_seconds"] for shot in plan["shots"]])
-    if abs(total - target) > max(3, target * 0.15):
+    if context.get("schedule_by_tool", False) and target > 15 * len(plan["shots"]):
+        issues = issues + ["Add enough story beats to fill the target: at least " + str((target + 14) // 15) + " shots. A deterministic tool will assign their durations."]
+    if context.get("schedule_by_tool", False):
+        texts = ["".join([line["text"] for line in shot["dialogue"]]) + shot["narration"] for shot in plan["shots"]]
+        speech_floors = [max(3, (len(text) + 4) // 5) if chinese_language else max(3, (len(text.split()) + 2) // 3) for text in texts]
+        if max(speech_floors) > 15:
+            issues = issues + ["Split long spoken passages between shots so each fits fifteen seconds."]
+        if sum(speech_floors) > target:
+            issues = issues + ["The spoken text cannot fit the episode. Shorten narration while preserving the source's plot and ending."]
+    if not context.get("schedule_by_tool", False) and abs(total - target) > max(3, target * 0.15):
         count = len(plan["shots"])
         timing = ("The " + str(count) + " shots total " + str(total)
                 + " seconds; the requested total is " + str(target) + ". Change the total by "
@@ -54,6 +63,6 @@ def run(inputs):
                     issues = issues + ["Shot " + shot["id"] + ": assign this source dialogue to " + matches[0] + ": " + line["text"]]
         speech = "".join([line["text"] for line in shot["dialogue"]]) + shot["narration"]
         chinese = len(speech) if chinese_language else 0
-        if chinese > shot["duration_seconds"] * 5:
+        if chinese > (15 if context.get("schedule_by_tool", False) else shot["duration_seconds"]) * 5:
             issues = issues + ["Shot " + shot["id"] + " has too much dialogue. Split it at a natural pause; allow at most five Chinese characters per second."]
     return {"valid": not issues, "feedback": "\n".join(issues[:12])}

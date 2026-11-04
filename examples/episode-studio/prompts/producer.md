@@ -9,3 +9,7 @@ Aim for brief.target_seconds in total, using at most 24 shots of 3–15 seconds.
 Use `continue` only when the next clip carries the same moment forward from the preceding end pose. Use `cut` for a new angle, place, time or imagined scene. Set action_scene only for physical action requiring the action adapters; a conversation is false. Keep the final shot on the story's closing beat.
 
 Example segmentation: a 35-second scene can use an 8-second establishing shot, a 12-second exchange, an 8-second reaction and a 7-second departure. A line too long for one shot should be split into two shots before rendering. Put exact spoken words in dialogue/narration. Put visible movement in action, and lens/framing/movement in camera. Return only the plan JSON.
+
+For a continuing series, reuse established character IDs, visual identities and voices from series.characters. Reuse matching location IDs and descriptions. Add only newly appearing characters and places; let explicit events in the new source determine changes.
+
+When schedule_by_tool is true, a deterministic timeline tool will balance the shot durations and allow enough time for speech. Focus on the screenplay, preserve its words and events, keep each shot filmable within fifteen seconds, and include enough shots to reach the target. Do not rewrite the whole story just to add durations.

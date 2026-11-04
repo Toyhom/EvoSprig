@@ -51,7 +51,18 @@ Edit `.evosprig/episode/services.json` after setup. API mode uses one GPU for im
 
 The director supports concurrent requests (`max_concurrent_requests`, default 4). Director, image and video services run independently. Media inspection, reference staging and composition have their own CPU queue, so an image generation does not block them. Each image worker and each ComfyUI instance executes one generation at a time. Shots that need the preceding ending frame run in order; independent productions can overlap work across the services.
 
-The renderer keeps the tuned recipe defaults. Its agent returns the audiovisual prompt, the approved action switch and only necessary parameter changes. Duration and seeds come from the timeline. The screenplay and render roles have separate worked examples in their [skills](../../examples/episode-studio/skills/).
+A timing tool balances the screenplay’s shot durations, so the writers do not regenerate a script to correct duration arithmetic. The renderer keeps the tuned recipe defaults. Its agent returns the audiovisual prompt, the approved action switch and only necessary parameter changes. Duration and seeds come from the timeline. The screenplay and render roles have separate worked examples in their [skills](../../examples/episode-studio/skills/).
+
+## Continue a series
+
+The completed production returns `series`: character and location settings, style, reference images and voices. Supply it with the next story:
+
+```python
+next_input = {"source_text": "The next chapter…", "series": previous_result.output["series"]}
+next_result = await runtime.run(version, next_input)
+```
+
+The source reader retains recurring character IDs. Writers keep their established appearance and voice, and the reference library generates only newly needed assets. Keep the media service and referenced files available. Remove a reference from `series.references` when you want it redrawn. Explicit `voices` inputs override matching series voices.
 
 ## Voices across an episode
 
@@ -71,3 +82,5 @@ python apps/episode-studio/app.py --profile deployment.yaml \
 ```
 
 Setup builds the canvas editor and installs the local dialogue transcriber. Application generation uses the same saved AgentSpec and runtime as the editor. Role instructions and skills live in [examples/episode-studio](../../examples/episode-studio/).
+
+[Runtime and resource measurements](../../docs/episode-performance.md).

@@ -1,56 +1,59 @@
 # Episode Studio
 
-![Episode Studio canvas](assets/canvas.png)
+![The Episode Studio production team in EvoSprig](assets/canvas.png)
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-**Paste a novel. Or start with one sentence. Let the production team make the film.**
+**A novel. A sentence. Your next animated film.**
 
-Episode Studio turns stories into animated episodes. Its director chooses a visual style and develops a brief; writers, artists and shot directors take it through to the final cut. Open the same application in EvoSprig's canvas to change the team.
+Give Episode Studio a story. Its agents develop the script, cast and locations, create the reference images, direct each shot and assemble the film with dialogue and sound. The entire production team is editable in EvoSprig.
 
-- **An idea is enough.** Agents expand the story, choose the style, write dialogue and prepare every generation prompt. Style, language and length are optional directions.
-- **One cast across the episode.** Characters and locations keep shared references; voices are captured from accepted shots and reused.
-- **Automatic retakes.** Reference images and first frames are reviewed before rendering. The visual editor then checks each clip and sends specific changes back to the team.
-- **Longer stories.** Shots share final frames, ending motion and saved character voices, then assemble into a film with audio.
-- **Editable decisions.** Agents read the render recipe's switches, parameter limits and saved defaults. Agents preserve tuned defaults and submit only the controls that need changing.
+[**Watch the film ↓**](#on-the-hillside) · [**Make your own ↓**](#make-a-film) · [**Meet the agents**](build_agent.py)
 
 ## On the hillside
 
-[![Watch the opening scene](assets/hillside.webp)](assets/hillside.mp4)
+[![Play the animated opening](assets/hillside.webp)](assets/hillside.mp4)
 
-Two friends, a quiet town, and a world beyond the hills. **25 seconds · Chinese dialogue and narration · [Watch with sound](assets/hillside.mp4)**.
+**Two friends. A quiet town. A world beyond the hills.**
 
-Adapted from [Vera's Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉的忧郁), an in-game book in *Genshin Impact*.
+25 seconds · Chinese dialogue and narration · **[Watch with sound](assets/hillside.mp4)**
 
-## The team checks its work
+From [Vera’s Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉的忧郁), an in-game book in *Genshin Impact*.
 
-![A mismatched character corrected after automatic visual review](assets/retake.jpg)
+## From story to screen
 
-The visual editor catches the wrong character in the foreground and sends a correction to the shot director. The next frame restores Vera’s short hair, blue dress and position beside Sachi.
+| You bring | The team takes care of |
+| --- | --- |
+| A novel or a short idea | Style, screenplay, character designs, locations and shot prompts |
+| A recurring cast | Shared reference images, costumes and character voices across episodes |
+| A scene that needs another take | Visual checks, specific corrections and bounded retakes |
+| A longer story | Ordered shots, ending-frame continuity and the final cut with audio |
+
+### It can spot a wrong character
+
+![Automatic visual review corrects the foreground character](assets/retake.jpg)
+
+The editor spots the wrong character in the foreground. The shot director redraws the frame with Vera’s short hair, blue dress and position beside Sachi restored.
 
 ## Make a film
 
-![Episode Studio application](assets/application.png)
+![Episode Studio: story input and production progress](assets/application.png)
 
 ```bash
 python apps/episode-studio/launch.py setup --model-dir /path/to/models --env-root /path/to/environments
 python apps/episode-studio/launch.py start
 ```
 
-Open **http://127.0.0.1:18767/episode/**, paste your story and choose **Make this film**. Watch the script, cast and shots appear as the team works, then play the finished film. Return to earlier films from **Your productions**. Use the language switch for the Chinese interface.
+Open **http://127.0.0.1:18767/episode/**. Paste your story and choose **Make this film**. Follow the script, cast and shots as they appear. Completed films stay in **Your productions**.
 
-Use an API director with `setup --director api --model-config model-api.json`; see the [connection example](../../apps/episode-studio/model-api.example.json). Local image and video models stay warm between productions.
+Use **Open canvas** to change an agent, **Debug selection** to try a node or group, and **Open render workflow** to edit the render graph and export it to ComfyUI.
 
-[Installation and hardware settings](../../apps/episode-studio/) · [Domestic mirrors](../../apps/episode-studio/#install) · [Connect existing services](../../apps/episode-studio/#deployment-settings)
+**[Installation, API models and domestic mirrors](../../apps/episode-studio/)** · **[ComfyUI import/export](../../docs/comfyui.md)**
 
-## Make it yours
+## Your team, your next episode
 
-![Render controls and continuity review](assets/render-team.png)
+Change the [role instructions](prompts/), [production skills](skills/) and [render recipe](../../apps/episode-studio/render-recipe.json). The render agent keeps the tuned defaults and changes only what the shot needs. Its video-prompt skill follows [MiniMax H3’s official examples](https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing).
 
-Edit the role instructions in `prompts/` and the worked screenplay, camera and video-prompt examples in `skills/`. Expose extra controls in the recipe to make them available to the render engineer; omitted values keep their saved defaults. `build_agent.py` sets the number of takes and concurrency. After the retake limit, production continues with the latest take and returns remaining issues in `notes`. Set `build(review_policy="pause")` to approve these cases yourself. Completed work stays available.
+Pass a completed run’s `series` into the next story to carry its cast bible, reference images and voices forward. Models stay loaded between productions. [Series input and deployment settings](../../apps/episode-studio/#continue-a-series).
 
-**Open render workflow** reveals the model loaders, references, adapters, samplers and output nodes. Search for a node, edit its parameters, switch an adapter on or off, and export the graph to ComfyUI. The [included recipe](../../apps/episode-studio/render-recipe.json) carries the attention, chunking and upscaling controls alongside the creative settings.
-
-Use **Debug selection** to try a prompt, reference-image stage or rendering group before running the episode. Use **Improve** with your own scene tasks and rubric to compare prompt, skill and harness candidates.
-
-The supplied [search space](search-space.yaml) divides changes between story, visual direction, first-frame review and motion continuity. Select the team's prompts and skills in **Improve** to search those modules together with their output and retake limits. [Configure an evaluation suite](../../docs/evaluation.md) · [Harness search](../../docs/harness-search.md).
+Want the team to improve? Open **Improve**, choose the prompts, skills or harness settings, and supply scene tasks with your judging criteria. The included [search space](search-space.yaml) covers story, visual direction, frame review and continuity. [Set up evaluation](../../docs/evaluation.md).

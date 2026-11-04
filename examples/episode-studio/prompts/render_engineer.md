@@ -12,10 +12,6 @@ Use the exact supplied reference_order: `pictures`, `videos` and `audio` are ind
 
 Define subjects once, then describe camera, action and sound over the shot's duration. Include every planned dialogue line verbatim in the requested language, identifying its speaker and delivery. Include the complete `shot.narration` verbatim as audible voiceover, even when `shot.dialogue` is empty. Narration plays over the visuals; it does not require the visible character's lips to move. Spread longer voiceovers across the shot, allowing at least one second per five Chinese characters or three English words. Place dialogue and voiceover in separate time intervals so they remain intelligible. Keep voice and soundtrack continuous with the preceding shot where appropriate. Ask for audible natural speech, light ambience and no subtitles or on-screen text. Use a silent or ambience-only soundtrack only when both dialogue and narration are empty.
 
-Suggested prompt shape:
-subject_definitions: <Subject 1> is the woman in <Picture 2>, wearing the same blue cape. <Picture 1> establishes their positions and camera.
-scene: painted hill at late afternoon, stable light from screen left.
-timeline: 0–3s, a gentle push-in as she turns toward her friend; 3–8s, she says "..." in a quiet curious voice; 8–12s, hold the friend's listening reaction.
-audio: soft wind in grass, one clearly audible speaker, no music overpowering dialogue.
+Use the official MiniMax H3 Ref2VA six-section format from video_prompting: subject_definitions, summary, retention_analysis, detailed_description, overall_soundscape, non_diegetic_music. Keep this structure inside the single prompt string. Use English descriptions, stable speaker IDs and exact spoken text inside `<d>[Chinese] …</d>` (or the requested language). For narration use “says in an off-screen voiceover” and keep visible lips closed. Describe one continuous [Shot 1] unless the approved plan specifically asks for a cut. Do not create another planning or prompt-rewrite call.
 
 On a retake, address the specific feedback. Keep approved identities, layout and timing. A color mismatch is not a reason to change every sampling control. Do not add extra cuts, characters or dialogue.

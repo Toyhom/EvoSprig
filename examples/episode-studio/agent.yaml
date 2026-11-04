@@ -16,11 +16,14 @@ graph:
   - source: creative_director
     target: production_brief
     when: null
+  - source: draft_schedule
+    target: draft_timing
+    when: null
   - source: draft_timing
     target: script_editor
     when: null
   - source: producer
-    target: draft_timing
+    target: draft_schedule
     when: null
   - source: production_brief
     target: source_reader
@@ -28,13 +31,25 @@ graph:
   - source: production_notes
     target: voice_catalog
     when: null
-  - source: reference_library
-    target: shots
+  - source: reference_catalog
+    target: supplied_voices
     when: null
-  - source: render_profile
+  - source: reference_library
+    target: reference_catalog
+    when: null
+  - source: reference_plan
     target: reference_library
     when: null
+  - source: render_profile
+    target: reference_plan
+    when: null
   - source: script_editor
+    target: shooting_plan
+    when: null
+  - source: series_catalog
+    target: timeline
+    when: null
+  - source: shooting_plan
     target: art_director
     when: null
   - source: shots
@@ -43,11 +58,14 @@ graph:
   - source: source_reader
     target: producer
     when: null
+  - source: supplied_voices
+    target: shots
+    when: null
   - source: timeline
     target: assemble
     when: null
   - source: voice_catalog
-    target: timeline
+    target: series_catalog
     when: null
   entry: creative_director
   nodes:
@@ -69,7 +87,7 @@ graph:
         plan:
           default: null
           optional: false
-          ref: nodes.script_editor.output
+          ref: nodes.shooting_plan.output
         style:
           default: null
           optional: false
@@ -224,6 +242,154 @@ graph:
       tools: []
       type: agent
       until: null
+    draft_schedule:
+      body: null
+      branches: {}
+      code: schedule_plan
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: nodes.production_brief.output
+        plan:
+          default: null
+          optional: false
+          ref: nodes.producer.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                name:
+                  minLength: 1
+                  type: string
+                visual_identity:
+                  minLength: 1
+                  type: string
+                voice:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - name
+              - visual_identity
+              - voice
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          locations:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          logline:
+            minLength: 1
+            type: string
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                action:
+                  minLength: 1
+                  type: string
+                action_scene:
+                  type: boolean
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  maxItems: 4
+                  type: array
+                dialogue:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      speaker:
+                        minLength: 1
+                        type: string
+                      text:
+                        minLength: 1
+                        type: string
+                    required:
+                    - speaker
+                    - text
+                    type: object
+                  type: array
+                duration_seconds:
+                  maximum: 15
+                  minimum: 3
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+                location:
+                  minLength: 1
+                  type: string
+                narration:
+                  type: string
+                transition:
+                  enum:
+                  - cut
+                  - continue
+              required:
+              - id
+              - location
+              - characters
+              - action
+              - camera
+              - dialogue
+              - narration
+              - duration_seconds
+              - transition
+              - action_scene
+              type: object
+            maxItems: 24
+            minItems: 1
+            type: array
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - logline
+        - characters
+        - locations
+        - shots
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
     draft_timing:
       body: null
       branches: {}
@@ -237,7 +403,7 @@ graph:
         output:
           default: null
           optional: false
-          ref: nodes.producer.output
+          ref: nodes.draft_schedule.output
         source:
           default: null
           optional: false
@@ -275,6 +441,12 @@ graph:
           default: null
           optional: false
           ref: nodes.production_brief.output
+        schedule_by_tool:
+          value: true
+        series:
+          default: {}
+          optional: true
+          ref: input.series
         source:
           default: null
           optional: false
@@ -475,11 +647,39 @@ graph:
         references:
           default: null
           optional: false
-          ref: nodes.reference_library.output.items
+          ref: nodes.reference_catalog.output.items
         shots:
           default: null
           optional: false
           ref: nodes.shots.output.items
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    reference_catalog:
+      body: null
+      branches: {}
+      code: reference_catalog
+      condition: null
+      inputs:
+        generated:
+          default: null
+          optional: false
+          ref: nodes.reference_library.output.items
+        reused:
+          default: null
+          optional: false
+          ref: nodes.reference_plan.output.reused
       instructions: ''
       items: null
       join: all
@@ -983,7 +1183,7 @@ graph:
       items:
         default: null
         optional: false
-        ref: nodes.art_director.output.assets
+        ref: nodes.reference_plan.output.pending
       join: all
       max_items: 8
       max_iterations: 1
@@ -995,6 +1195,34 @@ graph:
       tool_errors: raise
       tools: []
       type: map
+      until: null
+    reference_plan:
+      body: null
+      branches: {}
+      code: reference_plan
+      condition: null
+      inputs:
+        assets:
+          default: null
+          optional: false
+          ref: nodes.art_director.output.assets
+        supplied:
+          default: []
+          optional: true
+          ref: input.series.references
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
       until: null
     render_profile:
       body: null
@@ -1037,7 +1265,13 @@ graph:
         draft:
           default: null
           optional: false
-          ref: nodes.producer.output
+          ref: nodes.draft_schedule.output
+        schedule_by_tool:
+          value: true
+        series:
+          default: {}
+          optional: true
+          ref: input.series
         source:
           default: null
           optional: false
@@ -1184,6 +1418,190 @@ graph:
       tool_errors: raise
       tools: []
       type: agent
+      until: null
+    series_catalog:
+      body: null
+      branches: {}
+      code: series_catalog
+      condition: null
+      inputs:
+        plan:
+          default: null
+          optional: false
+          ref: nodes.shooting_plan.output
+        references:
+          default: null
+          optional: false
+          ref: nodes.reference_catalog.output.items
+        style:
+          default: null
+          optional: false
+          ref: nodes.art_director.output.style
+        voices:
+          default: null
+          optional: false
+          ref: nodes.voice_catalog.output.voices
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    shooting_plan:
+      body: null
+      branches: {}
+      code: schedule_plan
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: nodes.production_brief.output
+        plan:
+          default: null
+          optional: false
+          ref: nodes.script_editor.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                id:
+                  minLength: 1
+                  type: string
+                name:
+                  minLength: 1
+                  type: string
+                visual_identity:
+                  minLength: 1
+                  type: string
+                voice:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - name
+              - visual_identity
+              - voice
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          locations:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  minLength: 1
+                  type: string
+                id:
+                  minLength: 1
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            maxItems: 4
+            minItems: 1
+            type: array
+          logline:
+            minLength: 1
+            type: string
+          shots:
+            items:
+              additionalProperties: false
+              properties:
+                action:
+                  minLength: 1
+                  type: string
+                action_scene:
+                  type: boolean
+                camera:
+                  minLength: 1
+                  type: string
+                characters:
+                  items:
+                    minLength: 1
+                    type: string
+                  maxItems: 4
+                  type: array
+                dialogue:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      speaker:
+                        minLength: 1
+                        type: string
+                      text:
+                        minLength: 1
+                        type: string
+                    required:
+                    - speaker
+                    - text
+                    type: object
+                  type: array
+                duration_seconds:
+                  maximum: 15
+                  minimum: 3
+                  type: integer
+                id:
+                  minLength: 1
+                  type: string
+                location:
+                  minLength: 1
+                  type: string
+                narration:
+                  type: string
+                transition:
+                  enum:
+                  - cut
+                  - continue
+              required:
+              - id
+              - location
+              - characters
+              - action
+              - camera
+              - dialogue
+              - narration
+              - duration_seconds
+              - transition
+              - action_scene
+              type: object
+            maxItems: 24
+            minItems: 1
+            type: array
+          title:
+            minLength: 1
+            type: string
+        required:
+        - title
+        - logline
+        - characters
+        - locations
+        - shots
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
       until: null
     shots:
       body:
@@ -2694,19 +3112,19 @@ graph:
         assets:
           default: null
           optional: false
-          ref: nodes.reference_library.output.items
+          ref: nodes.reference_catalog.output.items
         plan:
           default: null
           optional: false
-          ref: nodes.script_editor.output
+          ref: nodes.shooting_plan.output
         render_profile:
           default: null
           optional: false
           ref: nodes.render_profile.output
         voices:
-          default: []
-          optional: true
-          ref: input.voices
+          default: null
+          optional: false
+          ref: nodes.supplied_voices.output.voices
       instructions: ''
       items:
         default: null
@@ -2739,6 +3157,10 @@ graph:
         tool_limit: null
         tool_selection: null
       inputs:
+        cast:
+          default: []
+          optional: true
+          ref: input.series.characters
         source_text:
           default: null
           optional: false
@@ -2809,6 +3231,34 @@ graph:
       tools: []
       type: agent
       until: null
+    supplied_voices:
+      body: null
+      branches: {}
+      code: supplied_voices
+      condition: null
+      inputs:
+        series:
+          default: []
+          optional: true
+          ref: input.series.voices
+        voices:
+          default: []
+          optional: true
+          ref: input.voices
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
     timeline:
       body: null
       branches: {}
@@ -2844,9 +3294,9 @@ graph:
           optional: false
           ref: nodes.shots.output.items
         supplied:
-          default: []
-          optional: true
-          ref: input.voices
+          default: null
+          optional: false
+          ref: nodes.supplied_voices.output.voices
       instructions: ''
       items: null
       join: all
@@ -2873,7 +3323,11 @@ graph:
     plan:
       default: null
       optional: false
-      ref: nodes.script_editor.output
+      ref: nodes.shooting_plan.output
+    series:
+      default: null
+      optional: false
+      ref: nodes.series_catalog.output
     shots:
       default: null
       optional: false
@@ -2889,6 +3343,119 @@ input_schema:
     language:
       minLength: 1
       type: string
+    series:
+      additionalProperties: false
+      properties:
+        characters:
+          items:
+            additionalProperties: false
+            properties:
+              id:
+                minLength: 1
+                type: string
+              name:
+                minLength: 1
+                type: string
+              visual_identity:
+                minLength: 1
+                type: string
+              voice:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - name
+            - visual_identity
+            - voice
+            type: object
+          maxItems: 4
+          minItems: 1
+          type: array
+        locations:
+          items:
+            additionalProperties: false
+            properties:
+              description:
+                minLength: 1
+                type: string
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - description
+            type: object
+          maxItems: 4
+          minItems: 1
+          type: array
+        references:
+          items:
+            additionalProperties: false
+            properties:
+              asset:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              id:
+                minLength: 1
+                type: string
+              kind:
+                enum:
+                - character
+                - location
+            required:
+            - id
+            - kind
+            - asset
+            type: object
+          maxItems: 8
+          type: array
+        style:
+          type: string
+        voices:
+          items:
+            additionalProperties: false
+            properties:
+              asset:
+                additionalProperties: false
+                properties:
+                  id:
+                    minLength: 1
+                    type: string
+                  media_type:
+                    minLength: 1
+                    type: string
+                  uri:
+                    minLength: 1
+                    type: string
+                required:
+                - id
+                - uri
+                - media_type
+                type: object
+              id:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - asset
+            type: object
+          maxItems: 5
+          type: array
+      type: object
     source_text:
       minLength: 1
       type: string
@@ -3104,6 +3671,8 @@ output_schema:
       - locations
       - shots
       type: object
+    series:
+      type: object
     shots:
       type: object
     voices:
@@ -3139,6 +3708,7 @@ output_schema:
   - film
   - plan
   - shots
+  - series
   - notes
   - voices
   type: object
@@ -3191,8 +3761,14 @@ resources:
   record_take:
     path: code/record_take.py
     role: code
+  reference_catalog:
+    path: code/reference_catalog.py
+    role: code
   reference_names:
     path: code/reference_names.py
+    role: code
+  reference_plan:
+    path: code/reference_plan.py
     role: code
   reference_prompt:
     path: code/reference_prompt.py
@@ -3215,6 +3791,9 @@ resources:
   review_images:
     path: code/review_images.py
     role: code
+  schedule_plan:
+    path: code/schedule_plan.py
+    role: code
   screenwriting:
     path: skills/screenwriting.md
     role: skill
@@ -3230,6 +3809,9 @@ resources:
   selected_take:
     path: code/selected_take.py
     role: code
+  series_catalog:
+    path: code/series_catalog.py
+    role: code
   shot_context:
     path: code/shot_context.py
     role: code
@@ -3241,6 +3823,9 @@ resources:
     role: prompt
   source_valid:
     path: code/source_valid.py
+    role: code
+  supplied_voices:
+    path: code/supplied_voices.py
     role: code
   timeline:
     path: code/timeline.py

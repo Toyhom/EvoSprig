@@ -19,6 +19,7 @@ from evosprig.core.journal import (
     validate_response,
 )
 from evosprig.core.spec import canonical_json
+from evosprig.plugins import sqlite_checkpoint
 
 CONTROL_FIELDS = (
     "run_id", "scope", "status", "owner", "generation", "lease_until",
@@ -62,6 +63,8 @@ class SQLiteJournal:
             )
             db.execute("CREATE TABLE IF NOT EXISTS runtime_run_control (id TEXT PRIMARY KEY, body TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS runtime_checkpoints (id TEXT PRIMARY KEY, body TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS runtime_checkpoint_blobs "
+                       "(run_id TEXT, digest TEXT, body TEXT NOT NULL, PRIMARY KEY(run_id, digest))")
             # One atomic migration, including old in-flight leases and checkpoints.
             pending = [row[0] for row in db.execute(
                 "SELECT id FROM runtime_runs WHERE id NOT IN (SELECT id FROM runtime_run_control)"
@@ -107,11 +110,11 @@ class SQLiteJournal:
         ).fetchone()
         if row is None:
             raise KeyError("run not found")
-        record, control, checkpoint = (json.loads(body) for body in row)
+        record, control = (json.loads(body) for body in row[:2])
         record.update({key: control[key] for key in CONTROL_FIELDS})
-        record["checkpoint"] = checkpoint
         if scope is not None and record["scope"] != asdict(scope):
             raise KeyError("run not found in scope")
+        record["checkpoint"] = sqlite_checkpoint.unpack(db, run_id, row[2])
         return record
 
     @staticmethod
@@ -176,7 +179,7 @@ class SQLiteJournal:
 
     def save(self, lease, checkpoint, status, events, *, release=False, delay=0):
         # Serialize before acquiring the writer lock, so heartbeats can proceed.
-        checkpoint_body = canonical_json(checkpoint)
+        checkpoint_body, blobs = sqlite_checkpoint.pack(checkpoint)
         with self._transaction() as db:
             record = self._control(db, lease.run_id)
             check_lease(record, lease)
@@ -194,7 +197,7 @@ class SQLiteJournal:
                 "INSERT INTO runtime_events VALUES (?, ?, ?)",
                 [(lease.run_id, event["sequence"], canonical_json(event)) for event in added],
             )
-            db.execute("UPDATE runtime_checkpoints SET body=? WHERE id=?", (checkpoint_body, lease.run_id))
+            sqlite_checkpoint.write(db, lease.run_id, checkpoint_body, blobs)
             record["title"] = production_title(checkpoint, {}) or record.get("title", "")
             # Fence again after database I/O; an expired worker cannot commit.
             check_lease(record, lease)
@@ -261,8 +264,8 @@ class SQLiteJournal:
             record["checkpoint"]["responses"][path] = response
             control = self._control(db, run_id, scope)
             control.update(status="queued", ready_at=time.time())
-            db.execute("UPDATE runtime_checkpoints SET body=? WHERE id=?",
-                       (canonical_json(record["checkpoint"]), run_id))
+            body, blobs = sqlite_checkpoint.pack(record["checkpoint"])
+            sqlite_checkpoint.write(db, run_id, body, blobs)
             self._write_control(db, control)
 
     def due(self, limit=100):

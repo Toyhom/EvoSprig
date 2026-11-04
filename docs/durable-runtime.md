@@ -17,6 +17,12 @@ Lease renewal runs independently of the execution loop. SQLite stores lease,
 cancellation and scheduling state separately from checkpoints, so polling a
 multimodal run does not deserialize its images and message history. Existing
 journals migrate atomically when opened; stop older workers before upgrading.
+Large checkpoint strings (16 KiB and above), including inline image previews, are
+stored once per run in the same SQLite transaction. Checkpoints refer to these
+values by content hash; reads restore the original JSON. State changes rewrite
+compact references while unchanged media stays in place. Back up the complete
+SQLite database, which contains both the state and its blobs.
+
 `Runtime(..., lease_seconds=30)` sets the lease duration for your storage latency.
 Snapshot and operation writes continue to check the worker's generation and expiry.
 

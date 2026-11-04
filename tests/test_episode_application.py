@@ -20,6 +20,22 @@ def asset(name, media_type="image/png"):
     return {"id": name, "uri": "https://media.example/" + name, "media_type": media_type}
 
 
+def test_timeline_tool_fits_speech_without_rewriting_the_story():
+    from evosprig.core.json_program import execute
+
+    code = (Path(__file__).parents[1] / "examples/episode-studio/code/schedule_plan.py").read_text()
+    shots = [{"id": str(i), "action": "A traveller opens the map.", "narration": "",
+              "dialogue": [{"speaker": "traveller", "text": "走" * (41 if i == 0 else 12)}],
+              "duration_seconds": 5} for i in range(24)]
+    plan = {"title": "The journey", "shots": shots}
+    result = execute(code, {"plan": plan, "brief": {"language": "zh-CN", "target_seconds": 180}})
+    assert sum(s["duration_seconds"] for s in result["shots"]) == 180
+    assert result["shots"][0]["duration_seconds"] >= 9
+    assert all(3 <= s["duration_seconds"] <= 15 for s in result["shots"])
+    assert [{k: v for k, v in s.items() if k != "duration_seconds"} for s in result["shots"]] == [
+        {k: v for k, v in s.items() if k != "duration_seconds"} for s in shots]
+
+
 @pytest.mark.parametrize("idea", [False, True])
 async def test_creative_direction_accepts_text_only_and_preserves_optional_overrides(idea):
     from evosprig.core.debug import plan_debug
@@ -214,6 +230,19 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
     assert done.output["voices"][0]["asset"]["id"] == ("previous-episode-voice" if reuse_voice else "clip-2-voice")
     assert (await runtime().resume(result.run_id)).status == "succeeded"
     assert len(compositions) == 1
+    if reuse_voice and not director_cut:
+        previous_images = len(images)
+        previous_renders = len(renders)
+        model = FilmModel()
+        sequel = await runtime().run(compile_agent(spec, root),
+            {"source_text": "A visitor opens a door.", "style": "2D", "language": "en",
+             "target_seconds": 24, "series": done.output["series"]})
+        assert sequel.status == "succeeded", sequel.error
+        assert model.reference_reviews == 0
+        assert len(images) - previous_images == 3  # Only shot frames; cast and location are reused.
+        assert len(renders) - previous_renders == 4
+        assert sequel.output["voices"] == done.output["voices"]
+        assert sequel.output["series"]["references"] == done.output["series"]["references"]
 
 
 @pytest.mark.parametrize("rejections", [1, 2])
@@ -223,7 +252,7 @@ async def test_reference_review_retries_locally_and_preserves_completed_assets(t
 
     root = Path(__file__).parents[1] / "examples/episode-studio"
     full = compile_agent(load_spec(root / "agent.yaml"), root)
-    fragment = plan_debug(full.spec, ["reference_library"])
+    fragment = plan_debug(full.spec, ["reference_plan", "reference_library"])
     version = compile_snapshot(fragment.spec, {key: full.resources[key] for key in fragment.spec.resources})
     model = FilmModel(reference_rejections=rejections)
     images = []
