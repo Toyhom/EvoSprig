@@ -1,0 +1,456 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 8
+  max_output_tokens: 2200
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 32000
+  timeout_seconds: 600.0
+graph:
+  edges:
+  - source: approve
+    target: record
+    when: null
+  - source: context
+    target: writer
+    when: null
+  - source: customer_key
+    target: history
+    when: null
+  - source: fact_editor
+    target: approve
+    when: null
+  - source: history
+    target: context
+    when: null
+  - source: record
+    target: save
+    when: null
+  - source: writer
+    target: fact_editor
+    when: null
+  entry: customer_key
+  nodes:
+    approve:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output
+        draft:
+          default: null
+          optional: false
+          ref: nodes.fact_editor.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        additionalProperties: false
+        properties:
+          approved:
+            type: boolean
+          note:
+            type: string
+        required:
+        - approved
+        - note
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    context:
+      body: null
+      branches: {}
+      code: checks
+      condition: null
+      inputs:
+        history:
+          default: null
+          optional: false
+          ref: nodes.history.output
+        request:
+          default: null
+          optional: false
+          ref: input
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    customer_key:
+      body: null
+      branches: {}
+      code: key
+      condition: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    fact_editor:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 2200
+        max_tool_rounds: null
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output
+        draft:
+          default: null
+          optional: false
+          ref: nodes.writer.output
+        request:
+          default: null
+          optional: false
+          ref: input
+      instructions:
+        resource: review
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          body:
+            type: string
+          claims:
+            items:
+              additionalProperties: false
+              properties:
+                fact_id:
+                  type: string
+                sentence:
+                  type: string
+              required:
+              - sentence
+              - fact_id
+              type: object
+            type: array
+          missing_information:
+            items:
+              type: string
+            type: array
+          next_action:
+            type: string
+          subject:
+            type: string
+        required:
+        - subject
+        - body
+        - claims
+        - missing_information
+        - next_action
+        type: object
+      output_validator: facts_valid
+      response_format: json
+      skills:
+      - sales
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    history:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        name:
+          default: null
+          optional: false
+          ref: nodes.customer_key.output.name
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: read
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    record:
+      body: null
+      branches: {}
+      code: record
+      condition: null
+      inputs:
+        approval:
+          default: null
+          optional: false
+          ref: nodes.approve.output
+        draft:
+          default: null
+          optional: false
+          ref: nodes.fact_editor.output
+        history:
+          default: null
+          optional: false
+          ref: nodes.history.output
+        request:
+          default: null
+          optional: false
+          ref: input
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    save:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        content:
+          default: null
+          optional: false
+          ref: nodes.record.output.content
+        expected_revision:
+          default: null
+          optional: false
+          ref: nodes.history.output.revision
+        name:
+          default: null
+          optional: false
+          ref: nodes.customer_key.output.name
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: write
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    writer:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 2200
+        max_tool_rounds: null
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output
+        request:
+          default: null
+          optional: false
+          ref: input
+      instructions:
+        resource: draft
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          body:
+            type: string
+          claims:
+            items:
+              additionalProperties: false
+              properties:
+                fact_id:
+                  type: string
+                sentence:
+                  type: string
+              required:
+              - sentence
+              - fact_id
+              type: object
+            type: array
+          missing_information:
+            items:
+              type: string
+            type: array
+          next_action:
+            type: string
+          subject:
+            type: string
+        required:
+        - subject
+        - body
+        - claims
+        - missing_information
+        - next_action
+        type: object
+      response_format: json
+      skills:
+      - sales
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+  output:
+    approval:
+      default: null
+      optional: false
+      ref: nodes.approve.output
+    context:
+      default: null
+      optional: false
+      ref: nodes.context.output
+    customer_document:
+      default: null
+      optional: false
+      ref: nodes.save.output.name
+    draft:
+      default: null
+      optional: false
+      ref: nodes.fact_editor.output
+id: trade-followup
+input_schema:
+  additionalProperties: false
+  properties:
+    conversation:
+      type: string
+    customer_id:
+      pattern: ^[A-Za-z0-9_-]{1,64}$
+      type: string
+    goal:
+      type: string
+    language:
+      type: string
+    product_facts:
+      items:
+        additionalProperties: false
+        properties:
+          id:
+            type: string
+          text:
+            type: string
+        required:
+        - id
+        - text
+        type: object
+      maxItems: 30
+      minItems: 1
+      type: array
+    thread_id:
+      pattern: ^[A-Za-z0-9_-]{1,64}$
+      type: string
+  required:
+  - customer_id
+  - thread_id
+  - product_facts
+  - conversation
+  - language
+  - goal
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  type: object
+resources:
+  checks:
+    path: code/checks.py
+    role: code
+  draft:
+    path: prompts/draft.md
+    role: prompt
+  facts_valid:
+    path: code/facts_valid.py
+    role: code
+  key:
+    path: code/key.py
+    role: code
+  record:
+    path: code/record.py
+    role: code
+  review:
+    path: prompts/review.md
+    role: prompt
+  sales:
+    path: skills/sales.md
+    role: skill
+spec_version: '0.3'
+tools:
+  python:
+    plugin: code.python
+    version: '1'
+  read:
+    plugin: workspace.read
+    version: '1'
+  write:
+    plugin: workspace.write
+    version: '1'

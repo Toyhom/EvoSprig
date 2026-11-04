@@ -1,0 +1,278 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 8
+  max_output_tokens: 1600
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 30
+  max_total_tokens: 28000
+  timeout_seconds: 500.0
+graph:
+  edges: []
+  entry: engineering
+  nodes:
+    engineering:
+      body:
+        edges:
+        - source: design
+          target: simulate
+          when: null
+        - source: simulate
+          target: carry
+          when: null
+        entry: design
+        nodes:
+          carry:
+            body: null
+            branches: {}
+            code: carry
+            condition: null
+            inputs:
+              design:
+                default: null
+                optional: false
+                ref: nodes.design.output
+              simulation:
+                default: null
+                optional: false
+                ref: nodes.simulate.output
+              state:
+                default: null
+                optional: false
+                ref: input
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          design:
+            body: null
+            branches: {}
+            condition: null
+            harness:
+              max_output_retries: 1
+              max_output_tokens: 1600
+              max_tool_rounds: null
+              memory: null
+              output_errors: feedback
+              parallel_tool_calls: null
+              tool_errors: null
+              tool_limit: null
+              tool_selection: null
+            inputs:
+              analysis:
+                default: null
+                optional: false
+                ref: input.analysis
+              feedback:
+                default: null
+                optional: false
+                ref: input.feedback
+              previous:
+                default: null
+                optional: false
+                ref: input.previous
+              request:
+                default: null
+                optional: false
+                ref: input.request
+              target:
+                default: null
+                optional: false
+                ref: input.target
+            instructions:
+              resource: designer
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              additionalProperties: false
+              properties:
+                explanation:
+                  type: string
+                netlist:
+                  type: string
+              required:
+              - netlist
+              - explanation
+              type: object
+            response_format: json
+            skills:
+            - spice_rules
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: agent
+            until: null
+          simulate:
+            body: null
+            branches: {}
+            condition: null
+            inputs:
+              analysis:
+                default: null
+                optional: false
+                ref: input.analysis
+              netlist:
+                default: null
+                optional: false
+                ref: nodes.design.output.netlist
+              target:
+                default: null
+                optional: false
+                ref: input.target
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: spice
+            tool_errors: raise
+            tools: []
+            type: tool
+            until: null
+        output:
+          accepted:
+            default: null
+            optional: false
+            ref: nodes.carry.output.accepted
+          analysis:
+            default: null
+            optional: false
+            ref: nodes.carry.output.analysis
+          attempts:
+            default: null
+            optional: false
+            ref: nodes.carry.output.attempts
+          feedback:
+            default: null
+            optional: false
+            ref: nodes.carry.output.feedback
+          previous:
+            default: null
+            optional: false
+            ref: nodes.carry.output.previous
+          request:
+            default: null
+            optional: false
+            ref: nodes.carry.output.request
+          target:
+            default: null
+            optional: false
+            ref: nodes.carry.output.target
+      branches: {}
+      condition: null
+      inputs:
+        analysis:
+          default: null
+          optional: false
+          ref: input.analysis
+        attempts:
+          value: 0
+        feedback:
+          value: {}
+        previous:
+          value: {}
+        request:
+          default: null
+          optional: false
+          ref: input.request
+        target:
+          default: null
+          optional: false
+          ref: input.target
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 3
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: loop
+      until:
+        left:
+          default: null
+          optional: false
+          ref: input.accepted
+        op: truthy
+        right: null
+  output:
+    accepted:
+      default: null
+      optional: false
+      ref: nodes.engineering.output.accepted
+    attempts:
+      default: null
+      optional: false
+      ref: nodes.engineering.output.attempts
+    design:
+      default: null
+      optional: false
+      ref: nodes.engineering.output.previous
+    simulation:
+      default: null
+      optional: false
+      ref: nodes.engineering.output.feedback
+id: circuit-lab
+input_schema:
+  additionalProperties: false
+  properties:
+    analysis:
+      enum:
+      - ac
+      - transient
+    request:
+      type: string
+    target:
+      type: object
+  required:
+  - request
+  - analysis
+  - target
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  type: object
+resources:
+  carry:
+    path: code/carry.py
+    role: code
+  designer:
+    path: prompts/designer.md
+    role: prompt
+  spice_rules:
+    path: skills/spice.md
+    role: skill
+spec_version: '0.3'
+tools:
+  python:
+    plugin: code.python
+    version: '1'
+  spice:
+    plugin: artifacts.spice
+    version: '1'

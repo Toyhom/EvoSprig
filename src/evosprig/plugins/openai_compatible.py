@@ -21,6 +21,7 @@ class Connection(Contract):
     base_url: str
     model: str
     api_key_env: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    local_service: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_-]{1,80}$")
     timeout_seconds: float = Field(default=45.0, gt=0, le=3600)
     max_connections: int = Field(default=32, ge=1, le=1024)
     max_keepalive_connections: int = Field(default=8, ge=0, le=1024)
@@ -37,6 +38,8 @@ class Connection(Contract):
         if self.max_keepalive_connections > self.max_connections:
             raise ValueError("keepalive connections cannot exceed the connection limit")
         url = urlsplit(self.base_url)
+        if self.local_service and url.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise ValueError("local_service requires a loopback model endpoint")
         if url.username or url.password or url.query or url.fragment or not url.hostname:
             raise ValueError("base_url must be an endpoint without credentials, query or fragment")
         if url.scheme != "https" and not (

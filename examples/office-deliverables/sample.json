@@ -1,0 +1,23 @@
+{
+  "goal": "Prepare an English quarterly performance brief for the operations team. Focus on margin and order volume.",
+  "rows": [
+    {
+      "period": "January",
+      "revenue": 42000,
+      "cost": 31500,
+      "orders": 210
+    },
+    {
+      "period": "February",
+      "revenue": 38000,
+      "cost": 30400,
+      "orders": 190
+    },
+    {
+      "period": "March",
+      "revenue": 54000,
+      "cost": 37800,
+      "orders": 270
+    }
+  ]
+}

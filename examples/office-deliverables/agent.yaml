@@ -1,0 +1,221 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 4
+  max_output_tokens: 1400
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 18000
+  timeout_seconds: 300.0
+graph:
+  edges:
+  - source: analyst
+    target: deliver
+    when: null
+  - source: calculate
+    target: analyst
+    when: null
+  entry: calculate
+  nodes:
+    analyst:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 1400
+        max_tool_result_chars: 8000
+        max_tool_rounds: null
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        goal:
+          default: null
+          optional: false
+          ref: input.goal
+        metrics:
+          default: null
+          optional: false
+          ref: nodes.calculate.output
+      instructions:
+        resource: analyst
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          recommendations:
+            items:
+              maxLength: 200
+              type: string
+            maxItems: 6
+            minItems: 1
+            type: array
+          summary:
+            maxLength: 400
+            type: string
+          title:
+            maxLength: 100
+            type: string
+        required:
+        - title
+        - summary
+        - recommendations
+        type: object
+      output_validator: metrics_valid
+      response_format: json
+      skills:
+      - reporting
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    calculate:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        rows:
+          default: null
+          optional: false
+          ref: input.rows
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: table
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    deliver:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        recommendations:
+          default: null
+          optional: false
+          ref: nodes.analyst.output.recommendations
+        rows:
+          default: null
+          optional: false
+          ref: input.rows
+        summary:
+          default: null
+          optional: false
+          ref: nodes.analyst.output.summary
+        title:
+          default: null
+          optional: false
+          ref: nodes.analyst.output.title
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: office
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+  output:
+    directory:
+      default: null
+      optional: false
+      ref: nodes.deliver.output.directory
+    files:
+      default: null
+      optional: false
+      ref: nodes.deliver.output.files
+    metrics:
+      default: null
+      optional: false
+      ref: nodes.deliver.output.metrics
+    recommendations:
+      default: null
+      optional: false
+      ref: nodes.deliver.output.recommendations
+    summary:
+      default: null
+      optional: false
+      ref: nodes.deliver.output.summary
+id: office-deliverables
+input_schema:
+  additionalProperties: false
+  properties:
+    goal:
+      maxLength: 400
+      type: string
+    rows:
+      items:
+        additionalProperties: false
+        properties:
+          cost:
+            minimum: 0
+            type: number
+          orders:
+            minimum: 0
+            type: integer
+          period:
+            maxLength: 100
+            type: string
+          revenue:
+            minimum: 0
+            type: number
+        required:
+        - period
+        - revenue
+        - cost
+        - orders
+        type: object
+      maxItems: 1000
+      minItems: 1
+      type: array
+  required:
+  - rows
+  - goal
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  type: object
+resources:
+  analyst:
+    path: prompts/analyst.md
+    role: prompt
+  metrics_valid:
+    path: code/metrics_valid.py
+    role: code
+  reporting:
+    path: skills/reporting.md
+    role: skill
+spec_version: '0.3'
+tools:
+  office:
+    plugin: artifacts.office
+    version: '1'
+  table:
+    plugin: artifacts.table
+    version: '1'

@@ -1,0 +1,25 @@
+{
+  "customer_id": "mira-retail",
+  "thread_id": "sample-request-01",
+  "product_facts": [
+    {
+      "id": "item",
+      "text": "Luna desk lamp: 8 W, USB-C power, warm-white light."
+    },
+    {
+      "id": "moq",
+      "text": "Minimum order quantity is 200 units."
+    },
+    {
+      "id": "lead",
+      "text": "Production lead time is 18 days after deposit."
+    },
+    {
+      "id": "sample",
+      "text": "One evaluation sample can be arranged. Shipping and sample price need a quotation."
+    }
+  ],
+  "conversation": "Mira: We are looking at 300 lamps for our autumn collection. Can you send a sample to Hamburg, and what is your best price?",
+  "language": "English",
+  "goal": "Respond to the sample request and collect the details needed for a quote."
+}

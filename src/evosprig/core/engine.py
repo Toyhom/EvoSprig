@@ -488,9 +488,12 @@ class ExecutionSession:
                     raise ExecutionError("resolved mailbox must be an identifier")
                 slot["mailbox"] = mailbox
             if node.type == "code":
+                code_arguments = {"code": self.version.resources[node.code], "data": arguments}
+                if node.code_max_value_chars is not None:
+                    code_arguments["max_value_chars"] = node.code_max_value_chars
                 output = await self.tool(
                     node.tool,
-                    {"code": self.version.resources[node.code], "data": arguments},
+                    code_arguments,
                     path,
                     "code",
                 )
@@ -922,8 +925,11 @@ class ExecutionSession:
                 outputs = None
             for index, call in enumerate(pending_calls):
                 output = outputs[index] if outputs is not None else await execute_call(call)
+                from .context_window import tool_observation
+
+                content = tool_observation(output, node.harness.max_tool_result_chars if node.harness else None)
                 slot["messages"].append(
-                    {"role": "tool", "tool_call_id": call["id"], "content": canonical_json(output)}
+                    {"role": "tool", "tool_call_id": call["id"], "content": content}
                 )
                 slot["tool_index"] += 1
                 self.save()

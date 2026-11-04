@@ -101,7 +101,6 @@ class MediaBackend:
                 pipeline_class = Flux2KleinPipeline
             components = {}
             if self.image_backend == "qwen-image-2.1":
-                import os
                 strategy = os.environ.get("EVOSPRIG_IMAGE_LOAD_STRATEGY", "auto")
                 if strategy not in {"auto", "eager"}:
                     raise ValueError("image loading strategy must be auto or eager")
@@ -123,7 +122,15 @@ class MediaBackend:
             from diffusers import HunyuanVideo15ImageToVideoPipeline
             pipeline = HunyuanVideo15ImageToVideoPipeline.from_pretrained(self.video_model, torch_dtype=torch.bfloat16, local_files_only=True)
             pipeline.vae.enable_tiling()
-        pipeline.enable_model_cpu_offload()
+        offload = os.environ.get("EVOSPRIG_IMAGE_OFFLOAD", "model") if kind == "image" else "model"
+        if offload == "sequential":
+            pipeline.enable_sequential_cpu_offload()
+        elif offload == "model":
+            pipeline.enable_model_cpu_offload()
+        else:
+            raise ValueError("EVOSPRIG_IMAGE_OFFLOAD must be model or sequential")
+        if kind == "image" and hasattr(pipeline.vae, "enable_tiling"):
+            pipeline.vae.enable_tiling()
         self.pipeline, self.loaded = pipeline, kind
         return pipeline
 

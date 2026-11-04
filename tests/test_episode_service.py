@@ -218,3 +218,48 @@ def test_api_download_skips_director_and_optional_voice_weights(tmp_path, monkey
     launcher.download(SimpleNamespace(mirror=None, state=tmp_path, model_dir=tmp_path / 'weights',
                                       director='api', with_voice=False))
     assert downloaded == ['image', 'speech']
+
+
+def test_low_vram_recipe_preserves_source_and_remains_a_valid_comfy_tool():
+    from evosprig.plugins.comfy_tools import ComfyRecipeConfig, comfy_recipe_tool
+
+    original = json.loads((ROOT / 'apps/episode-studio/render-recipe.json').read_text())
+    lower = module('launch').memory_recipe(original, 'low-vram')
+    by_kind = {node['type']: node for node in lower['workflow']['nodes']}
+    assert by_kind['CLIPLoader']['widgets_values'][2] == 'cpu'
+    assert by_kind['MiniMaxChunkFeedForward']['widgets_values'] == [4, 2048]
+    assert by_kind['ResolutionSelector']['widgets_values'][1] == 0.5
+    assert next(n for n in original['workflow']['nodes'] if n['type'] == 'CLIPLoader')['widgets_values'][2] == 'default'
+    assert comfy_recipe_tool(ComfyRecipeConfig.model_validate(lower)).side_effect == "read_only"
+
+
+def test_episode_restart_keeps_canvas_model_connections(tmp_path, monkeypatch):
+    import subprocess
+    import sys
+
+    import yaml
+
+    saved = tmp_path / 'saved.yaml'
+    connection = {'base_url': 'http://127.0.0.1:8000/v1', 'model': 'my-vision',
+                  'api_key_env': 'LOCAL_MODEL_API_KEY', 'local_service': 'vision-server',
+                  'capabilities': ['text', 'structured_output', 'vision']}
+    services = {'vision-server': {'health_url': 'http://127.0.0.1:8000/health'}}
+    saved.write_text(yaml.safe_dump({'models': {'main': connection, 'reviewer': connection},
+                                    'services': services, 'tools': {}}))
+    stale_config = tmp_path / 'old-api.json'
+    stale_config.write_text(json.dumps({'main': {**connection, 'api_key_env': 'REPLACED_MODEL_KEY'}}))
+    monkeypatch.delenv('REPLACED_MODEL_KEY', raising=False)
+    # Both default roles were replaced in Studio; the old API key must not block restart.
+    data = yaml.safe_load(saved.read_text())
+    data['models']['vision'] = connection
+    saved.write_text(yaml.safe_dump(data))
+    output = tmp_path / 'deployment.yaml'
+    subprocess.run([sys.executable, str(ROOT / 'examples/episode-studio/configure.py'),
+                    '--recipe', str(ROOT / 'apps/episode-studio/render-recipe.json'),
+                    '--model-config', str(stale_config), '--check-model-keys',
+                    '--reuse-connections', str(saved), '--out', str(output)], check=True)
+    result = yaml.safe_load(output.read_text())
+    assert result['models']['main'] == connection
+    assert result['models']['reviewer'] == connection
+    assert result['services'] == services
+    assert 'film.render' in result['tools'] and 'media.generate_image' in result['tools']

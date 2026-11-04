@@ -1,6 +1,12 @@
 {
   "book-studio": {},
   "career-coach": {},
+  "circuit-lab": {
+    "profile": "deployment.example.yaml"
+  },
+  "comic-studio": {
+    "profile": "deployment.example.yaml"
+  },
   "content-studio": {},
   "cowork": {
     "sample": "request.json"
@@ -25,6 +31,9 @@
   "motion-graphics": {
     "profile": "deployment.example.yaml"
   },
+  "office-deliverables": {
+    "profile": "deployment.example.yaml"
+  },
   "personal-memory": {},
   "rai-manipulation": {
     "profile": "deployment.example.yaml",
@@ -43,6 +52,9 @@
     "profile": "deployment.example.yaml"
   },
   "study-coach": {},
+  "trade-followup": {
+    "profile": "deployment.example.yaml"
+  },
   "travel-planner": {
     "profile": "deployment.example.yaml"
   },

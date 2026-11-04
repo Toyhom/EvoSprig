@@ -6,10 +6,10 @@ A story-to-film application built with EvoSprig. Start from a novel, a scene or 
 
 Use Linux, Python 3.12, Node.js 20+, Git and an NVIDIA CUDA driver, then run:
 
-For an API director, copy [model-api.example.json](model-api.example.json) to `model-api.json` and set your endpoint, model ID and credential environment variable. Use a vision-capable model for both roles, or add a separate `vision` connection alongside `main`.
+API models are the default. Copy [model-api.example.json](model-api.example.json) to `model-api.json` and set your endpoint, model ID and credential environment variable. Use a vision-capable model for both roles, or add a separate `vision` connection alongside `main`.
 
 ```bash
-python apps/episode-studio/launch.py setup --director api --model-config model-api.json \
+python apps/episode-studio/launch.py setup --model-config model-api.json \
   --model-dir /path/to/models --env-root /path/to/environments
 ```
 
@@ -18,7 +18,7 @@ This installs local image/video tools and skips the director weights and vLLM en
 For a fully local director:
 
 ```bash
-python apps/episode-studio/launch.py setup \
+python apps/episode-studio/launch.py setup --director local \
   --model-dir /path/to/models --env-root /path/to/environments
 ```
 
@@ -44,6 +44,10 @@ python apps/episode-studio/launch.py status
 ```
 
 On a shared server, run the production session inside your GPU scheduler allocation. The launcher maps its service partitions onto `CUDA_VISIBLE_DEVICES`.
+
+## GPU capacity
+
+See [hardware and placement](HARDWARE.md) for component sizes, 16/24/32–48 GB planning and the `--memory-profile low-vram` preset. Each agent can use a different API or [resident local model connection](../../docs/model-connections.md).
 
 ## Deployment settings
 

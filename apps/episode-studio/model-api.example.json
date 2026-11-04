@@ -1,7 +1,7 @@
 {
   "main": {
-    "base_url": "https://api.moonshot.cn/v1",
-    "model": "kimi-k3.1-pro",
+    "base_url": "https://api.openai.com/v1",
+    "model": "your-multimodal-model-id",
     "api_key_env": "EPISODE_MODEL_API_KEY",
     "timeout_seconds": 300,
     "max_connections": 8,
@@ -11,11 +11,6 @@
       "text",
       "structured_output",
       "vision"
-    ],
-    "token_limit_field": "max_completion_tokens",
-    "send_sampling_parameters": false,
-    "options": {
-      "reasoning_effort": "low"
-    }
+    ]
   }
 }

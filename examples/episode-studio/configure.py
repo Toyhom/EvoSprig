@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import yaml
@@ -79,10 +80,22 @@ if __name__ == "__main__":
     parser.add_argument("--comfy-url", default="http://127.0.0.1:18884")
     parser.add_argument("--model-timeout-seconds", type=float, default=1200)
     parser.add_argument("--model-config", type=Path, help="JSON connections: main and optional vision; keys stay in environment variables")
+    parser.add_argument("--reuse-connections", type=Path, help="Preserve connections edited in an existing deployment")
+    parser.add_argument("--check-model-keys", action="store_true", help="Check the effective connections before loading models")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     result = profile(json.loads(args.recipe.read_text()), model_url=args.model_url, model_name=args.model_name,
                      media_url=args.media_url, comfy_url=args.comfy_url, model_timeout_seconds=args.model_timeout_seconds,
                      model_connections=json.loads(args.model_config.read_text()) if args.model_config else None)
+    if args.reuse_connections and args.reuse_connections.is_file():
+        saved = yaml.safe_load(args.reuse_connections.read_text())
+        result["models"].update(saved.get("models", {}))
+        if saved.get("services"):
+            result["services"] = saved["services"]
+    if args.check_model_keys:
+        for name in ("main", "vision"):
+            key = result["models"][name]["api_key_env"]
+            if key != "LOCAL_MODEL_API_KEY" and not os.environ.get(key):
+                parser.error("set the model credential environment variable: " + key)
     with args.out.open("x") as target:
         yaml.safe_dump(result, target, sort_keys=False)

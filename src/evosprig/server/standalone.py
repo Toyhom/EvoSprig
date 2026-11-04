@@ -67,6 +67,10 @@ def create_service(
 
     @asynccontextmanager
     async def lifespan(app):
+        if not mock:
+            from evosprig.local_services import prepare_services
+
+            await asyncio.to_thread(prepare_services, profile)
         await worker.start()
         try:
             yield

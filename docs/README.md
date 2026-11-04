@@ -11,7 +11,7 @@ Start with the [application developer guide](build-applications.md), covering Py
 | Design the agent | [Prompts, skills and model settings](agent-resources.md) · [Studio](studio.md) · [SDK and graphs](architecture.md) |
 | Connect capabilities | [Tools and MCP](tools.md) · [ComfyUI](comfyui.md) · [Repository tools](repository-tools.md) · [Vision](vision.md) · [Memory](memory.md) · [Shared documents and peer messages](shared-workspaces.md) |
 | Improve the application | [Evaluation](evaluation.md) · [Self-evolution](evolution.md) · [Harness and code search](harness-search.md) · [Industry environments](industry-environments.md) |
-| Run in production | [Event triggers](triggers.md) · [Recovery](durable-runtime.md) · [Deployment and export](deployment.md) |
+| Run in production | [Event triggers](triggers.md) · [Recovery](durable-runtime.md) · [Deployment and export](deployment.md) · [Preload local models](local-models.md) |
 
 ## Extend EvoSprig
 
@@ -26,3 +26,5 @@ Start with the [framework contributor guide](extend-framework.md).
 | Set up development | [Contributing](../CONTRIBUTING.md) |
 
 [Research references](references.md) · [Supported interfaces](support-matrix.md) · [Roadmap](roadmap.md)
+
+[Models for each agent](model-connections.md) · [Preload local models](local-models.md)

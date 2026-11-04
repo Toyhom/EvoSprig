@@ -97,8 +97,8 @@
         },
         "pure_checkpoint_interval": {
           "default": 1,
-          "minimum": 1,
           "maximum": 128,
+          "minimum": 1,
           "title": "Pure Checkpoint Interval",
           "type": "integer"
         }
@@ -272,6 +272,20 @@
           ],
           "default": null,
           "title": "Max Output Tokens"
+        },
+        "max_tool_result_chars": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 512,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tool Result Chars"
         },
         "memory": {
           "anyOf": [
@@ -701,6 +715,20 @@
           ],
           "default": null,
           "title": "Code"
+        },
+        "code_max_value_chars": {
+          "anyOf": [
+            {
+              "maximum": 8388608,
+              "minimum": 1024,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code Max Value Chars"
         }
       },
       "required": [

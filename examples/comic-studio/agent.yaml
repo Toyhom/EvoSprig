@@ -1,0 +1,665 @@
+execution:
+  allow_side_effects: true
+  max_model_calls: 60
+  max_output_tokens: 3200
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 250
+  max_total_tokens: 250000
+  timeout_seconds: 7200.0
+graph:
+  edges:
+  - source: adapt
+    target: cast
+    when: null
+  - source: cast
+    target: panels
+    when: null
+  - source: panels
+    target: pages
+    when: null
+  entry: adapt
+  nodes:
+    adapt:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 2
+        max_output_tokens: 3200
+        max_tool_rounds: null
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        story:
+          default: null
+          optional: false
+          ref: input.story
+      instructions:
+        resource: adapter
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          characters:
+            items:
+              additionalProperties: false
+              properties:
+                description:
+                  type: string
+                id:
+                  type: string
+              required:
+              - id
+              - description
+              type: object
+            maxItems: 3
+            minItems: 1
+            type: array
+          panels:
+            items:
+              additionalProperties: false
+              properties:
+                camera:
+                  type: string
+                caption:
+                  maxLength: 55
+                  type: string
+                characters:
+                  items:
+                    type: string
+                  type: array
+                description:
+                  type: string
+                dialogue:
+                  maxLength: 55
+                  type: string
+                id:
+                  type: string
+              required:
+              - id
+              - description
+              - camera
+              - characters
+              - caption
+              - dialogue
+              type: object
+            maxItems: 8
+            minItems: 4
+            type: array
+          style:
+            type: string
+          title:
+            type: string
+        required:
+        - title
+        - style
+        - characters
+        - panels
+        type: object
+      response_format: json
+      skills:
+      - continuity
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    cast:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        characters:
+          default: null
+          optional: false
+          ref: nodes.adapt.output.characters
+        style:
+          default: null
+          optional: false
+          ref: nodes.adapt.output.style
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: assets
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    pages:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        panels:
+          default: null
+          optional: false
+          ref: nodes.panels.output.items
+        title:
+          default: null
+          optional: false
+          ref: nodes.adapt.output.title
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: layout
+      tool_errors: raise
+      tools: []
+      type: tool
+      until: null
+    panels:
+      body:
+        edges:
+        - source: context
+          target: takes
+          when: null
+        - source: takes
+          target: letter
+          when: null
+        entry: context
+        nodes:
+          context:
+            body: null
+            branches: {}
+            code: frame_context
+            condition: null
+            inputs:
+              catalog:
+                default: null
+                optional: false
+                ref: input.context.catalog
+              index:
+                default: null
+                optional: false
+                ref: input.index
+              panel:
+                default: null
+                optional: false
+                ref: input.item
+              style:
+                default: null
+                optional: false
+                ref: input.context.style
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          letter:
+            body: null
+            branches: {}
+            code: panel
+            condition: null
+            inputs:
+              image:
+                default: null
+                optional: false
+                ref: nodes.takes.output.image
+              panel:
+                default: null
+                optional: false
+                ref: input.item
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          takes:
+            body:
+              edges:
+              - source: direct
+                target: draw
+                when: null
+              - source: draw
+                target: preview
+                when: null
+              - source: preview
+                target: review
+                when: null
+              - source: review
+                target: remember
+                when: null
+              entry: direct
+              nodes:
+                direct:
+                  body: null
+                  branches: {}
+                  condition: null
+                  harness:
+                    max_output_retries: 1
+                    max_output_tokens: 1800
+                    max_tool_rounds: null
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: null
+                    tool_limit: null
+                    tool_selection: null
+                  inputs:
+                    context:
+                      default: null
+                      optional: false
+                      ref: input
+                  instructions:
+                    resource: frame_director
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: main
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      prompt:
+                        type: string
+                    required:
+                    - prompt
+                    type: object
+                  response_format: json
+                  tool: null
+                  tool_errors: raise
+                  tools: []
+                  type: agent
+                  until: null
+                draw:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    options:
+                      default: {}
+                      optional: true
+                      ref: input.options
+                    prompt:
+                      default: null
+                      optional: false
+                      ref: nodes.direct.output.prompt
+                    references:
+                      default: null
+                      optional: false
+                      ref: input.references
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      id:
+                        type: string
+                      media_type:
+                        type: string
+                      uri:
+                        type: string
+                    required:
+                    - id
+                    - uri
+                    - media_type
+                    type: object
+                  response_format: text
+                  tool: image
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                preview:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    asset:
+                      default: null
+                      optional: false
+                      ref: nodes.draw.output
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: preview
+                  tool_errors: raise
+                  tools: []
+                  type: tool
+                  until: null
+                remember:
+                  body: null
+                  branches: {}
+                  code: frame_carry
+                  condition: null
+                  inputs:
+                    image:
+                      default: null
+                      optional: false
+                      ref: nodes.draw.output
+                    review:
+                      default: null
+                      optional: false
+                      ref: nodes.review.output
+                    state:
+                      default: null
+                      optional: false
+                      ref: input
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: python
+                  tool_errors: raise
+                  tools: []
+                  type: code
+                  until: null
+                review:
+                  body: null
+                  branches: {}
+                  condition: null
+                  harness:
+                    max_output_retries: 1
+                    max_output_tokens: 1200
+                    max_tool_rounds: null
+                    memory: null
+                    output_errors: feedback
+                    parallel_tool_calls: null
+                    tool_errors: null
+                    tool_limit: null
+                    tool_selection: null
+                  image_inputs:
+                  - images
+                  inputs:
+                    images:
+                      default: null
+                      optional: false
+                      ref: nodes.preview.output.images
+                    panel:
+                      default: null
+                      optional: false
+                      ref: input.panel
+                  instructions:
+                    resource: frame_review
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: vision
+                  output_schema:
+                    additionalProperties: false
+                    properties:
+                      accepted:
+                        type: boolean
+                      feedback:
+                        type: string
+                    required:
+                    - accepted
+                    - feedback
+                    type: object
+                  response_format: json
+                  tool: null
+                  tool_errors: raise
+                  tools: []
+                  type: agent
+                  until: null
+              output:
+                accepted:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.accepted
+                attempt:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.attempt
+                feedback:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.feedback
+                image:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.image
+                options:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.options
+                panel:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.panel
+                reference_ids:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.reference_ids
+                references:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.references
+                seed:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.seed
+                style:
+                  default: null
+                  optional: false
+                  ref: nodes.remember.output.style
+            branches: {}
+            condition: null
+            inputs:
+              attempt:
+                default: null
+                optional: false
+                ref: nodes.context.output.attempt
+              feedback:
+                default: null
+                optional: false
+                ref: nodes.context.output.feedback
+              options:
+                default: null
+                optional: false
+                ref: nodes.context.output.options
+              panel:
+                default: null
+                optional: false
+                ref: nodes.context.output.panel
+              reference_ids:
+                default: null
+                optional: false
+                ref: nodes.context.output.reference_ids
+              references:
+                default: null
+                optional: false
+                ref: nodes.context.output.references
+              seed:
+                default: null
+                optional: false
+                ref: nodes.context.output.seed
+              style:
+                default: null
+                optional: false
+                ref: nodes.context.output.style
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 3
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: loop
+            until:
+              left:
+                default: null
+                optional: false
+                ref: input.accepted
+              op: truthy
+              right: null
+        output:
+          caption:
+            default: null
+            optional: false
+            ref: nodes.letter.output.caption
+          dialogue:
+            default: null
+            optional: false
+            ref: nodes.letter.output.dialogue
+          image:
+            default: null
+            optional: false
+            ref: nodes.letter.output.image
+      branches: {}
+      condition: null
+      inputs:
+        catalog:
+          default: null
+          optional: false
+          ref: nodes.cast.output
+        style:
+          default: null
+          optional: false
+          ref: nodes.adapt.output.style
+      instructions: ''
+      items:
+        default: null
+        optional: false
+        ref: nodes.adapt.output.panels
+      join: all
+      max_items: 8
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: map
+      until: null
+  output:
+    catalog:
+      default: null
+      optional: false
+      ref: nodes.cast.output
+    chapter:
+      default: null
+      optional: false
+      ref: nodes.pages.output
+    panels:
+      default: null
+      optional: false
+      ref: nodes.panels.output.items
+    plan:
+      default: null
+      optional: false
+      ref: nodes.adapt.output
+id: comic-studio
+input_schema:
+  additionalProperties: false
+  properties:
+    story:
+      maxLength: 6000
+      type: string
+  required:
+  - story
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+  vision:
+    binding: vision
+    requires:
+    - text
+    - structured_output
+    - vision
+output_schema:
+  type: object
+resources:
+  adapter:
+    path: prompts/adapter.md
+    role: prompt
+  continuity:
+    path: skills/continuity.md
+    role: skill
+  frame_carry:
+    path: code/frame_carry.py
+    role: code
+  frame_context:
+    path: code/frame_context.py
+    role: code
+  frame_director:
+    path: prompts/frame_director.md
+    role: prompt
+  frame_review:
+    path: prompts/frame_review.md
+    role: prompt
+  panel:
+    path: code/panel.py
+    role: code
+spec_version: '0.3'
+tools:
+  assets:
+    plugin: media.assets
+    version: '1'
+  image:
+    plugin: comic.image
+    version: '1'
+  layout:
+    plugin: artifacts.comic
+    version: '1'
+  preview:
+    plugin: comic.vision
+    version: '1'
+  python:
+    plugin: code.python
+    version: '1'

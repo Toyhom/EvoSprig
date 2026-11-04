@@ -1,0 +1,10 @@
+models: {}
+tools:
+  artifacts.table:
+    kind: artifact
+    name: artifacts.table
+    operation: table
+  artifacts.office:
+    kind: artifact
+    name: artifacts.office
+    operation: office

@@ -121,6 +121,7 @@ class Harness(Contract):
     output_errors: Literal["raise", "feedback"] | None = None
     max_output_retries: int | None = Field(default=None, ge=0, le=3)
     max_output_tokens: int | None = Field(default=None, ge=1, le=32768)
+    max_tool_result_chars: int | None = Field(default=None, ge=512, le=1000000)
     memory: MemoryPolicy | None = None
 
 
@@ -170,10 +171,13 @@ class Node(Contract):
     output_validator: str | None = None
     mailbox: str | Ref | None = None
     code: str | None = None
+    code_max_value_chars: int | None = Field(default=None, ge=1024, le=8388608)
 
     @model_validator(mode="after")
     def valid_node(self):
         check_schema(self.output_schema)
+        if self.code_max_value_chars is not None and self.type != "code":
+            raise ValueError("code_max_value_chars belongs to code nodes")
         if self.output_validator is not None and self.type not in {"model", "agent"}:
             raise ValueError("output validators belong to model and agent nodes")
         if self.harness is not None and self.type != "agent":
@@ -263,7 +267,7 @@ class Node(Contract):
         if self.harness is None:
             return self
         return self.model_copy(
-            update=self.harness.model_dump(exclude_none=True, exclude={"memory"})
+            update=self.harness.model_dump(exclude_none=True, exclude={"memory", "max_tool_result_chars"})
         )
 
 
@@ -501,11 +505,14 @@ class AgentSpec(Contract):
                     ("harness", None),
                     ("mailbox", None),
                     ("code", None),
+                    ("code_max_value_chars", None),
                     ("output_validator", None),
                     ("carry", None),
                 ):
                     if node[key] == default:
                         node.pop(key)
+                if node.get("harness") and node["harness"].get("max_tool_result_chars") is None:
+                    node["harness"].pop("max_tool_result_chars", None)
                 if self.spec_version != "0.3":
                     for key in ("items", "max_items", "tool_errors"):
                         node.pop(key)

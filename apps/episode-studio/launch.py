@@ -63,6 +63,7 @@ def service_environment(config, role, state):
         env["EVOSPRIG_MEDIA_ATTENTION"] = "sdpa"
         env["EVOSPRIG_VOICE_LOAD_STRATEGY"] = config.get("voice_load_strategy", "auto")
         env["EVOSPRIG_IMAGE_LOAD_STRATEGY"] = config.get("image_load_strategy", "auto")
+        env["EVOSPRIG_IMAGE_OFFLOAD"] = config.get("image_offload", "sequential" if config.get("memory_profile") == "low-vram" else "model")
     return env
 
 
@@ -177,11 +178,30 @@ def setup(args):
             config = {**config, **saved, "models": {**model_paths, **saved.get("models", {})}}
             if saved.get("director", "local") != args.director:
                 config.update(partition)
+                (args.state / "refresh-model-connections").touch()
             config["with_voice"] = args.with_voice
         if args.model_config:
             config["model_connections"] = json.loads(args.model_config.read_text())
+            (args.state / "refresh-model-connections").touch()
+        config["memory_profile"] = args.memory_profile or config.get("memory_profile", "balanced")
         write(config_path, config)
         print("Ready. Start with: python apps/episode-studio/launch.py start --state", args.state)
+
+
+def memory_recipe(recipe, mode):
+    """Keep the original recipe and create an explicit lower-memory deployment copy."""
+    recipe = json.loads(json.dumps(recipe))
+    if mode == "low-vram":
+        for node in recipe["workflow"]["nodes"]:
+            if node["type"] == "CLIPLoader":
+                node["widgets_values"][2] = "cpu"
+            elif node["type"] == "MiniMaxChunkFeedForward":
+                node["widgets_values"] = [4, 2048]
+            elif node["type"] == "ResolutionSelector":
+                node["widgets_values"][1] = 0.5
+    elif mode != "balanced":
+        raise ValueError("memory profile must be balanced or low-vram")
+    return recipe
 
 
 def device_partition(config, visible):
@@ -259,21 +279,23 @@ def run_services(args):
         connections = config.get("model_connections")
         if not connections:
             raise ValueError("API deployment requires model_connections (main and optional vision)")
-        for connection in connections.values():
-            key_env = connection.get("api_key_env", "")
-            if not key_env or not os.environ.get(key_env):
-                raise ValueError("set the model credential environment variable: " + key_env)
         write(connection_path, connections)
     profile = state / "deployment.yaml"
+    memory_mode = config.get("memory_profile", "balanced")
+    recipe_path = state / "active-recipe.json"
+    write(recipe_path, memory_recipe(json.loads(Path(config["recipe"]).read_text()), memory_mode))
     with tempfile.NamedTemporaryFile(dir=state, prefix="deployment-", suffix=".yaml") as temporary:
         pending = Path(temporary.name)
     try:
-        command([python(env_root, "episode-core"), ROOT / "examples/episode-studio/configure.py", "--recipe", config["recipe"],
+        command([python(env_root, "episode-core"), ROOT / "examples/episode-studio/configure.py", "--recipe", recipe_path,
                  "--model-url", f"http://127.0.0.1:{ports['director']}/v1", "--media-url", f"http://127.0.0.1:{ports['media']}",
                  "--comfy-url", f"http://127.0.0.1:{ports['comfy']}",
                  *(["--model-config", connection_path] if external else []),
+                 *(["--reuse-connections", profile] if profile.exists() and not (state / "refresh-model-connections").exists() else []),
+                 "--check-model-keys",
                  "--model-timeout-seconds", str(config.get("model_timeout_seconds", 1200)), "--out", pending])
         pending.replace(profile)
+        (state / "refresh-model-connections").unlink(missing_ok=True)
     finally:
         pending.unlink(missing_ok=True)
     model_root = state / "comfy-models"
@@ -309,6 +331,10 @@ def run_services(args):
     }
     if external:
         del commands["director"]
+    if memory_mode == "low-vram":
+        commands["comfy"].extend(["--lowvram", "--reserve-vram", "1"])
+        for flag, value in (("--width", "1024"), ("--height", "576")):
+            commands["media"][commands["media"].index(flag) + 1] = value
     processes, logs = {}, []
     session = {"pid": os.getpid(), "started": time.time(), "services": {}}
     stop = state / "stop"
@@ -367,13 +393,14 @@ def main():
     parser.add_argument("--mirror", help="Hugging Face-compatible endpoint, e.g. https://hf-mirror.com")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--director", choices=["local", "api"], default=None)
+    parser.add_argument("--memory-profile", choices=["balanced", "low-vram"], default=None)
     parser.add_argument("--model-config", type=Path, help="JSON model connections for API deployment")
     parser.add_argument("--with-voice", action="store_true", help="Also download the optional Omni voice tool")
     args = parser.parse_args()
     args.state, args.model_dir, args.env_root = (p.resolve() for p in (args.state, args.model_dir, args.env_root))
     config_path = args.state / "services.json"
     saved = json.loads(config_path.read_text()) if config_path.exists() else {}
-    args.director = args.director or saved.get("director", "local")
+    args.director = args.director or saved.get("director", "api")
     args.with_voice = args.with_voice or saved.get("with_voice", False)
     if args.action == "setup" and args.director == "api" and not args.model_config and not saved.get("model_connections"):
         parser.error("API setup needs --model-config with main and optional vision connections")

@@ -22,13 +22,15 @@
 
 Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate versions, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
-<img src="docs/assets/studio.png" alt="EvoSprig Studio: workflow canvas, node settings and execution history" width="100%" />
+[![EvoSprig: canvas, code, debugging and self-improvement](docs/assets/evosprig-demo.webp)](docs/assets/evosprig-demo.mp4)
+
+**[Watch EvoSprig in 52 seconds · sound on](docs/assets/evosprig-demo.mp4)**
 
 ## What will you build?
 
 ### Episode Studio — a story, a cast, a film
 
-[![Episode Studio: an animated scene with dialogue](examples/episode-studio/assets/hillside.jpg)](examples/episode-studio/)
+[![Episode Studio: an animated scene with dialogue](examples/episode-studio/assets/chapter-one.jpg)](examples/episode-studio/)
 
 A production team turns a novel or one sentence into an animated film. Agents choose the style, write the script, create the cast and voices, and direct and review each shot. **[Watch the scene and make your own](examples/episode-studio/)**.
 
@@ -53,6 +55,10 @@ A production team turns a novel or one sentence into an animated film. Agents ch
 | Builds a business sandbox for agent development | **[Industry environment builder](examples/industry-environment-builder/)** — procedures, tools, data and business-state checks |
 | Tailors a resume and runs interview practice | **[Career coach](examples/career-coach/)** — job fit, application materials and feedback |
 | Writes a Xiaohongshu post from your notes | **[Xiaohongshu Studio](examples/xiaohongshu-studio/)** — reader angles, style examples and guided revisions |
+| Produces editable office files | **[Office deliverables](examples/office-deliverables/)** — spreadsheet, brief and slides from one table |
+| Designs and tests a small circuit | **[Circuit Lab](examples/circuit-lab/)** — netlists, ngspice waveforms and measured targets |
+| Drafts a useful buyer follow-up | **[Trade follow-up](examples/trade-followup/)** — customer history, product facts and reviewed drafts |
+| Draws a complete comic page | **[Comic Studio](examples/comic-studio/)** — shared cast, panel review and page layout |
 | Turns one announcement into a content campaign | **[Content studio](examples/content-studio/)** — parallel channels and shared editing skills |
 | Teaches a topic and reviews your answers | **[Study coach](examples/study-coach/)** — lessons, exercises and personal feedback |
 | Turns a brief into a working web app | **[Software team](examples/software-team/)** — design, implementation, browser checks and repair |
@@ -80,6 +86,7 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 
 <img src="docs/assets/architecture.svg" alt="EvoSprig architecture: authoring, AgentSpec, durable runtime, tools and memory, evaluation, controlled evolution and release" width="100%" />
 
+Build the application on the canvas or in Python; both produce the same versioned **AgentSpec**. The runtime coordinates agents, tools and shared memory, saving progress for debugging and recovery. Evaluation feeds real tasks and outcomes into controlled evolution, which changes selected resources or workflow settings; compare the candidates, enable a version and export the application. ComfyUI graphs can join the workflow as editable tools and be exported back to ComfyUI.
 
 ## Get started
 

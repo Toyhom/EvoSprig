@@ -127,6 +127,9 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app):
+        from evosprig.local_services import prepare_services
+
+        await asyncio.to_thread(prepare_services, profile)
         await worker.start()
         await study_worker.start()
         try:
@@ -136,6 +139,9 @@ def create_app(
             await worker.stop()
 
     app = FastAPI(title="EvoSprig", version="0.1.0", lifespan=lifespan)
+    from .model_connections import install_model_routes
+
+    install_model_routes(app, profile, editable=principals is None)
     app.state.projects = store
     app.state.journal = journal
     app.state.worker = worker
@@ -148,6 +154,26 @@ def create_app(
     from .workspace_api import install_workspace_routes
 
     install_workspace_routes(app, WorkspaceStore(workspace / "documents.sqlite"), store)
+
+    @app.get("/api/services")
+    async def service_status():
+        if not profile:
+            return {"services": []}
+        from evosprig.local_services import ServiceManager
+
+        manager = ServiceManager(profile)
+        return {"services": await asyncio.to_thread(lambda: [manager.status(name) for name in manager.configs])}
+
+    @app.post("/api/services/{name}/warmup")
+    async def service_warmup(name: str):
+        if not profile:
+            raise HTTPException(404, "No deployment services configured")
+        from evosprig.local_services import ServiceManager
+
+        manager = ServiceManager(profile)
+        if name not in manager.configs:
+            raise HTTPException(404, "Service not configured")
+        return await asyncio.to_thread(manager.ensure, name)
 
     @app.middleware("http")
     async def boundary(request: Request, call_next):

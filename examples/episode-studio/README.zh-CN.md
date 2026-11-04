@@ -12,30 +12,44 @@
 
 ## 作品展示
 
-### 《少女薇拉的忧郁》· 开场片段
+### 《少女薇拉的忧郁》· 第一卷
 
-[![播放动画开场](assets/hillside.webp)](assets/hillside.mp4)
+[![播放《少女薇拉的忧郁》第一卷](assets/chapter-one.webp)](assets/chapter-one.mp4)
 
-**两个朋友，一座小镇，以及山那边的世界。**
+**一座安静的小镇，一颗闲不住的心，一场冒险的开端。**
 
-25 秒 · 中文对白与旁白 · **[有声播放](assets/hillside.mp4)**
+126.6 秒 · 16 个镜头 · 中文对白与旁白 · **[有声播放](assets/chapter-one.mp4)**
 
 改编自《原神》中的书籍[《少女薇拉的忧郁》第一卷](https://wiki.biligame.com/ys/少女薇拉的忧郁)。
 
+### 从故事到镜头
+
+[![Episode Studio 使用演示](assets/episode-studio-demo.webp)](assets/episode-studio-demo.mp4)
+
+**[观看应用演示 · 带音乐与字幕](assets/episode-studio-demo.mp4)**：输入故事、制作分工、视觉重拍，以及同一部影片中的成品镜头。
+
 ## 应用特性
 
-| 你提供 | 制作团队负责 |
+| 应用特性 | 制作时能做什么 |
 | --- | --- |
-| 小说或一句想法 | 风格、剧本、人设、场景和每个镜头的生成提示词 |
-| 一套固定角色 | 跨镜头、跨集复用参考图、服装和音色 |
-| 一个需要重拍的场景 | 检查画面、指出具体问题，在设定次数内自动重做 |
-| 更长的故事 | 分镜制作、尾帧与动作衔接、带音轨的成片合成 |
+| **一句想法也能开拍** | 自动确定视觉方向、扩写剧本、安排分镜与时长 |
+| **分工明确的制作团队** | 编剧、美术、镜头导演、渲染工程师和审核各有自己的 prompt、skill、工具和 harness |
+| **先定人设，再拍镜头** | 提前准备角色、服装、场景和参考图 |
+| **让镜头接得上** | 共享参考图、上一镜状态和尾帧参与下一镜制作 |
+| **让角色沿用自己的声音** | 保存合适的单人音轨，在后续镜头和剧集中复用 |
+| **自动检查与定向重拍** | 检查图像和视频，指出不符之处，在设定次数内重做 |
+| **保留调好的渲染参数** | 智能体集中处理镜头提示词与必要控制项，其余使用默认值 |
+| **长任务可以继续** | 后台作业和检查点保留已完成工作，支持中断续接 |
+| **只改需要改的地方** | 单独调试节点、镜头或分组，复用已有输入与产物 |
+| **每个角色都能选模型** | 混用不同厂商 API 或本地模型，为视觉审核配置多模态模型 |
+| **模型提前准备好** | 预加载本地服务、跨任务常驻，并提供低显存部署预设 |
+| **整套应用都可修改** | 画布和 Python 双向开发；导入、编辑并导出 ComfyUI 渲染图 |
 
 ### 自动检查画面，定向重拍
 
 ![视觉审核发现前景人物不对，自动修正首帧](assets/retake.jpg)
 
-视觉编辑根据角色设定和分镜检查生成画面，发现问题后，把具体修改意见交给镜头导演，自动发起重拍。这个镜头中，系统恢复了薇拉的短发、蓝裙，以及她与萨奇的位置关系。
+视觉编辑根据角色设定和分镜检查生成画面，发现问题后，把具体修改意见交给镜头导演，自动发起重拍。这个镜头中，系统纠正了萨奇的发型，并按分镜把薇拉及其蓝裙、躺卧姿势恢复到背景里。
 
 ## 运行与实现
 
@@ -43,7 +57,7 @@
 
 ![Episode Studio：输入故事，查看制作进度](assets/application.png)
 
-需要 **Linux、Python 3.12、Node.js 20+、Git 和 NVIDIA CUDA 驱动**。API 导演方案使用两张 GPU 分别运行图像和视频工具；默认本地导演方案使用六张 80 GB GPU。可以先使用 API 导演：
+需要 **Linux、Python 3.12、Node.js 20+、Git 和 NVIDIA CUDA 驱动**。默认由 API 模型驱动智能体，本地图像与视频模型作为工具运行：
 
 ```bash
 git clone --depth 1 https://github.com/Toyhom/EvoSprig.git
@@ -51,7 +65,7 @@ cd EvoSprig
 mkdir -p .evosprig/episode
 cp apps/episode-studio/model-api.example.json .evosprig/episode/model-api.json
 export EPISODE_MODEL_API_KEY="你的 API Key"
-python3.12 apps/episode-studio/launch.py setup --director api \
+python3.12 apps/episode-studio/launch.py setup \
   --model-config .evosprig/episode/model-api.json \
   --model-dir "$PWD/models" --env-root "$PWD/.venvs"
 python3.12 apps/episode-studio/launch.py start
@@ -59,7 +73,9 @@ python3.12 apps/episode-studio/launch.py start
 
 安装器创建应用和模型环境、下载固定版本的权重，并构建画布编辑器。将 `--model-dir` 指向容量充足的模型磁盘，`--env-root` 指向环境目录。需要国内镜像时，在 setup 命令后加 `--mirror https://hf-mirror.com`。安装中断后，可以重复相同命令继续。
 
-setup 前，编辑 `.evosprig/episode/model-api.json`。示例使用 `https://api.moonshot.cn/v1`、`kimi-k3.1-pro` 和凭据环境变量 `EPISODE_MODEL_API_KEY`，同时负责导演与视觉检查。若要分开设置，在 `main` 旁增加 `vision` 连接；视觉检查模型必须支持图片输入。每次在新终端 start 前都要设置相应凭据变量，启动器不自动读取 `.env`。
+setup 前编辑 `.evosprig/episode/model-api.json`，填入厂商的 **Base URL、模型 ID 和密钥环境变量名**。可选 OpenAI、Kimi、MiniMax、Qwen/百炼或其他兼容接口。`main` 负责制作团队，另设 `vision` 可为视觉审核使用独立多模态模型。每个节点都能在“模型连接 → 模型”中单独选择；[API 与本地常驻模型配置](../../docs/model-connections.md)。
+
+较小显卡可添加 `--memory-profile low-vram`，启用 CPU 卸载、视频文本编码器放 CPU、更小的图像/渲染尺寸与前馈分块。[显存需求与设备分配](../../apps/episode-studio/HARDWARE.md)列出了权重大小和 16/24/32–48 GB 显卡的规划依据。
 
 完全本地运行时，setup 改用 `--director local` 并去掉 `--model-config`。安装后可在 `.evosprig/episode/services.json` 修改 GPU 分配和端口。[models.json](../../apps/episode-studio/models.json) 列出了图像、视频模型来源。
 

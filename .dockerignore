@@ -4,5 +4,6 @@ node_modules
 .env*
 *.sqlite*
 .evosprig
+.evosprig-services
 build
 dist

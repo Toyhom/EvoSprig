@@ -1,0 +1,14 @@
+{
+  "request": "Design an RC low-pass filter with a cutoff close to 1 kHz and unity DC gain.",
+  "analysis": "ac",
+  "target": {
+    "cutoff_hz": {
+      "min": 950,
+      "max": 1050
+    },
+    "gain": {
+      "min": 0.98,
+      "max": 1.01
+    }
+  }
+}

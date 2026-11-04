@@ -22,13 +22,15 @@
 
 使用 Python 或可视化画布开发智能体，再用自己的任务推动智能体持续改进。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
-<img src="docs/assets/studio.png" alt="EvoSprig Studio 软件开发团队画布" width="100%" />
+[![EvoSprig：画布、代码、调试与自进化](docs/assets/evosprig-demo.webp)](docs/assets/evosprig-demo.mp4)
+
+**[52 秒了解 EvoSprig · 带音乐与字幕](docs/assets/evosprig-demo.mp4)**
 
 ## 你可以开发什么？
 
 ### Episode Studio：把故事拍成动画
 
-[![Episode Studio：带对白的动画片段](examples/episode-studio/assets/hillside.jpg)](examples/episode-studio/)
+[![Episode Studio：带对白的动画片段](examples/episode-studio/assets/chapter-one.jpg)](examples/episode-studio/)
 
 输入一段小说或一句想法，制作团队自动选风格、写剧本、设计角色与声音，再逐镜头导演、生成和检查。**[观看片段，制作自己的动画](examples/episode-studio/README.zh-CN.md)**。
 
@@ -53,6 +55,10 @@
 | 构造业务模拟环境并改进行业智能体 | **[行业环境构造](examples/industry-environment-builder/)** — 业务规则、工具、数据与状态评估 |
 | 准备求职材料并练习面试 | [求职教练](examples/career-coach/)：岗位匹配、简历要点和练习反馈 |
 | 把素材写成小红书笔记 | **[小红书写作台](examples/xiaohongshu-studio/README.zh-CN.md)** — 切入点、文风样例、事实检查与自动改稿 |
+| 交付可编辑办公文件 | **[办公交付助手](examples/office-deliverables/README.zh-CN.md)** — 一张表生成分析表、简报与幻灯片 |
+| 设计并仿真小型电路 | **[电路实验室](examples/circuit-lab/README.zh-CN.md)** — 网表、ngspice 波形与实际测量 |
+| 起草有针对性的客户回复 | **[外贸跟进助手](examples/trade-followup/README.zh-CN.md)** — 客户历史、产品资料与草稿审核 |
+| 画出一话完整漫画 | **[漫画工坊](examples/comic-studio/README.zh-CN.md)** — 共用人设、分格审核与排版 |
 | 把一份公告改写成多个渠道的内容 | [内容工作室](examples/content-studio/)：并行写作、共享文风和事实核对技能 |
 | 讲解知识并根据回答安排练习 | [学习教练](examples/study-coach/)：课程、互动练习与针对性反馈 |
 | 把需求变成能操作的网页 | [软件开发团队](examples/software-team/)：设计、编码、浏览器检查与修复 |
@@ -80,6 +86,8 @@
 
 <img src="docs/assets/architecture.svg" alt="EvoSprig 框架架构" width="100%" />
 
+
+画布和 Python 代码生成同一份可版本化的 **AgentSpec**。运行时据此协调智能体、工具和共享记忆，保存进度供调试与恢复；评估把实际任务和结果交给自进化模块，自动修改选定的资源或流程配置。比较候选版本、启用合适的版本后，即可独立导出应用。ComfyUI 工作流也能作为可编辑工具接入，再导出回 ComfyUI。
 
 ## 快速开始
 

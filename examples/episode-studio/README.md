@@ -12,30 +12,44 @@ Give Episode Studio a story. Its agents develop the script, cast and locations, 
 
 ## Showcase
 
-### Vera’s Melancholy · opening scene
+### Vera’s Melancholy · Volume I
 
-[![Play the animated opening](assets/hillside.webp)](assets/hillside.mp4)
+[![Watch Vera’s Melancholy, Volume I](assets/chapter-one.webp)](assets/chapter-one.mp4)
 
-**Two friends. A quiet town. A world beyond the hills.**
+**A quiet town. A restless imagination. The beginning of an adventure.**
 
-25 seconds · Chinese dialogue and narration · **[Watch with sound](assets/hillside.mp4)**
+126.6 seconds · 16 shots · Chinese dialogue and narration · **[Watch with sound](assets/chapter-one.mp4)**
 
 From [Vera’s Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉的忧郁), an in-game book in *Genshin Impact*.
 
+### From story to shot
+
+[![Episode Studio walkthrough](assets/episode-studio-demo.webp)](assets/episode-studio-demo.mp4)
+
+**[Watch the application demo · sound on](assets/episode-studio-demo.mp4)** — story input, production team, visual retakes and a finished shot from the same film.
+
 ## Features
 
-| You bring | The team takes care of |
+| Feature | What it does for your production |
 | --- | --- |
-| A novel or a short idea | Style, screenplay, character designs, locations and shot prompts |
-| A recurring cast | Shared reference images, costumes and character voices across episodes |
-| A scene that needs another take | Visual checks, specific corrections and bounded retakes |
-| A longer story | Ordered shots, ending-frame continuity and the final cut with audio |
+| **Start with a story** | A sentence or a chapter becomes visual direction, a screenplay and timed shots |
+| **A specialist production team** | Writers, art directors, shot directors, render engineers and reviewers each have their own prompts, skills, tools and harness |
+| **Build the cast before filming** | Character designs, costumes, locations and reference images are prepared before shot production |
+| **Carry the story across cuts** | Shared references, previous-shot state and ending frames guide the next shot |
+| **Recurring character voices** | Save suitable single-speaker audio and reuse it in later shots and episodes |
+| **Automatic review and retakes** | Check the generated image and clip, explain a mismatch and direct a bounded retry |
+| **Preserve tuned settings** | Agents change the shot prompt and necessary controls while keeping the render defaults |
+| **Continue a long production** | Background jobs and checkpoints preserve completed work through worker restarts |
+| **Redo one part** | Debug one node, shot or group with saved inputs; reuse the rest of the production |
+| **Choose each role’s model** | Mix API vendors and local models, with a multimodal connection for visual review |
+| **Keep tools ready** | Preload local services and share them across tasks; use a lower-memory deployment preset |
+| **Edit the whole application** | Move between canvas and Python; import, edit and export the ComfyUI render graph |
 
 ### Automatic visual review and retakes
 
-![Automatic visual review corrects the foreground character](assets/retake.jpg)
+![Automatic visual review restores the planned cast and composition](assets/retake.jpg)
 
-The visual editor checks generated frames against the cast and shot plan. When it finds a mismatch, it sends specific corrections to the shot director and requests another take. Here it restored Vera’s short hair, blue dress and position beside Sachi.
+The visual editor checks generated frames against the cast and shot plan. When it finds a mismatch, it sends specific corrections to the shot director and requests another take. Here it corrected Sachi’s hairstyle and restored Vera in the background with the planned costume and position.
 
 ## Implementation
 
@@ -43,7 +57,7 @@ The visual editor checks generated frames against the cast and shot plan. When i
 
 ![Episode Studio: story input and production progress](assets/application.png)
 
-Use **Linux, Python 3.12, Node.js 20+, Git and an NVIDIA CUDA driver**. The API-director profile uses two GPUs for local image/video generation; the default local-director profile uses six 80 GB GPUs. Start with the API option:
+Use **Linux, Python 3.12, Node.js 20+, Git and an NVIDIA CUDA driver**. Agents use your model APIs by default; image and video generation run as local tools. Start here:
 
 ```bash
 git clone --depth 1 https://github.com/Toyhom/EvoSprig.git
@@ -51,7 +65,7 @@ cd EvoSprig
 mkdir -p .evosprig/episode
 cp apps/episode-studio/model-api.example.json .evosprig/episode/model-api.json
 export EPISODE_MODEL_API_KEY="your-api-key"
-python3.12 apps/episode-studio/launch.py setup --director api \
+python3.12 apps/episode-studio/launch.py setup \
   --model-config .evosprig/episode/model-api.json \
   --model-dir "$PWD/models" --env-root "$PWD/.venvs"
 python3.12 apps/episode-studio/launch.py start
@@ -59,7 +73,9 @@ python3.12 apps/episode-studio/launch.py start
 
 The installer creates the application/model environments, downloads the pinned weights and builds the canvas editor. Set `--model-dir` to your large model disk and `--env-root` to your environment directory. Append `--mirror https://hf-mirror.com` to setup for domestic downloads. Rerun the same setup command to resume an interrupted installation.
 
-Before setup, edit `.evosprig/episode/model-api.json` to select your provider. The supplied connection uses `https://api.moonshot.cn/v1`, model `kimi-k3.1-pro`, and credential variable `EPISODE_MODEL_API_KEY`. It serves both the director and visual reviewer. For separate models, add a `vision` connection alongside `main`; the reviewer must accept image inputs. Export every credential variable before `start` in each new terminal. `.env` files are not loaded automatically.
+Before setup, edit `.evosprig/episode/model-api.json`: enter your provider's **base URL, model ID and API-key environment variable**. Use OpenAI, Kimi, MiniMax, Qwen/DashScope or another compatible endpoint. Configure `main` for the production team and optionally `vision` for a separate multimodal reviewer. Each node can select its own model in **Model connections → Model**; [configure API or resident local models](../../docs/model-connections.md).
+
+For smaller GPUs, add `--memory-profile low-vram`. The preset uses CPU offload, CPU video-text encoding, smaller image/render defaults and feed-forward chunking. See [GPU capacity and placement](../../apps/episode-studio/HARDWARE.md) for weight sizes, 16/24/32–48 GB planning and device assignments.
 
 For a fully local director, run setup with `--director local` and omit `--model-config`. Change GPU assignments and ports in `.evosprig/episode/services.json` after installation. The image and video model sources are listed in [models.json](../../apps/episode-studio/models.json).
 

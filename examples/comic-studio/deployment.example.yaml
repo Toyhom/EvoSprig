@@ -1,0 +1,136 @@
+models:
+  main:
+    base_url: https://api.moonshot.cn/v1
+    model: kimi-k3.1-pro
+    api_key_env: MOONSHOT_API_KEY
+    timeout_seconds: 300
+    token_limit_field: max_completion_tokens
+    send_sampling_parameters: false
+    capabilities: &id001
+    - text
+    - structured_output
+    - tool_calling
+    - vision
+    options: &id002
+      reasoning_effort: low
+  vision:
+    base_url: https://api.moonshot.cn/v1
+    model: kimi-k3.1-pro
+    api_key_env: MOONSHOT_API_KEY
+    timeout_seconds: 300
+    token_limit_field: max_completion_tokens
+    send_sampling_parameters: false
+    capabilities: *id001
+    options: *id002
+tools:
+  artifacts.comic:
+    kind: artifact
+    name: artifacts.comic
+    operation: comic
+  media.assets:
+    kind: external_http
+    name: media.assets
+    description: Video production assets service
+    endpoint: http://127.0.0.1:18880/assets
+    input_schema:
+      type: object
+      properties:
+        characters:
+          type: array
+          items:
+            type: object
+            properties:
+              id: &id003
+                type: string
+                minLength: 1
+              description: *id003
+            required:
+            - id
+            - description
+            additionalProperties: false
+        style: *id003
+      required:
+      - characters
+      - style
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            type: object
+            properties:
+              character_id: *id003
+              asset:
+                type: object
+                properties:
+                  id: *id003
+                  uri: *id003
+                  media_type: *id003
+                required:
+                - id
+                - uri
+                - media_type
+                additionalProperties: false
+            required:
+            - character_id
+            - asset
+            additionalProperties: false
+          minItems: 1
+      required:
+      - assets
+      additionalProperties: false
+    side_effect: write
+    idempotent: true
+  comic.image:
+    kind: external_http
+    name: comic.image
+    description: Draw a comic panel from an explicit scene instruction and character
+      references
+    endpoint: http://127.0.0.1:18880/generate-image
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+        references:
+          type: array
+          items:
+            type: object
+        options:
+          type: object
+      required:
+      - prompt
+      - references
+      - options
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: write
+    idempotent: true
+  comic.vision:
+    kind: http
+    name: comic.vision
+    description: Read a panel image for visual review
+    endpoint: http://127.0.0.1:18880/vision
+    method: POST
+    input_schema:
+      type: object
+      properties:
+        asset:
+          type: object
+      required:
+      - asset
+      additionalProperties: false
+    output_schema:
+      type: object
+    side_effect: read_only
+services:
+  images:
+    health_url: http://127.0.0.1:18880/health
+    warmup_url: http://127.0.0.1:18880/warmup
+    warmup_body:
+      family: image
+    ready:
+      loaded: image

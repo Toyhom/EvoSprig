@@ -13,6 +13,7 @@ def python_tool():
             "properties": {
                 "code": {"type": "string", "maxLength": 32000},
                 "data": {"type": "object"},
+                "max_value_chars": {"type": "integer", "minimum": 1024, "maximum": 8388608},
             },
             "required": ["code", "data"],
             "additionalProperties": False,

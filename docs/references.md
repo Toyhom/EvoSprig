@@ -49,3 +49,7 @@ See [method requirements](method-requirements.md) for application data and feedb
 ## Embodied applications
 
 - **RAI** — Rachwał et al., *RAI: Flexible Agent Framework for Embodied AI* (2025). [Paper](https://arxiv.org/abs/2505.07532) · [Code](https://github.com/RobotecAI/rai). The [manipulation application](../examples/rai-manipulation/) recreates the camera–reasoning–tool–feedback loop in EvoSprig.
+
+### Agent runtime design
+
+- [PenguinHarness](https://github.com/Prism-Shadow/penguin-harness): compact tool sets, context management, background sessions and agent workbenches informed the local service and tool-observation work.

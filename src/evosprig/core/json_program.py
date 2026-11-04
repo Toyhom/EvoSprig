@@ -28,7 +28,10 @@ class Returned(Exception):
 
 
 class Program:
-    def __init__(self, code, *, steps=10000):
+    def __init__(self, code, *, steps=10000, max_value_chars=1048576):
+        if type(max_value_chars) is not int or not 1024 <= max_value_chars <= 8388608:
+            raise ValueError("max_value_chars must be between 1024 and 8388608")
+        self.max_value_chars = max_value_chars
         if not isinstance(code, str) or len(code) > 32000:
             raise ValueError("code must be at most 32000 characters")
         tree = ast.parse(code)
@@ -57,13 +60,12 @@ class Program:
         if self.steps < 0:
             raise ValueError("program instruction budget exceeded")
 
-    @staticmethod
-    def bounded(value):
+    def bounded(self, value):
         # Values cross a JSON boundary on every operation; no object capabilities.
         if type(value) is int and value.bit_length() > 1024:
             raise ValueError("integer exceeds program limit")
-        if len(canonical_json(value)) > 65536:
-            raise ValueError("value exceeds program limit")
+        if len(canonical_json(value)) > self.max_value_chars:
+            raise ValueError(f"JSON value exceeds code_max_value_chars ({self.max_value_chars})")
         return value
 
     def expr(self, node, env):
@@ -111,7 +113,7 @@ class Program:
             if isinstance(node.op, ast.Mult):
                 for sequence, count in ((left, right), (right, left)):
                     if isinstance(sequence, (str, list)) and isinstance(count, int):
-                        if len(canonical_json(sequence)) * max(count, 0) > 65536:
+                        if len(canonical_json(sequence)) * max(count, 0) > self.max_value_chars:
                             raise ValueError("sequence multiplication exceeds program limit")
             return operations[type(node.op)](left, right)
         if isinstance(node, ast.UnaryOp):
@@ -223,13 +225,13 @@ class Program:
                 # Bound replacements/joins before allocating their results.
                 if (
                     node.func.attr in {"replace", "join"}
-                    and len(canonical_json([value, args])) > 8000
+                    and len(canonical_json([value, args])) > self.max_value_chars
                 ):
                     raise ValueError("string operation input exceeds limit")
                 if (
                     node.func.attr == "replace"
                     and len(args) >= 2
-                    and len(value) * (len(args[1]) + 1) > 65536
+                    and (len(value) + (len(value) + 1) * len(args[1])) > self.max_value_chars
                 ):
                     raise ValueError("replacement exceeds limit")
                 if node.func.attr == "join" and len(args) == 1:
@@ -237,7 +239,7 @@ class Program:
                         not isinstance(v, str) for v in args[0]
                     ):
                         raise ValueError("join requires a sequence of strings")
-                    if sum(len(v) for v in args[0]) + len(value) * max(0, len(args[0]) - 1) > 65536:
+                    if sum(len(v) for v in args[0]) + len(value) * max(0, len(args[0]) - 1) > self.max_value_chars:
                         raise ValueError("joined value exceeds limit")
                 result = getattr(value, node.func.attr)(*args)
                 return list(result) if node.func.attr in {"keys", "values", "items"} else result
@@ -279,9 +281,9 @@ class Program:
         raise ValueError("run(inputs) must return a JSON value")
 
 
-def execute(code, data):
+def execute(code, data, max_value_chars=1048576):
     try:
-        return Program(code).run(data)
+        return Program(code, max_value_chars=max_value_chars).run(data)
     except (
         ValueError,
         TypeError,

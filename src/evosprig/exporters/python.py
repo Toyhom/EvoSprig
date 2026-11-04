@@ -22,6 +22,8 @@ from evosprig.plugins.workspace_tools import WORKSPACE_TOOL_NAMES
 MODULES = (
     "__init__.py",
     "config.py",
+    "local_services.py",
+    "core/context_window.py",
     "data_cli.py",
     "core/__init__.py",
     "core/spec.py",
@@ -42,6 +44,10 @@ MODULES = (
     "sdk/__init__.py",
     "sdk/builder.py",
     "plugins/__init__.py",
+    "plugins/artifact_tools.py",
+    "plugins/office_artifacts.py",
+    "plugins/spice_artifacts.py",
+    "plugins/comic_artifacts.py",
     "plugins/mock.py",
     "plugins/builtin_tools.py",
     "plugins/openai_compatible.py",
@@ -108,6 +114,9 @@ if args.documents:
     print(json.dumps(add_documents(args.documents, workspace, spec.id), indent=2))
     raise SystemExit(0)
 journal = SQLiteJournal(workspace / "runs.sqlite")
+if args.profile and not args.mock:
+    from evosprig.local_services import prepare_services
+    prepare_services(args.profile)
 if args.resume:
     record = journal.get(args.resume)
     if record["version"]["version_id"] != version.version_id:
@@ -176,7 +185,7 @@ def compatibility_report(
         if binding.plugin in tool_bindings:
             config = tool_bindings[binding.plugin]
             if (
-                config.get("kind") in {"http", "mcp", "external_http", "sqlite", "repository", "comfy_node", "comfy_collect", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
+                config.get("kind") in {"artifact", "http", "mcp", "external_http", "sqlite", "repository", "comfy_node", "comfy_collect", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
                 and config.get("version", "1") == binding.version
             ):
                 continue
@@ -211,7 +220,11 @@ def export_python(
     for tool in version.spec.tools.values():
         if tool.plugin in (tool_bindings or {}):
             raw = tool_bindings[tool.plugin]
-            if raw.get("kind") == "http":
+            if raw.get("kind") == "artifact":
+                from evosprig.plugins.artifact_tools import ArtifactToolConfig
+
+                config = ArtifactToolConfig.model_validate(raw)
+            elif raw.get("kind") == "http":
                 from evosprig.plugins.http_tools import HTTPToolConfig
 
                 config = HTTPToolConfig.model_validate(raw)
@@ -301,6 +314,13 @@ def export_python(
             "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, set DEEPSEEK_API_KEY and omit --mock. Use --profile deployment.example.yaml for explicit bindings. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n\nFor document applications, load your own text collection with `python app.py --documents ./notes --workspace ./workspace`. Use the same `--workspace` for subsequent runs or the HTTP service. Exports do not contain your database or memory records.\n",
             "DEPENDENCIES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
+        operations = {binding.get("operation") for binding in bindings.values() if binding["kind"] == "artifact"}
+        if "office" in operations:
+            files["requirements.lock"] += "\nxlsxwriter==3.2.5\npython-docx==1.2.0\npython-pptx==1.0.2\nlxml==5.3.0\nPillow==12.0.0\n"
+        elif "comic" in operations:
+            files["requirements.lock"] += "\nPillow==12.0.0\n"
+        if "spice" in operations:
+            files["README.md"] += "\nCircuit tools require ngspice on PATH, or EVOSPRIG_NGSPICE pointing to its executable.\n"
         if any(binding["kind"] == "mcp" for binding in bindings.values()):
             files["requirements.lock"] += (Path(__file__).parent / "mcp.lock").read_text()
         if target != "python":

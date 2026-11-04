@@ -41,7 +41,13 @@ The inspector lists tools declared in the application and provides shortcuts for
 
 Choose all tools or task-based selection, bound tool rounds, and enable parallel read calls when useful. Write tools keep their configured permissions and idempotency behavior. See [tools](tools.md) and [memory](memory.md).
 
+## Code node limits
+
+Code nodes accept JSON values up to 1,048,576 characters by default. For larger batches, set `code_max_value_chars` on the node (1,024–8,388,608), or use **JSON value limit** in the canvas inspector. The limit covers inputs, intermediate values and outputs; instruction and allocation budgets still apply. Keep large media files in artifact storage and pass their handles.
+
 ## Model parameters
+
+Each node selects its own model binding. Configure vendors, API key variables and associated local services in [Model connections](model-connections.md).
 
 | Setting | Default | Range / behavior |
 | --- | --- | --- |
@@ -65,3 +71,7 @@ Model credentials and provider options stay in the deployment profile. Sampling 
 5. Open **Compare prompts, skills and outputs**. Review the original and selected resource contents together with the paired answers. Enable your chosen version in **Versions**.
 
 Choose text resources or a structured search space for per-agent harness settings, model routes, retrieval parameters, code and topology. Deployment permissions and task partitions remain fixed. See [harness search](harness-search.md) for configuration and [evolution](evolution.md) for methods and release checks.
+
+### Long tool results
+
+Set `harness.max_tool_result_chars` (for example, `8000`) to bound each tool observation sent to that agent. Longer results become a marked preview with their original length and hash. The full result remains in the run journal. Keep the limit unset for tools whose complete structured output is required in the next model call. Studio exposes the setting under Harness.

@@ -1,0 +1,6 @@
+models: {}
+tools:
+  artifacts.spice:
+    kind: artifact
+    name: artifacts.spice
+    operation: spice

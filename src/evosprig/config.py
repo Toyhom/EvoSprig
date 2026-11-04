@@ -33,11 +33,15 @@ def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool =
         raw = read_profile(profile)
         if (
             not isinstance(raw, dict)
-            or set(raw) - {"models", "tools", "evaluation"}
+            or set(raw) - {"models", "tools", "evaluation", "services"}
             or "models" not in raw
         ):
-            raise ValueError("deployment profile needs models and optional tools")
+            raise ValueError("deployment profile needs models and optional tools, evaluation or services")
         profiles = raw["models"]
+        for name in bindings & profiles.keys():
+            service = profiles[name].get("local_service")
+            if service and service not in raw.get("services", {}):
+                raise ValueError(f"model {name}: unknown local service {service}")
     else:
         profiles = {
             name: {
@@ -95,7 +99,12 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
         raw = read_profile(profile)
         bindings = raw.get("tools", {})
     for name, raw in bindings.items():
-        if raw.get("kind") == "http":
+        if raw.get("kind") == "artifact":
+            from evosprig.plugins.artifact_tools import ArtifactToolConfig, artifact_tool
+
+            config = ArtifactToolConfig.model_validate(raw)
+            tool = artifact_tool(config, workspace, scope)
+        elif raw.get("kind") == "http":
             from evosprig.plugins.http_tools import HTTPToolConfig, http_tool
 
             config = HTTPToolConfig.model_validate(raw)

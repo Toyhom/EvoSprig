@@ -2,9 +2,9 @@ export type Json = Record<string, unknown>;
 export type Binding = { ref: string; optional?: boolean; default?: unknown } | { value: unknown };
 export type Predicate = { left: Binding; op: 'eq'|'ne'|'lt'|'le'|'gt'|'ge'|'contains'|'truthy'; right?: Binding|null };
 export type NodeKind = 'model'|'agent'|'tool'|'transform'|'condition'|'join'|'loop'|'parallel'|'map'|'human'|'code';
-export type Harness = {max_tool_rounds?:number|null; tool_selection?:'all'|'relevant'|null; tool_limit?:number|null; parallel_tool_calls?:boolean|null; tool_errors?:'raise'|'feedback'|null; output_errors?:'raise'|'feedback'|null; max_output_retries?:number|null; max_output_tokens?:number|null; memory?:{tool:string;query_input:string;limit:number;max_chars:number}|null};
+export type Harness = {max_tool_result_chars?:number|null;max_tool_rounds?:number|null; tool_selection?:'all'|'relevant'|null; tool_limit?:number|null; parallel_tool_calls?:boolean|null; tool_errors?:'raise'|'feedback'|null; output_errors?:'raise'|'feedback'|null; max_output_retries?:number|null; max_output_tokens?:number|null; memory?:{tool:string;query_input:string;limit:number;max_chars:number}|null};
 export type NodeSpec = {
-  code?:string|null; harness?:Harness|null; mailbox?:string|{ref:string}|null;
+  code?:string|null; code_max_value_chars?:number|null; harness?:Harness|null; mailbox?:string|{ref:string}|null;
   type: NodeKind; inputs: Record<string, Binding>; output_schema: Json; model?: string | null;
   instructions?: string | { resource: string }; skills?:string[]; image_inputs?:string[]; temperature?:number|null; top_p?:number|null; tools?: string[]; tool?: string | null;
   response_format?: 'text' | 'json'; condition?: Predicate|null; body?: Graph|null;

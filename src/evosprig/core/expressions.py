@@ -2,7 +2,12 @@
 
 from copy import deepcopy
 
+from .protocols import ExecutionError
 from .spec import Predicate, Ref, Value
+
+
+class BindingError(ExecutionError, ValueError):
+    code = "missing_input_reference"
 
 
 def resolve_value(value: Ref | Value, context: dict):
@@ -19,7 +24,7 @@ def resolve_value(value: Ref | Value, context: dict):
     except (KeyError, IndexError, TypeError):
         if value.optional:
             return deepcopy(value.default)
-        raise ValueError(f"unavailable value reference: {value.ref}") from None
+        raise BindingError(f"Input reference {value.ref} is unavailable. Check the node input mapping; map items use input.item and shared bindings use input.context.") from None
     return deepcopy(cursor)
 
 

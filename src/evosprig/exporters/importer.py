@@ -76,6 +76,7 @@ def inspect_archive(data: bytes):
             raise ValueError("export version lock mismatch")
         bindings = json.loads(files["tool-bindings.json"])
         # Config validation is inert; imported credentials are always environment references.
+        from evosprig.plugins.artifact_tools import ArtifactToolConfig
         from evosprig.plugins.comfy_tools import (
             ComfyCollectConfig,
             ComfyJobConfig,
@@ -90,6 +91,7 @@ def inspect_archive(data: bytes):
 
         for name, binding in bindings.items():
             cls = {
+                "artifact": ArtifactToolConfig,
                 "http": HTTPToolConfig,
                 "mcp": MCPToolConfig,
                 "external_http": ExternalHTTPConfig,
