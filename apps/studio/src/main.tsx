@@ -230,7 +230,7 @@ function App() {
     setEdges(items => addEdge({...connection,type:'smoothstep',data:conditional?{when:connection.sourceHandle!=='false'}:{},label:conditional?String(connection.sourceHandle!=='false'):undefined},items));setDirty(true);
   };
   const chooseTab = async (next: typeof tab) => {
-    if (!doc || !commitNodeDraft()) return;
+    if (!doc || busy || !commitNodeDraft()) return;
     if (tab === 'spec' && next !== 'spec') {
       try {
         const draft: Spec = JSON.parse(specText);
@@ -375,7 +375,7 @@ function App() {
       {comfyOpen&&<ComfyImport api={api} lang={lang} onCreated={next=>replaceProject(async()=>{load(next);await refresh();setComfyOpen(false);})} onClose={()=>setComfyOpen(false)}/>}
       {imported&&<section className="panel"><h2>{lang==='zh'?'检查导入工程':'Review imported project'}</h2><p>{lang==='zh'?'已校验规格、资源和文件哈希。外部服务需要在部署配置中绑定。':'Spec, resources and file hashes verified. Bind external services in your deployment profile.'}</p><label>Project ID<input aria-label="Imported project ID" value={importId} onChange={e=>setImportId(e.target.value)}/></label><pre className="json-block">{JSON.stringify(imported.report,null,2)}</pre><button disabled={busy || !!runId} onClick={()=>replaceProject(async()=>{try{const created=await(await api('/projects',{method:'POST',body:JSON.stringify({spec:{...imported.spec,id:importId},resources:imported.resources})})).json();load(created);await refresh();setImported(null);}catch(e){error(e);}})}>{lang==='zh'?'创建导入项目':'Create imported project'}</button><button onClick={()=>setImported(null)}>{lang==='zh'?'关闭':'Close'}</button></section>}
       {!doc ? <div className="empty"><div className="empty-symbol"><Icon name="grid" size={25}/></div><h2>{lang==='zh'?'开始构建你的智能体':'Build your first agent'}</h2><p>{t.empty}</p></div> : <>
-        <nav className="tabs">{(['canvas','spec','code','resources','runs','memory','improve','versions'] as const).map(key => <button key={key} aria-current={tab===key?'page':undefined} className={tab === key ? 'selected' : ''} onClick={() => chooseTab(key)}><Icon name={tabIcons[key]} size={15}/>{t[key]}</button>)}
+        <nav className="tabs">{(['canvas','spec','code','resources','runs','memory','improve','versions'] as const).map(key => <button key={key} disabled={busy} aria-current={tab===key?'page':undefined} className={tab === key ? 'selected' : ''} onClick={() => chooseTab(key)}><Icon name={tabIcons[key]} size={15}/>{t[key]}</button>)}
           <span className="revision">r{doc.revision}</span></nav>
         {tab==='resources' ? <ResourcesPanel key={doc.id} doc={{...doc,spec:currentSpec()}} api={api} lang={lang} onError={error} onChange={next=>{setDoc(next);setNodes(items=>items.map(node=>({...node,data:{...node.data,config:graphAt(next.spec,graphPath).nodes[node.id]}})));mutate();}}/>
         :tab==='memory'?<MemoryPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>

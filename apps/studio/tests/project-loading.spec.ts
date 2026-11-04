@@ -85,3 +85,40 @@ test('a late startup response preserves the newly created project and its task s
   const suites = await (await request.get(`/api/projects/${id}/suites`)).json();
   expect(suites.find((suite: { suite_id: string }) => suite.suite_id === suiteId).suite.metric.kind).toBe('llm_judge');
 });
+
+test('view navigation waits for project creation to finish before editing a spec', async ({ page, request }) => {
+  await page.goto('/');
+  await page.locator('.project[title="hello"]').click();
+  await expect(page.locator('h1')).toHaveText('hello');
+  await expect(page.locator('.editor')).toHaveAttribute('aria-busy', 'false');
+  let releaseRefresh!: () => void;
+  const refreshGate = new Promise<void>(resolve => { releaseRefresh = resolve; });
+  await page.route('**/api/projects', async route => {
+    if (route.request().method() === 'GET') await refreshGate;
+    await route.continue();
+  });
+  try {
+    const created = page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/projects');
+    await page.getByRole('button', { name: '＋ New project' }).click();
+    const id = (await (await created).json()).id;
+    await expect(page.locator('h1')).toHaveText(id);
+    await expect(page.locator('.editor')).toHaveAttribute('aria-busy', 'true');
+    for (const view of ['Canvas', 'Spec', 'Python', 'Resources', 'History', 'Memory', 'Improve', 'Versions']) {
+      await expect(page.getByRole('button', { name: view, exact: true })).toBeDisabled();
+    }
+    releaseRefresh();
+    await page.getByRole('button', { name: 'Spec', exact: true }).click();
+    const editor = page.getByLabel('AgentSpec JSON');
+    const draft = JSON.parse(await editor.inputValue());
+    draft.graph.nodes.assistant.instructions = 'Keep the first edit after project creation.';
+    await editor.fill(JSON.stringify(draft, null, 2));
+    await page.getByRole('button', { name: 'Canvas', exact: true }).click();
+    await expect(page.locator('.react-flow__node')).toContainText(draft.graph.nodes.assistant.instructions);
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Saved');
+    const saved = await (await request.get('/api/projects/' + id)).json();
+    expect(saved.spec.graph.nodes.assistant.instructions).toBe(draft.graph.nodes.assistant.instructions);
+  } finally {
+    releaseRefresh();
+  }
+});
