@@ -49,10 +49,15 @@ class JobStore:
             raise KeyError(identifier)
         return dict(row)
 
-    def claim(self):
+    def claim(self, operations=None):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT * FROM jobs WHERE status='pending' ORDER BY created LIMIT 1").fetchone()
+            allowed = tuple(sorted(operations)) if operations is not None else None
+            if allowed == ():
+                return None
+            clause = " AND operation IN (" + ",".join("?" for _ in allowed) + ")" if allowed else ""
+            row = db.execute("SELECT * FROM jobs WHERE status='pending'" + clause + " ORDER BY created LIMIT 1",
+                             allowed or ()).fetchone()
             if not row:
                 return None
             db.execute("UPDATE jobs SET status='running', updated=? WHERE id=?", (time.time(), row["id"]))
@@ -83,8 +88,13 @@ class JobStore:
         with self.connect() as db:
             db.execute("UPDATE jobs SET status='failed', error='Worker interrupted; retry this job or submit a new take', updated=? WHERE status='running'", (time.time(),))
 
-    def run_once(self, backend):
-        row = self.claim()
+    def counts(self):
+        with self.connect() as db:
+            return {row["status"]: row["count"] for row in db.execute(
+                "SELECT status, COUNT(*) AS count FROM jobs GROUP BY status")}
+
+    def run_once(self, backend, operations=None):
+        row = self.claim(operations)
         if row is None:
             return False
         try:

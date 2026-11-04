@@ -25,6 +25,7 @@ modules:
     - resource:source_reader
     - resource:producer
     - resource:script_editor
+    - resource:screenwriting
     - /graph/nodes/source_reader/harness/max_output_tokens
     - /graph/nodes/script_editor/harness/max_output_retries
   visual_direction:
@@ -33,13 +34,12 @@ modules:
     - /graph/nodes/reference_library/body/nodes/takes/max_iterations
     - resource:shot_director
     - resource:cinematography
-  voice_direction:
-    - resource:voice_director
   first_frame:
     - resource:frame_review
     - /graph/nodes/shots/body/nodes/frame_takes/max_iterations
   motion_and_continuity:
     - resource:render_engineer
+    - resource:video_prompting
     - resource:continuity_review
     - resource:continuity
     - /graph/nodes/shots/body/nodes/takes/max_iterations

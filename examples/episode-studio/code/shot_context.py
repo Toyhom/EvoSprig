@@ -16,6 +16,7 @@ def run(inputs):
                         for speaker in speakers if speaker in voice_references][:3]
     video_references = [previous["tail"]] if shot["transition"] == "continue" and previous.get("tail") else []
     return {"shot": shot, "style": context["art"]["style"], "references": references,
+            "scene": [scene for scene in context["plan"]["locations"] if scene["id"] == shot["location"]][0],
             "previous_shot": context["plan"]["shots"][inputs["index"] - 1] if inputs["index"] else None,
             "render_profile": context["render_profile"],
             "reference_labels": [a["id"] for a in characters + locations],

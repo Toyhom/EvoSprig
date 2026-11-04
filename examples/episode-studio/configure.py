@@ -10,7 +10,8 @@ from build_agent import ANY, ASSET, ASSETS, STRING, TEXT, obj
 from evosprig.plugins.comfy_tools import ComfyRecipeConfig, comfy_recipe_tool
 
 
-def profile(recipe, *, model_url, model_name, media_url, comfy_url, model_timeout_seconds=1200):
+def profile(recipe, *, model_url, model_name, media_url, comfy_url, model_timeout_seconds=1200,
+            model_connections=None):
     config = ComfyRecipeConfig.model_validate(recipe)
     if config.name != "film.recipe":
         raise ValueError("the recipe binding must be named film.recipe")
@@ -51,7 +52,22 @@ def profile(recipe, *, model_url, model_name, media_url, comfy_url, model_timeou
                                 "input_schema": obj(assets=ASSETS),
                                 "output_schema": obj(images={"type": "array", "items": STRING}),
                                 "side_effect": "read_only", "max_response_bytes": 10000000}
-    return {"models": {"main": model, "vision": dict(model)}, "tools": bindings}
+    bindings["media.frame_vision"] = {**bindings["media.vision"], "name": "media.frame_vision",
+                                     "input_schema": obj(asset=ASSET)}
+    models = {"main": model, "vision": dict(model)}
+    if model_connections is not None:
+        from evosprig.plugins.openai_compatible import Connection
+
+        if set(model_connections) - {"main", "vision"} or "main" not in model_connections:
+            raise ValueError("model connections require main and optionally vision")
+        models = {name: Connection.model_validate(value).model_dump(mode="json")
+                  for name, value in model_connections.items()}
+        models.setdefault("vision", dict(models["main"]))
+        for name in ("main", "vision"):
+            required = {"text", "structured_output"} | ({"vision"} if name == "vision" else set())
+            if required - set(models[name]["capabilities"]):
+                raise ValueError(name + " is missing capabilities: " + ", ".join(sorted(required - set(models[name]["capabilities"]))))
+    return {"models": models, "tools": bindings}
 
 
 if __name__ == "__main__":
@@ -62,9 +78,11 @@ if __name__ == "__main__":
     parser.add_argument("--media-url", default="http://127.0.0.1:18880")
     parser.add_argument("--comfy-url", default="http://127.0.0.1:18884")
     parser.add_argument("--model-timeout-seconds", type=float, default=1200)
+    parser.add_argument("--model-config", type=Path, help="JSON connections: main and optional vision; keys stay in environment variables")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     result = profile(json.loads(args.recipe.read_text()), model_url=args.model_url, model_name=args.model_name,
-                     media_url=args.media_url, comfy_url=args.comfy_url, model_timeout_seconds=args.model_timeout_seconds)
+                     media_url=args.media_url, comfy_url=args.comfy_url, model_timeout_seconds=args.model_timeout_seconds,
+                     model_connections=json.loads(args.model_config.read_text()) if args.model_config else None)
     with args.out.open("x") as target:
         yaml.safe_dump(result, target, sort_keys=False)

@@ -16,24 +16,28 @@ from isolated import IsolatedMediaBackend
 from store import JobStore
 
 OPERATIONS = {"assets", "image", "video", "compose", "generate-image", "generate-video",
-              "stage-reference", "ingest-comfy", "inspect-video", "generate-voice"}
+              "stage-reference", "ingest-comfy", "inspect-video", "generate-voice", "warmup"}
+CPU_OPERATIONS = {"compose", "stage-reference", "ingest-comfy", "inspect-video"}
 
 
-def create_app(store, backend, *, token=None, start_worker=True, idle_unload_seconds=120, preload=None):
+def create_app(store, backend, *, token=None, start_worker=True, idle_unload_seconds=0, preload=None):
     stop = threading.Event()
     readiness = {"ready": preload is None, "error": None}
-    def work():
+    def work(cpu=False):
         last_work = time.monotonic()
         try:
-            if preload:
-                backend.execute("warmup", {"family": preload}, "warmup", stop.is_set)
+            if preload and not cpu:
+                payload = {"family": preload}
+                if preload == "image":
+                    payload["probe"] = True
+                backend.execute("warmup", payload, "warmup", stop.is_set)
                 readiness["ready"] = True
                 last_work = time.monotonic()
             while not stop.is_set():
-                if store.run_once(backend):
+                if store.run_once(backend, CPU_OPERATIONS if cpu else OPERATIONS - CPU_OPERATIONS):
                     last_work = time.monotonic()
                 else:
-                    if idle_unload_seconds > 0 and time.monotonic() - last_work >= idle_unload_seconds and hasattr(backend, "close"):
+                    if not cpu and idle_unload_seconds > 0 and time.monotonic() - last_work >= idle_unload_seconds and hasattr(backend, "close"):
                         backend.close()
                         last_work = time.monotonic()
                     stop.wait(0.5)
@@ -41,21 +45,23 @@ def create_app(store, backend, *, token=None, start_worker=True, idle_unload_sec
             readiness.update(ready=False, error=type(exc).__name__)
             raise
         finally:
-            if hasattr(backend, "close"):
+            if not cpu and hasattr(backend, "close"):
                 backend.close()
 
     @asynccontextmanager
     async def lifespan(app):
-        worker = None
+        workers = []
         if start_worker:
             store.recover()
-            worker = threading.Thread(target=work, daemon=True)
-            worker.start()
+            for cpu in (False, True):
+                worker = threading.Thread(target=work, args=(cpu,), daemon=True)
+                worker.start()
+                workers.append(worker)
         yield
         stop.set()
         if hasattr(backend, "shutdown"):
             backend.shutdown()
-        if worker:
+        for worker in workers:
             await asyncio.to_thread(worker.join)
 
     app = FastAPI(title="EvoSprig local media", lifespan=lifespan)
@@ -90,6 +96,8 @@ def create_app(store, backend, *, token=None, start_worker=True, idle_unload_sec
             return JSONResponse({"status": "failed" if readiness["error"] else "loading",
                                  "family": preload, "error": readiness["error"]}, status_code=503)
         return {"status": "ok", "loaded": backend.loaded, "seed": backend.seed,
+                "queue": await asyncio.to_thread(store.counts),
+                "idle_unload_seconds": idle_unload_seconds,
                 "image_steps": backend.image_steps, "video_steps": backend.video_steps,
                 "width": backend.width, "height": backend.height}
 
@@ -126,6 +134,12 @@ def create_app(store, backend, *, token=None, start_worker=True, idle_unload_sec
         if not key or len(key) > 200:
             raise HTTPException(422, "Idempotency-Key is required (max 200 characters)")
         payload = await body(request)
+        if operation == "warmup" and (
+            payload.get("family") not in ("image", "video", "voice")
+            or type(payload.get("probe", False)) is not bool
+            or (payload.get("probe") and payload["family"] != "image")
+        ):
+            raise HTTPException(422, "warmup accepts a model family and an optional image probe")
         try:
             identifier = store.submit(operation, key, payload)
         except ValueError:
@@ -175,7 +189,8 @@ def main():
     parser.add_argument("--comfy-output", type=Path)
     parser.add_argument("--speech-model", type=Path, help="Local Faster Whisper model for dialogue checks")
     parser.add_argument("--voice-model", type=Path, help="Qwen Omni Instruct checkpoint with speech output")
-    parser.add_argument("--idle-unload-seconds", type=float, default=120)
+    parser.add_argument("--idle-unload-seconds", type=float, default=0,
+                        help="0 retains models until shutdown; positive values unload idle models")
     parser.add_argument("--preload", choices=["image", "video", "voice"], help="Load this model before the service becomes ready")
     parser.add_argument("--video-model", type=Path)
     parser.add_argument("--outputs", required=True, type=Path)

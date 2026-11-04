@@ -6,13 +6,13 @@
 
 **Paste a novel. Or start with one sentence. Let the production team make the film.**
 
-Episode Studio turns stories into animated episodes. Its director chooses a visual style and develops a brief; writers, artists, voice and shot directors take it through to the final cut. Open the same application in EvoSprig's canvas to change the team.
+Episode Studio turns stories into animated episodes. Its director chooses a visual style and develops a brief; writers, artists and shot directors take it through to the final cut. Open the same application in EvoSprig's canvas to change the team.
 
 - **An idea is enough.** Agents expand the story, choose the style, write dialogue and prepare every generation prompt. Style, language and length are optional directions.
-- **One cast across the episode.** Character, location and voice references are generated once and reused.
+- **One cast across the episode.** Characters and locations keep shared references; voices are captured from accepted shots and reused.
 - **Automatic retakes.** Reference images and first frames are reviewed before rendering. The visual editor then checks each clip and sends specific changes back to the team.
 - **Longer stories.** Shots share final frames, ending motion and saved character voices, then assemble into a film with audio.
-- **Editable decisions.** Agents read the render recipe's switches, parameter limits and saved defaults. Prompts, skills, LoRA strengths, sampling and upscaling settings can change together.
+- **Editable decisions.** Agents read the render recipe's switches, parameter limits and saved defaults. Agents preserve tuned defaults and submit only the controls that need changing.
 
 ## On the hillside
 
@@ -39,16 +39,18 @@ python apps/episode-studio/launch.py start
 
 Open **http://127.0.0.1:18767/episode/**, paste your story and choose **Make this film**. Watch the script, cast and shots appear as the team works, then play the finished film. Return to earlier films from **Your productions**. Use the language switch for the Chinese interface.
 
+Use an API director with `setup --director api --model-config model-api.json`; see the [connection example](../../apps/episode-studio/model-api.example.json). Local image and video models stay warm between productions.
+
 [Installation and hardware settings](../../apps/episode-studio/) · [Domestic mirrors](../../apps/episode-studio/#install) · [Connect existing services](../../apps/episode-studio/#deployment-settings)
 
 ## Make it yours
 
 ![Render controls and continuity review](assets/render-team.png)
 
-Edit the role instructions in `prompts/` and the shared continuity/cinematography rules in `skills/`. Expose extra controls in the recipe to make them available to the render engineer; omitted values keep their saved defaults. `build_agent.py` sets the number of takes and concurrency. If a reference or shot reaches its retake limit, preview it in the application and choose a result to continue. Completed work stays available.
+Edit the role instructions in `prompts/` and the worked screenplay, camera and video-prompt examples in `skills/`. Expose extra controls in the recipe to make them available to the render engineer; omitted values keep their saved defaults. `build_agent.py` sets the number of takes and concurrency. After the retake limit, production continues with the latest take and returns remaining issues in `notes`. Set `build(review_policy="pause")` to approve these cases yourself. Completed work stays available.
 
 **Open render workflow** reveals the model loaders, references, adapters, samplers and output nodes. Search for a node, edit its parameters, switch an adapter on or off, and export the graph to ComfyUI. The [included recipe](../../apps/episode-studio/render-recipe.json) carries the attention, chunking and upscaling controls alongside the creative settings.
 
 Use **Debug selection** to try a prompt, reference-image stage or rendering group before running the episode. Use **Improve** with your own scene tasks and rubric to compare prompt, skill and harness candidates.
 
-The supplied [search space](search-space.yaml) divides changes between story, visual direction, voice casting, first-frame review and motion continuity. Select the team's prompts and skills in **Improve** to search those modules together with their output and retake limits. [Configure an evaluation suite](../../docs/evaluation.md) · [Harness search](../../docs/harness-search.md).
+The supplied [search space](search-space.yaml) divides changes between story, visual direction, first-frame review and motion continuity. Select the team's prompts and skills in **Improve** to search those modules together with their output and retake limits. [Configure an evaluation suite](../../docs/evaluation.md) · [Harness search](../../docs/harness-search.md).

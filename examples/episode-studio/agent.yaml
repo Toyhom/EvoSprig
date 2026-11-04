@@ -25,17 +25,20 @@ graph:
   - source: production_brief
     target: source_reader
     when: null
+  - source: production_notes
+    target: voice_catalog
+    when: null
   - source: reference_library
     target: shots
     when: null
   - source: render_profile
-    target: voice_director
+    target: reference_library
     when: null
   - source: script_editor
     target: art_director
     when: null
   - source: shots
-    target: timeline
+    target: production_notes
     when: null
   - source: source_reader
     target: producer
@@ -43,11 +46,8 @@ graph:
   - source: timeline
     target: assemble
     when: null
-  - source: voice_director
-    target: voice_library
-    when: null
-  - source: voice_library
-    target: reference_library
+  - source: voice_catalog
+    target: timeline
     when: null
   entry: creative_director
   nodes:
@@ -218,8 +218,7 @@ graph:
       output_validator: direction_valid
       response_format: json
       skills:
-      - continuity
-      - cinematography
+      - screenwriting
       tool: null
       tool_errors: raise
       tools: []
@@ -412,8 +411,8 @@ graph:
       output_validator: plan_valid
       response_format: json
       skills:
+      - screenwriting
       - continuity
-      - cinematography
       tool: null
       tool_errors: raise
       tools: []
@@ -460,6 +459,34 @@ graph:
         - style
         - language
         - target_seconds
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    production_notes:
+      body: null
+      branches: {}
+      code: production_notes
+      condition: null
+      inputs:
+        references:
+          default: null
+          optional: false
+          ref: nodes.reference_library.output.items
+        shots:
+          default: null
+          optional: false
+          ref: nodes.shots.output.items
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
         type: object
       response_format: text
       tool: python
@@ -597,10 +624,6 @@ graph:
             branches: {}
             condition: null
             inputs:
-              feedback:
-                default: null
-                optional: false
-                ref: nodes.takes.output.feedback
               frame:
                 default: null
                 optional: false
@@ -638,7 +661,7 @@ graph:
             tool: null
             tool_errors: raise
             tools: []
-            type: human
+            type: transform
             until: null
           selected_reference:
             body: null
@@ -847,9 +870,6 @@ graph:
                     - feedback
                     type: object
                   response_format: json
-                  skills:
-                  - continuity
-                  - cinematography
                   tool: null
                   tool_errors: raise
                   tools: []
@@ -952,6 +972,10 @@ graph:
             default: null
             optional: false
             ref: input.item.kind
+          review:
+            default: null
+            optional: false
+            ref: nodes.takes.output
       branches: {}
       condition: null
       inputs: {}
@@ -1154,8 +1178,8 @@ graph:
       output_validator: plan_valid
       response_format: json
       skills:
+      - screenwriting
       - continuity
-      - cinematography
       tool: null
       tool_errors: raise
       tools: []
@@ -1394,10 +1418,6 @@ graph:
             branches: {}
             condition: null
             inputs:
-              feedback:
-                default: null
-                optional: false
-                ref: nodes.frame_takes.output.feedback
               frame:
                 default: null
                 optional: false
@@ -1435,7 +1455,7 @@ graph:
             tool: null
             tool_errors: raise
             tools: []
-            type: human
+            type: transform
             until: null
           frame_choice:
             body: null
@@ -1534,7 +1554,6 @@ graph:
                   response_format: json
                   skills:
                   - continuity
-                  - cinematography
                   tool: null
                   tool_errors: raise
                   tools: []
@@ -1838,10 +1857,6 @@ graph:
             branches: {}
             condition: null
             inputs:
-              feedback:
-                default: null
-                optional: false
-                ref: nodes.takes.output.feedback
               take:
                 default: null
                 optional: false
@@ -1864,7 +1879,7 @@ graph:
             tool: null
             tool_errors: raise
             tools: []
-            type: human
+            type: transform
             until: null
           reference_names:
             body: null
@@ -2035,6 +2050,9 @@ graph:
               - source: render_engineer
                 target: render_settings
                 when: null
+              - source: render_preview
+                target: render_engineer
+                when: null
               - source: render_settings
                 target: configure_nodes
                 when: null
@@ -2044,7 +2062,7 @@ graph:
               - source: select_clip
                 target: inspect_clip
                 when: null
-              entry: render_engineer
+              entry: render_preview
               nodes:
                 collect_media:
                   body: null
@@ -2133,10 +2151,18 @@ graph:
                       default: null
                       optional: false
                       ref: input.context.previous
+                    previous_shot:
+                      default: null
+                      optional: false
+                      ref: input.context.previous_shot
                     reference_order:
                       default: null
                       optional: false
                       ref: nodes.review_images.output.labels
+                    scene:
+                      default: null
+                      optional: false
+                      ref: input.context.scene
                     shot:
                       default: null
                       optional: false
@@ -2186,7 +2212,6 @@ graph:
                   response_format: json
                   skills:
                   - continuity
-                  - cinematography
                   tool: null
                   tool_errors: raise
                   tools: []
@@ -2319,7 +2344,7 @@ graph:
                   condition: null
                   harness:
                     max_output_retries: 2
-                    max_output_tokens: 4096
+                    max_output_tokens: 2048
                     max_tool_rounds: 1
                     memory: null
                     output_errors: feedback
@@ -2327,6 +2352,8 @@ graph:
                     tool_errors: null
                     tool_limit: null
                     tool_selection: null
+                  image_inputs:
+                  - images
                   inputs:
                     cast:
                       default: null
@@ -2336,6 +2363,10 @@ graph:
                       default: null
                       optional: false
                       ref: input.feedback
+                    images:
+                      default: null
+                      optional: false
+                      ref: nodes.render_preview.output.images
                     previous:
                       default: null
                       optional: false
@@ -2348,6 +2379,10 @@ graph:
                       default: null
                       optional: false
                       ref: input.context.render_profile
+                    scene:
+                      default: null
+                      optional: false
+                      ref: input.context.scene
                     shot:
                       default: null
                       optional: false
@@ -2362,7 +2397,7 @@ graph:
                   join: all
                   max_items: 32
                   max_iterations: 1
-                  model: main
+                  model: vision
                   output_schema:
                     additionalProperties:
                       type:
@@ -2382,12 +2417,35 @@ graph:
                   output_validator: render_valid
                   response_format: json
                   skills:
+                  - video_prompting
                   - continuity
-                  - cinematography
                   tool: null
                   tool_errors: raise
                   tools: []
                   type: agent
+                  until: null
+                render_preview:
+                  body: null
+                  branches: {}
+                  condition: null
+                  inputs:
+                    asset:
+                      default: null
+                      optional: false
+                      ref: input.frame
+                  instructions: ''
+                  items: null
+                  join: all
+                  max_items: 32
+                  max_iterations: 1
+                  model: null
+                  output_schema:
+                    type: object
+                  response_format: text
+                  tool: frame_preview
+                  tool_errors: raise
+                  tools: []
+                  type: tool
                   until: null
                 render_settings:
                   body: null
@@ -2593,6 +2651,14 @@ graph:
             default: null
             optional: false
             ref: nodes.selected_take.output.continuity
+          frame_accepted:
+            default: null
+            optional: false
+            ref: nodes.frame_takes.output.accepted
+          frame_feedback:
+            default: null
+            optional: false
+            ref: nodes.frame_takes.output.feedback
           last_frame:
             default: null
             optional: false
@@ -2638,9 +2704,9 @@ graph:
           optional: false
           ref: nodes.render_profile.output
         voices:
-          default: null
-          optional: false
-          ref: nodes.voice_library.output.items
+          default: []
+          optional: true
+          ref: input.voices
       instructions: ''
       items:
         default: null
@@ -2738,9 +2804,6 @@ graph:
         type: object
       output_validator: source_valid
       response_format: json
-      skills:
-      - continuity
-      - cinematography
       tool: null
       tool_errors: raise
       tools: []
@@ -2770,174 +2833,43 @@ graph:
       tools: []
       type: code
       until: null
-    voice_director:
+    voice_catalog:
       body: null
       branches: {}
+      code: voice_catalog
       condition: null
-      harness:
-        max_output_retries: 2
-        max_output_tokens: 4096
-        max_tool_rounds: 1
-        memory: null
-        output_errors: feedback
-        parallel_tool_calls: null
-        tool_errors: null
-        tool_limit: null
-        tool_selection: null
       inputs:
-        language:
+        shots:
           default: null
           optional: false
-          ref: nodes.production_brief.output.language
-        plan:
-          default: null
-          optional: false
-          ref: nodes.script_editor.output
-      instructions:
-        resource: voice_director
+          ref: nodes.shots.output.items
+        supplied:
+          default: []
+          optional: true
+          ref: input.voices
+      instructions: ''
       items: null
       join: all
       max_items: 32
-      max_iterations: 1
-      model: main
-      output_schema:
-        additionalProperties: false
-        properties:
-          voices:
-            items:
-              additionalProperties: false
-              properties:
-                direction:
-                  minLength: 1
-                  type: string
-                id:
-                  minLength: 1
-                  type: string
-                seed:
-                  maximum: 2147483647
-                  minimum: 0
-                  type: integer
-                speaker:
-                  enum:
-                  - Chelsie
-                  - Ethan
-                  - Aiden
-                text:
-                  minLength: 1
-                  type: string
-              required:
-              - id
-              - speaker
-              - text
-              - direction
-              - seed
-              type: object
-            maxItems: 5
-            type: array
-        required:
-        - voices
-        type: object
-      output_validator: voice_valid
-      response_format: json
-      skills:
-      - continuity
-      - cinematography
-      tool: null
-      tool_errors: raise
-      tools: []
-      type: agent
-      until: null
-    voice_library:
-      body:
-        edges: []
-        entry: record
-        nodes:
-          record:
-            body: null
-            branches: {}
-            condition: null
-            inputs:
-              direction:
-                default: null
-                optional: false
-                ref: input.item.direction
-              max_seconds:
-                value: 5
-              seed:
-                default: null
-                optional: false
-                ref: input.item.seed
-              speaker:
-                default: null
-                optional: false
-                ref: input.item.speaker
-              text:
-                default: null
-                optional: false
-                ref: input.item.text
-            instructions: ''
-            items: null
-            join: all
-            max_items: 32
-            max_iterations: 1
-            model: null
-            output_schema:
-              additionalProperties: false
-              properties:
-                id:
-                  minLength: 1
-                  type: string
-                media_type:
-                  minLength: 1
-                  type: string
-                uri:
-                  minLength: 1
-                  type: string
-              required:
-              - id
-              - uri
-              - media_type
-              type: object
-            response_format: text
-            tool: voice
-            tool_errors: raise
-            tools: []
-            type: tool
-            until: null
-        output:
-          asset:
-            default: null
-            optional: false
-            ref: nodes.record.output
-          id:
-            default: null
-            optional: false
-            ref: input.item.id
-      branches: {}
-      condition: null
-      inputs: {}
-      instructions: ''
-      items:
-        default: null
-        optional: false
-        ref: nodes.voice_director.output.voices
-      join: all
-      max_items: 5
       max_iterations: 1
       model: null
       output_schema:
         type: object
       response_format: text
-      tool: null
+      tool: python
       tool_errors: raise
       tools: []
-      type: map
+      type: code
       until: null
   output:
     film:
       default: null
       optional: false
       ref: nodes.assemble.output
+    notes:
+      default: null
+      optional: false
+      ref: nodes.production_notes.output.notes
     plan:
       default: null
       optional: false
@@ -2946,6 +2878,10 @@ graph:
       default: null
       optional: false
       ref: nodes.shots.output
+    voices:
+      default: null
+      optional: false
+      ref: nodes.voice_catalog.output.voices
 id: episode-studio
 input_schema:
   additionalProperties: false
@@ -2963,6 +2899,36 @@ input_schema:
       maximum: 300
       minimum: 12
       type: integer
+    voices:
+      items:
+        additionalProperties: false
+        properties:
+          asset:
+            additionalProperties: false
+            properties:
+              id:
+                minLength: 1
+                type: string
+              media_type:
+                minLength: 1
+                type: string
+              uri:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - uri
+            - media_type
+            type: object
+          id:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - asset
+        type: object
+      maxItems: 5
+      type: array
   required:
   - source_text
   type: object
@@ -2998,6 +2964,24 @@ output_schema:
       - uri
       - media_type
       type: object
+    notes:
+      items:
+        additionalProperties: false
+        properties:
+          feedback:
+            type: string
+          id:
+            minLength: 1
+            type: string
+          stage:
+            minLength: 1
+            type: string
+        required:
+        - stage
+        - id
+        - feedback
+        type: object
+      type: array
     plan:
       additionalProperties: false
       properties:
@@ -3122,10 +3106,41 @@ output_schema:
       type: object
     shots:
       type: object
+    voices:
+      items:
+        additionalProperties: false
+        properties:
+          asset:
+            additionalProperties: false
+            properties:
+              id:
+                minLength: 1
+                type: string
+              media_type:
+                minLength: 1
+                type: string
+              uri:
+                minLength: 1
+                type: string
+            required:
+            - id
+            - uri
+            - media_type
+            type: object
+          id:
+            minLength: 1
+            type: string
+        required:
+        - id
+        - asset
+        type: object
+      type: array
   required:
   - film
   - plan
   - shots
+  - notes
+  - voices
   type: object
 resources:
   art_director:
@@ -3170,6 +3185,9 @@ resources:
   production_brief:
     path: code/production_brief.py
     role: code
+  production_notes:
+    path: code/production_notes.py
+    role: code
   record_take:
     path: code/record_take.py
     role: code
@@ -3197,6 +3215,9 @@ resources:
   review_images:
     path: code/review_images.py
     role: code
+  screenwriting:
+    path: skills/screenwriting.md
+    role: skill
   script_editor:
     path: prompts/script_editor.md
     role: prompt
@@ -3224,16 +3245,19 @@ resources:
   timeline:
     path: code/timeline.py
     role: code
-  voice_director:
-    path: prompts/voice_director.md
-    role: prompt
-  voice_valid:
-    path: code/voice_valid.py
+  video_prompting:
+    path: skills/video_prompting.md
+    role: skill
+  voice_catalog:
+    path: code/voice_catalog.py
     role: code
 spec_version: '0.3'
 tools:
   compose:
     plugin: media.compose
+    version: '1'
+  frame_preview:
+    plugin: media.frame_vision
     version: '1'
   image:
     plugin: media.generate_image
@@ -3261,7 +3285,4 @@ tools:
     version: '1'
   vision_preview:
     plugin: media.vision
-    version: '1'
-  voice:
-    plugin: media.generate_voice
     version: '1'

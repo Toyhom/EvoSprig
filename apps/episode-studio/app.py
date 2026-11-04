@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import os
 import re
 from pathlib import Path
 
@@ -38,16 +39,25 @@ def application(workspace, profile, *, media_root=None, token=None):
 
         bindings = read_profile(profile)
         model = bindings.get("models", {}).get("main", {})
+        vision_model = bindings.get("models", {}).get("vision", model)
         tools = bindings.get("tools", {})
         image = tools.get("media.generate_image", {})
         render = tools.get("film.render", {})
         addresses = {"director": model.get("base_url", "").rstrip("/") + "/models",
                      "media": image.get("endpoint", "").rsplit("/", 1)[0] + "/health",
                      "render": render.get("base_url", "").rstrip("/") + "/system_stats"}
+        if vision_model != model:
+            addresses["vision"] = vision_model.get("base_url", "").rstrip("/") + "/models"
         async with httpx.AsyncClient(timeout=2, trust_env=False) as client:
             async def check(name, address):
                 try:
-                    response = await client.get(address)
+                    headers = {}
+                    if name in {"director", "vision"}:
+                        connection = model if name == "director" else vision_model
+                        key = os.environ.get(connection.get("api_key_env", ""))
+                        if key:
+                            headers["Authorization"] = "Bearer " + key
+                    response = await client.get(address, headers=headers)
                     return {"name": name, "ready": response.is_success}
                 except (httpx.HTTPError, httpx.InvalidURL):
                     return {"name": name, "ready": False}

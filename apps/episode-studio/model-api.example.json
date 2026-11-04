@@ -1,0 +1,12 @@
+{
+  "main": {
+    "base_url": "https://api.moonshot.cn/v1",
+    "model": "kimi-k3.1-pro",
+    "api_key_env": "EPISODE_MODEL_API_KEY",
+    "timeout_seconds": 300,
+    "max_connections": 8,
+    "max_keepalive_connections": 4,
+    "json_mode": "without_tools",
+    "capabilities": ["text", "structured_output", "vision"]
+  }
+}

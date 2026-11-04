@@ -54,8 +54,18 @@ def val(value):
 
 
 def model(resource, inputs, schema, *, vision=False, tokens=4096, validator=None):
+    skills = {
+        "creative_director": ["screenwriting"],
+        "producer": ["screenwriting", "continuity"],
+        "script_editor": ["screenwriting", "continuity"],
+        "art_director": ["continuity", "cinematography"],
+        "shot_director": ["continuity", "cinematography"],
+        "render_engineer": ["video_prompting", "continuity"],
+        "continuity_review": ["continuity"],
+        "frame_review": ["continuity"],
+    }.get(resource, [])
     node = {"type": "agent", "model": "vision" if vision else "main",
-            "instructions": {"resource": resource}, "skills": ["continuity", "cinematography"],
+            "instructions": {"resource": resource}, "skills": skills,
             "response_format": "json", "inputs": inputs, "output_schema": schema,
             "harness": {"output_errors": "feedback", "max_output_retries": 2, "max_output_tokens": tokens,
                         "max_tool_rounds": 1}}
@@ -83,13 +93,16 @@ def graph(nodes, output, edges=None):
 
 def render_attempt():
     nodes = {
+        "render_preview": tool("frame_preview", {"asset": ref("input.frame")}),
         "render_engineer": model("render_engineer", {
             "shot": ref("input.context.shot"), "style": ref("input.context.style"),
+            "scene": ref("input.context.scene"),
+            "images": ref("nodes.render_preview.output.images"),
             "cast": ref("input.context.cast"), "previous": ref("input.context.previous"),
             "feedback": ref("input.feedback"),
             "reference_order": ref("input.reference_order"),
             "render_profile": ref("input.context.render_profile"),
-        }, CONTROLS, validator="render_valid"),
+        }, CONTROLS, vision=True, tokens=2048, validator="render_valid"),
         "render_settings": code("render_settings", {
             "controls": ref("nodes.render_engineer.output"), "context": ref("input.context"),
             "attempt": ref("input.attempt"),
@@ -108,6 +121,7 @@ def render_attempt():
         "preview": tool("vision_preview", {"assets": ref("nodes.review_images.output.assets")}),
         "continuity_review": model("continuity_review", {
             "images": ref("nodes.preview.output.images"), "shot": ref("input.context.shot"),
+            "scene": ref("input.context.scene"), "previous_shot": ref("input.context.previous_shot"),
             "previous": ref("input.context.previous"), "inspection": ref("nodes.inspect_clip.output"),
             "reference_order": ref("nodes.review_images.output.labels"),
         }, VERDICT, vision=True, tokens=3072),
@@ -213,6 +227,8 @@ def shot_graph(max_takes, max_frame_takes):
               {"source": "needs_review", "target": "gather_selected"},
               {"source": "gather_selected", "target": "selected_take"}]
     return graph(nodes, {"clip": ref("nodes.selected_take.output.clip"),
+                         "frame_accepted": ref("nodes.frame_takes.output.accepted"),
+                         "frame_feedback": ref("nodes.frame_takes.output.feedback"),
                          "last_frame": ref("nodes.selected_take.output.last_frame"),
                          "tail": ref("nodes.selected_take.output.tail"),
                          "voice_references": ref("nodes.selected_take.output.voice_references"),
@@ -255,15 +271,23 @@ def reference_graph(max_takes):
              {"source": "approved", "target": "choice"}, {"source": "needs_review", "target": "choice"},
              {"source": "choice", "target": "selected_reference"}]
     return graph(nodes, {"id": ref("input.item.id"), "kind": ref("input.item.kind"),
+                         "review": ref("nodes.takes.output"),
                          "asset": ref("nodes.selected_reference.output")}, edges)
 
 
-def build(max_takes=2, max_frame_takes=2, *, enable_voice=True, max_reference_takes=2):
+def build(max_takes=2, max_frame_takes=2, *, enable_voice=False, max_reference_takes=2,
+          review_policy="continue"):
+    if review_policy not in {"continue", "pause"}:
+        raise ValueError("review_policy must be continue or pause")
     if any(not 1 <= limit <= 3 for limit in (max_takes, max_frame_takes, max_reference_takes)):
         raise ValueError("take limits must be between one and three")
     request = {**BRIEF, "required": ["source_text"]}
+    request["properties"] = {**BRIEF["properties"], "voices": {
+        "type": "array", "maxItems": 5, "items": obj(id=TEXT, asset=ASSET)}}
     b = Builder("episode-studio", request,
-                obj(film=ASSET, plan=PLAN, shots=ANY), spec_version="0.3")
+                obj(film=ASSET, plan=PLAN, shots=ANY,
+                    notes={"type": "array", "items": obj(stage=TEXT, id=TEXT, feedback=STRING)},
+                    voices={"type": "array", "items": obj(id=TEXT, asset=ASSET)}), spec_version="0.3")
     b.model("main", "main", ["text", "structured_output"])
     b.model("vision", "vision", ["text", "structured_output", "vision"])
     for name in ["creative_director", "source_reader", "producer", "script_editor", "art_director", "reference_review", "shot_director", "frame_review", "render_engineer", "continuity_review"]:
@@ -272,16 +296,17 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=True, max_reference_ta
         b.resource("voice_director", "prompts/voice_director.md")
         b.resource("voice_valid", "code/voice_valid.py", role="code")
         b.tool("voice", "media.generate_voice")
-    for name in ["continuity", "cinematography"]:
+    for name in ["continuity", "cinematography", "screenwriting", "video_prompting"]:
         b.skill(name, f"skills/{name}.md")
     for name in ["shot_context", "gather_references", "reference_names", "render_settings", "select_clip",
                  "review_images", "record_take", "selected_take", "timeline", "plan_valid", "art_valid",
                  "frame_settings", "frame_review_inputs", "selected_frame", "render_valid", "source_valid", "reference_prompt",
-                 "production_brief", "direction_valid", "reference_review_inputs"]:
+                 "production_brief", "direction_valid", "reference_review_inputs", "voice_catalog", "production_notes"]:
         b.resource(name, f"code/{name}.py", role="code")
     for name, plugin in {"python": "code.python", "image": "media.generate_image", "stage": "media.stage_reference",
                          "recipe": "film.recipe", "render_profile": "film.settings", "render": "film.render", "ingest": "media.ingest_comfy",
-                         "inspect": "media.inspect_video", "vision_preview": "media.vision", "compose": "media.compose"}.items():
+                         "inspect": "media.inspect_video", "vision_preview": "media.vision",
+                         "frame_preview": "media.frame_vision", "compose": "media.compose"}.items():
         b.tool(name, plugin)
     assets = reference_graph(max_reference_takes)
     nodes = {
@@ -308,9 +333,14 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=True, max_reference_ta
         "shots": {"type": "map", "items": ref("nodes.script_editor.output.shots"),
                   "inputs": {"plan": ref("nodes.script_editor.output"), "art": ref("nodes.art_director.output"),
                              "assets": ref("nodes.reference_library.output.items"),
+                             "voices": ref("input.voices", optional=True, default=[]),
                              "render_profile": ref("nodes.render_profile.output")},
                   "carry": val({"last_frame": None, "continuity": {}, "shot_id": ""}),
                   "body": shot_graph(max_takes, max_frame_takes), "max_items": 24, "output_schema": ANY},
+        "production_notes": code("production_notes", {"shots": ref("nodes.shots.output.items"),
+                                                       "references": ref("nodes.reference_library.output.items")}),
+        "voice_catalog": code("voice_catalog", {"shots": ref("nodes.shots.output.items"),
+                                                 "supplied": ref("input.voices", optional=True, default=[])}),
         "timeline": code("timeline", {"shots": ref("nodes.shots.output.items")}),
         "assemble": tool("compose", {"clips": ref("nodes.timeline.output.clips"), "preserve_audio": val(True)}, ASSET),
     }
@@ -330,7 +360,17 @@ def build(max_takes=2, max_frame_takes=2, *, enable_voice=True, max_reference_ta
         nodes = dict(list(nodes.items())[:position] + list(voice_nodes.items()) + list(nodes.items())[position:])
         nodes["shots"]["inputs"]["voices"] = ref("nodes.voice_library.output.items")
     b.data["graph"] = graph(nodes, {"film": ref("nodes.assemble.output"), "plan": ref("nodes.script_editor.output"),
-                                    "shots": ref("nodes.shots.output")})
+                                    "notes": ref("nodes.production_notes.output.notes"),
+                                    "shots": ref("nodes.shots.output"), "voices": ref("nodes.voice_catalog.output.voices")})
+    if review_policy == "continue":
+        def continue_after_limit(flow):
+            for name, node in list(flow["nodes"].items()):
+                if node["type"] == "human":
+                    flow["nodes"][name] = {"type": "transform", "output_schema": node["output_schema"],
+                        "inputs": {key: node["inputs"][key] for key in node["output_schema"]["properties"]}}
+                elif "body" in node:
+                    continue_after_limit(node["body"])
+        continue_after_limit(b.data["graph"])
     return b.execution(max_steps=5000, max_model_calls=240, max_total_tokens=1000000,
                        max_output_tokens=4096, max_parallel_nodes=2, max_parallel_tools=2,
                        pure_checkpoint_interval=16,

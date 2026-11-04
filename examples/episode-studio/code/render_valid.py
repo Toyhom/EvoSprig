@@ -6,6 +6,8 @@ def run(inputs):
     if errors:
         return {"valid": False, "feedback": " ".join(errors)}
     shot = inputs["input"]["shot"]
+    if controls["action"] != shot["action_scene"]:
+        errors = errors + ["Keep action equal to the approved shot.action_scene."]
     prompt = controls["prompt"]
     for line in shot["dialogue"]:
         if line["text"].strip() and line["text"] not in prompt:

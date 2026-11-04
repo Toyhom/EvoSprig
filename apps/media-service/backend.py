@@ -435,7 +435,21 @@ class MediaBackend:
                 self.voice_generator.load()
                 self.loaded = "voice"
             elif family in {"image", "video"}:
-                self.load(family)
+                pipeline = self.load(family)
+                if family == "image" and payload.get("probe", False):
+                    # CPU offload can leave mapped weights unread until the first
+                    # forward pass. A small pass materializes them before readiness.
+                    import torch
+                    options = {"prompt": "A plain grey square.", "width": 256, "height": 256,
+                               "num_inference_steps": 1,
+                               "generator": torch.Generator(device="cpu").manual_seed(0)}
+                    if self.image_backend == "qwen-image-2.1":
+                        options["image"] = [Image.new("RGB", (256, 256), "grey")]
+                    else:
+                        options["guidance_scale"] = 1.0
+                    pipeline(**options)
+                    if canceled():
+                        raise RuntimeError("job canceled")
             else:
                 raise ValueError("choose image, video or voice for preloading")
             return {"loaded": family}

@@ -20,7 +20,9 @@ python apps/media-service/app.py \
   --outputs outputs/media --database .evosprig-media/jobs.sqlite
 ```
 
-The default address is `http://127.0.0.1:18880`. A single worker serializes GPU jobs. Each model family runs in a reusable child process; switching families releases the previous process and its GPU allocation. Idle models unload after 120 seconds, adjustable with `--idle-unload-seconds`. CPU offloading and tiled video decoding reduce GPU memory use. Keep the job database on a filesystem that supports SQLite locking.
+The default address is `http://127.0.0.1:18880`. One worker processes GPU jobs; a separate CPU worker handles inspection, reference staging and composition while generation runs. Each model family runs in a reusable child process; switching families releases the previous process and its GPU allocation. Models stay loaded until shutdown by default. Set a positive `--idle-unload-seconds` to release idle weights. CPU offloading and tiled video decoding reduce GPU memory use. Keep the job database on a filesystem that supports SQLite locking.
+
+Add `--preload image` to warm an image worker before its health endpoint reports ready. This includes a small inference pass, including the reference-image encoder for Qwen images. To warm a running service, submit `/warmup` with `{"family":"image","probe":true}` and poll its job ID. The warmup keeps its output in memory and retains the model for subsequent requests. Voice and video weight loading use `{"family":"voice"}` and `{"family":"video"}`.
 
 Defaults are seed 42, 4 image steps, 12 video steps, 848 × 480 image pixels and 24 video frames per second. Change the seed, steps and image dimensions with CLI flags. Hunyuan selects a video resolution bucket from the first frame and its checkpoint configuration and generates 1–15 seconds per shot. Set `preserve_audio: true` when composing clips with sound; subtitle input uses SRT. Clips with different sizes or frame rates are normalized to the first clip's canvas at 24 fps, with silence added where an audio track is missing.
 
@@ -44,7 +46,7 @@ For dialogue checks, install `requirements-speech.txt` and pass `--speech-model 
 
 ### Character voices
 
-Pass `--voice-model /path/to/Qwen3-Omni-30B-A3B-Instruct` to enable `/generate-voice`. Supply `text`, `speaker` (`Chelsie`, `Ethan` or `Aiden`), acting `direction`, a stable `seed` and `max_seconds`. The tool returns a 24 kHz WAV asset that can be staged as a ComfyUI audio reference. The voice model stays loaded across consecutive requests; switching to image or video generation releases it. Set `--idle-unload-seconds 1800` for longer production sessions.
+Pass `--voice-model /path/to/Qwen3-Omni-30B-A3B-Instruct` to enable `/generate-voice`. Supply `text`, `speaker` (`Chelsie`, `Ethan` or `Aiden`), acting `direction`, a stable `seed` and `max_seconds`. The tool returns a 24 kHz WAV asset that can be staged as a ComfyUI audio reference. The voice model stays loaded across consecutive requests; switching to image or video generation releases it. Episode Studio instead captures each character's voice from an accepted single-speaker video by default.
 
 ## Connect an agent
 
@@ -52,6 +54,7 @@ Start Studio with `examples/video-studio/local-agent.yaml` and `deployment.local
 
 | Endpoint | Function |
 | --- | --- |
+| `/warmup` | Prepare a model family for upcoming jobs |
 | `/assets` | Generate character references |
 | `/image` | Generate a shot's first frame using its character references |
 | `/video` | Animate an approved first frame |

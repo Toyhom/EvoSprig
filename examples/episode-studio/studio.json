@@ -155,14 +155,6 @@
     "timeline": {
       "x": 1332,
       "y": 343
-    },
-    "voice_director": {
-      "x": 529,
-      "y": 610
-    },
-    "voice_library": {
-      "x": 859,
-      "y": 610
     }
   },
   "canvas": {
@@ -195,22 +187,11 @@
           "collapsed": false,
           "direction": "DOWN",
           "id": "group:assets",
-          "label": "Cast, places & voices",
+          "label": "Cast & places",
           "members": [
             "art_director",
             "render_profile",
-            "group:voices",
             "reference_library"
-          ]
-        },
-        {
-          "collapsed": true,
-          "direction": "DOWN",
-          "id": "group:voices",
-          "label": "Voice casting & recording",
-          "members": [
-            "voice_director",
-            "voice_library"
           ]
         },
         {
@@ -228,6 +209,8 @@
           "id": "group:edit",
           "label": "The finished episode",
           "members": [
+            "production_notes",
+            "voice_catalog",
             "timeline",
             "assemble"
           ]

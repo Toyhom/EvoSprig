@@ -88,6 +88,40 @@ async def test_preload_readiness_waits_for_weights_and_shutdown_closes_worker(tm
     assert closed.is_set()
 
 
+async def test_cpu_media_jobs_complete_while_image_inference_is_busy(tmp_path, monkeypatch):
+    import asyncio
+    import threading
+
+    monkeypatch.syspath_prepend(str(SERVICE))
+    entered, release = threading.Event(), threading.Event()
+    calls = []
+    backend = MediaBackend(tmp_path / "assets", "unused", None, "http://localhost")
+    def execute(operation, payload, name, canceled):
+        calls.append(name)
+        if operation == "generate-image":
+            entered.set()
+            assert release.wait(10)
+        return {"id": name}
+    backend.execute = execute
+    store = JobStore(tmp_path / "jobs.sqlite")
+    image_job = store.submit("generate-image", "image", {})
+    compose_job = store.submit("compose", "compose", {})
+    app = load("app").create_app(store, backend)
+    async with app.router.lifespan_context(app):
+        try:
+            assert await asyncio.to_thread(entered.wait, 5)
+            for _ in range(100):
+                if store.get(compose_job)["status"] == "succeeded":
+                    break
+                await asyncio.sleep(.02)
+            assert store.get(compose_job)["status"] == "succeeded"
+            assert store.get(image_job)["status"] == "running"
+            assert store.counts() == {"running": 1, "succeeded": 1}
+        finally:
+            release.set()
+    assert calls.count(image_job) == calls.count(compose_job) == 1
+
+
 async def test_idempotency_and_restart_do_not_render_twice(service):
     store, backend, app = service
     calls = []
@@ -383,3 +417,32 @@ def test_composition_keeps_timing_with_mixed_size_fps_and_missing_sound(service,
         section = samples[48000 * index + 12000:48000 * index + 36000]
         assert (float(np.abs(section).max()) < 0.001) == silent
     assert not list(backend.root.glob("*_segment_*.mp4"))
+
+
+def test_image_warmup_materializes_both_text_and_reference_paths_without_publishing(tmp_path, monkeypatch):
+    calls = []
+    generator = SimpleNamespace(manual_seed=lambda seed: ('warmup', seed))
+    monkeypatch.setitem(sys.modules, 'torch', SimpleNamespace(Generator=lambda **kw: generator))
+    backend = MediaBackend(tmp_path, 'image', None, 'http://localhost', image_backend='qwen-image-2.1')
+    monkeypatch.setattr(backend, 'load', lambda family: lambda **kw: calls.append(kw))
+    assert backend.execute('warmup', {'family': 'image', 'probe': True}, 'unused', lambda: False) == {'loaded': 'image'}
+    assert len(calls) == 1 and calls[0]['num_inference_steps'] == 1
+    assert calls[0]['image'][0].size == (256, 256)
+    assert calls[0]['generator'] == ('warmup', 0)
+    assert list(tmp_path.iterdir()) == []
+
+
+async def test_image_warmup_job_is_idempotent_and_rejects_invalid_families(service):
+    store, backend, app = service
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url='http://test') as client:
+        headers = {'Idempotency-Key': 'warm-image'}
+        request = {'family': 'image', 'probe': True}
+        first = await client.post('/warmup', headers=headers, json=request)
+        assert first.status_code == 200
+        again = await client.post('/warmup', headers=headers, json=request)
+        assert first.json() == again.json()
+        assert store.get(first.json()['job_id'])['operation'] == 'warmup'
+        invalid = await client.post('/warmup', headers={'Idempotency-Key': 'invalid'}, json={'family':'voice','probe':True})
+        assert invalid.status_code == 422
+        invalid = await client.post('/warmup', headers={'Idempotency-Key': 'invalid-type'}, json={'family':{}})
+        assert invalid.status_code == 422

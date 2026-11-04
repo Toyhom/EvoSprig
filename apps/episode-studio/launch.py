@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -77,6 +78,8 @@ def download(args):
     receipt = args.state / "downloads.json"
     completed = json.loads(receipt.read_text()) if receipt.exists() else {}
     for role, model in manifest["models"].items():
+        if role == "director" and args.director == "api" or role == "voice" and not args.with_voice:
+            continue
         target = args.model_dir / model["repo"]
         print("Downloading", role, model["repo"], flush=True)
         snapshot_download(repo_id=model["repo"], revision=model["revision"], local_dir=target,
@@ -127,7 +130,10 @@ def setup(args):
             node_version = subprocess.check_output([node, "--version"], text=True).strip()
             if int(node_version.lstrip("v").split(".")[0]) < 20:
                 raise RuntimeError("Episode Studio needs Node.js 20 or newer; found " + node_version)
-            for name in ("episode-core", "episode-media", "episode-director", "episode-comfy"):
+            environments = ["episode-core", "episode-media", "episode-comfy"]
+            if args.director == "local":
+                environments.append("episode-director")
+            for name in environments:
                 path = args.env_root / name
                 if not path.exists():
                     command([sys.executable, "-m", "venv", path])
@@ -135,8 +141,9 @@ def setup(args):
             command([python(args.env_root, "episode-media"), "-m", "pip", "install", "torch==2.8.0", "torchvision==0.23.0",
                      "-r", ROOT / "apps/media-service/requirements-qwen.txt"])
             command([python(args.env_root, "episode-media"), "-m", "pip", "install", "-r", ROOT / "apps/media-service/requirements-speech.txt"])
-            command([python(args.env_root, "episode-director"), "-m", "pip", "install", "vllm==0.33.0",
-                     "nvidia-cuda-nvcc==13.0.88", "nvidia-nvvm==13.0.88", "nvidia-cuda-crt==13.0.88"])
+            if args.director == "local":
+                command([python(args.env_root, "episode-director"), "-m", "pip", "install", "vllm==0.33.0",
+                         "nvidia-cuda-nvcc==13.0.88", "nvidia-nvvm==13.0.88", "nvidia-cuda-crt==13.0.88"])
             for runtime in manifest["runtimes"].values():
                 requirements = comfy / runtime["path"] / "requirements.txt"
                 if requirements.exists():
@@ -145,12 +152,18 @@ def setup(args):
             command([npm, "ci"], cwd=ROOT / "apps/studio")
             command([npm, "run", "build"], cwd=ROOT / "apps/studio")
         command([python(args.env_root, "episode-core"), APP / "launch.py", "download", "--state", args.state,
-                 "--model-dir", args.model_dir, *(["--mirror", args.mirror] if args.mirror else [])])
+                 "--model-dir", args.model_dir, "--director", args.director,
+                 *(["--with-voice"] if args.with_voice else []),
+                 *(["--mirror", args.mirror] if args.mirror else [])])
         model_paths = {role: str(args.model_dir / model["repo"]) for role, model in manifest["models"].items()}
         config = {"env_root": str(args.env_root), "state": str(args.state), "models": model_paths,
-                  "recipe": str(args.recipe), "director_gpus": 4, "media_gpu": 4, "comfy_gpu": 5,
+                  "recipe": str(args.recipe), "director": args.director,
+                  "director_gpus": 4 if args.director == "local" else 0,
+                  "media_gpu": 4 if args.director == "local" else 0,
+                  "comfy_gpu": 5 if args.director == "local" else 1,
                   "context_length": 32768, "max_concurrent_requests": 4, "max_batched_tokens": 8192,
-                  "idle_unload_seconds": 1800,
+                  "idle_unload_seconds": 0, "preload": "image",
+                  "with_voice": args.with_voice,
                   "model_timeout_seconds": 1200,
                   "voice_load_strategy": "auto",
                   "image_load_strategy": "auto",
@@ -160,22 +173,31 @@ def setup(args):
         config_path = args.state / "services.json"
         if config_path.exists():
             saved = json.loads(config_path.read_text())
+            partition = {name: config[name] for name in ("director", "director_gpus", "media_gpu", "comfy_gpu")}
             config = {**config, **saved, "models": {**model_paths, **saved.get("models", {})}}
+            if saved.get("director", "local") != args.director:
+                config.update(partition)
+            config["with_voice"] = args.with_voice
+        if args.model_config:
+            config["model_connections"] = json.loads(args.model_config.read_text())
         write(config_path, config)
         print("Ready. Start with: python apps/episode-studio/launch.py start --state", args.state)
 
 
 def device_partition(config, visible):
-    count = config["director_gpus"]
-    if type(count) is not int or count < 1:
-        raise ValueError("director_gpus must be a positive integer")
+    external = config.get("director", "local") == "api"
+    count = 0 if external else config["director_gpus"]
+    if type(count) is not int or count < (0 if external else 1):
+        raise ValueError("director_gpus must be a positive integer for a local director")
     slots = [*range(count), config["media_gpu"], config["comfy_gpu"]]
     if any(type(slot) is not int or slot < 0 or slot >= len(visible) for slot in slots):
         raise ValueError("not enough allocated GPUs for services.json")
     if len(set(slots)) != len(slots):
         raise ValueError("director, media and ComfyUI require disjoint GPU allocations")
-    return {"director": ",".join(visible[:count]), "media": visible[config["media_gpu"]],
-            "comfy": visible[config["comfy_gpu"]]}
+    devices = {"media": visible[config["media_gpu"]], "comfy": visible[config["comfy_gpu"]]}
+    if not external:
+        devices["director"] = ",".join(visible[:count])
+    return devices
 
 
 def stop_services(processes, timeout=45):
@@ -199,13 +221,32 @@ def stop_services(processes, timeout=45):
             process.wait()
 
 
+def service_ready(opener, address, role):
+    try:
+        with opener.open(address, timeout=1):
+            return True
+    except urllib.error.HTTPError as exc:
+        if role == "media" and exc.code == 503:
+            try:
+                body = json.load(exc)
+            except (ValueError, OSError):
+                return False
+            if isinstance(body, dict) and body.get("status") == "failed":
+                raise RuntimeError("media preload failed; inspect media.log") from None
+    except OSError:
+        pass
+    return False
+
+
 def run_services(args):
     config = json.loads((args.state / "services.json").read_text())
     state = args.state
     ports = config["ports"]
-    if len(set(ports.values())) != len(ports):
+    external = config.get("director", "local") == "api"
+    active_ports = {role: port for role, port in ports.items() if role != "director" or not external}
+    if len(set(active_ports.values())) != len(active_ports):
         raise ValueError("service ports must be distinct")
-    for port in ports.values():
+    for port in active_ports.values():
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", port))
     visible = os.environ.get("CUDA_VISIBLE_DEVICES")
@@ -213,6 +254,16 @@ def run_services(args):
         visible = subprocess.check_output(["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"], text=True).replace("\n", ",").strip(",")
     devices = device_partition(config, visible.split(","))
     models, env_root = config["models"], config["env_root"]
+    connection_path = state / "model-connections.json"
+    if external:
+        connections = config.get("model_connections")
+        if not connections:
+            raise ValueError("API deployment requires model_connections (main and optional vision)")
+        for connection in connections.values():
+            key_env = connection.get("api_key_env", "")
+            if not key_env or not os.environ.get(key_env):
+                raise ValueError("set the model credential environment variable: " + key_env)
+        write(connection_path, connections)
     profile = state / "deployment.yaml"
     with tempfile.NamedTemporaryFile(dir=state, prefix="deployment-", suffix=".yaml") as temporary:
         pending = Path(temporary.name)
@@ -220,6 +271,7 @@ def run_services(args):
         command([python(env_root, "episode-core"), ROOT / "examples/episode-studio/configure.py", "--recipe", config["recipe"],
                  "--model-url", f"http://127.0.0.1:{ports['director']}/v1", "--media-url", f"http://127.0.0.1:{ports['media']}",
                  "--comfy-url", f"http://127.0.0.1:{ports['comfy']}",
+                 *(["--model-config", connection_path] if external else []),
                  "--model-timeout-seconds", str(config.get("model_timeout_seconds", 1200)), "--out", pending])
         pending.replace(profile)
     finally:
@@ -244,7 +296,9 @@ def run_services(args):
         "comfy": [python(env_root, "episode-comfy"), str(state / "ComfyUI/main.py"), "--listen", "127.0.0.1", "--port", str(ports["comfy"]),
             "--extra-model-paths-config", str(state / "extra-model-paths.yaml"), "--disable-auto-launch"],
         "media": [python(env_root, "episode-media"), str(ROOT / "apps/media-service/app.py"),
-            "--image-backend", "qwen-image-2.1", "--image-model", models["image"], "--voice-model", models["voice"], "--preload", "voice",
+            "--image-backend", "qwen-image-2.1", "--image-model", models["image"],
+            *(["--voice-model", models["voice"]] if config.get("with_voice", False) else []),
+            "--preload", config.get("preload", "image"),
             "--speech-model", models["speech"], "--image-steps", str(config.get("image_steps", 40)),
             "--width", str(config.get("image_width", 1344)), "--height", str(config.get("image_height", 768)),
             "--outputs", str(state / "media"), "--database", str(state / "media.sqlite"), "--port", str(ports["media"]),
@@ -253,6 +307,8 @@ def run_services(args):
         "app": [python(env_root, "episode-core"), str(APP / "app.py"), "--profile", str(profile),
             "--workspace", str(state / "workspace"), "--media-root", str(state / "media"), "--port", str(ports["app"])],
     }
+    if external:
+        del commands["director"]
     processes, logs = {}, []
     session = {"pid": os.getpid(), "started": time.time(), "services": {}}
     stop = state / "stop"
@@ -285,14 +341,11 @@ def run_services(args):
                     raise RuntimeError(role + " exited; inspect " + str(state / (role + ".log")))
                 if session["services"][role]["state"] == "starting":
                     endpoint = "/system_stats" if role == "comfy" else "/api/health" if role == "app" else "/health"
-                    try:
-                        with opener.open(f"http://127.0.0.1:{ports[role]}{endpoint}", timeout=1):
-                            session["services"][role]["state"] = "ready"
-                            write(state / "session.json", session)
-                    except OSError:
-                        pass
-            if time.time() - session["started"] > 5400 and any(x["state"] == "starting" for x in session["services"].values()):
-                raise TimeoutError("a service did not start within 90 minutes; inspect its log")
+                    if service_ready(opener, f"http://127.0.0.1:{ports[role]}{endpoint}", role):
+                        session["services"][role]["state"] = "ready"
+                        write(state / "session.json", session)
+            if time.time() - session["started"] > config.get("startup_timeout_seconds", 5400) and any(x["state"] == "starting" for x in session["services"].values()):
+                raise TimeoutError("a service exceeded startup_timeout_seconds; inspect its log")
             time.sleep(2)
     finally:
         stop_services(processes.values())
@@ -313,8 +366,17 @@ def main():
     parser.add_argument("--recipe", type=Path, default=APP / "render-recipe.json")
     parser.add_argument("--mirror", help="Hugging Face-compatible endpoint, e.g. https://hf-mirror.com")
     parser.add_argument("--skip-install", action="store_true")
+    parser.add_argument("--director", choices=["local", "api"], default=None)
+    parser.add_argument("--model-config", type=Path, help="JSON model connections for API deployment")
+    parser.add_argument("--with-voice", action="store_true", help="Also download the optional Omni voice tool")
     args = parser.parse_args()
     args.state, args.model_dir, args.env_root = (p.resolve() for p in (args.state, args.model_dir, args.env_root))
+    config_path = args.state / "services.json"
+    saved = json.loads(config_path.read_text()) if config_path.exists() else {}
+    args.director = args.director or saved.get("director", "local")
+    args.with_voice = args.with_voice or saved.get("with_voice", False)
+    if args.action == "setup" and args.director == "api" and not args.model_config and not saved.get("model_connections"):
+        parser.error("API setup needs --model-config with main and optional vision connections")
     if args.action == "setup" and sys.version_info < (3, 12):
         parser.error("Run setup with Python 3.12 or newer.")
     if args.action in {"start", "stop", "status"} and not (args.state / "services.json").is_file():

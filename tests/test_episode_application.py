@@ -119,8 +119,13 @@ class FilmModel(MockProvider):
 
 
 @pytest.mark.parametrize("director_cut", [False, True])
-async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_renders(tmp_path, director_cut):
+@pytest.mark.parametrize("reuse_voice", [False, True])
+async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_renders(tmp_path, director_cut, reuse_voice):
+    import runpy
+
     root = Path(__file__).parents[1] / "examples/episode-studio"
+    builder = runpy.run_path(str(root / "build_agent.py"))["build"]
+    spec = builder(review_policy="continue" if reuse_voice else "pause").build_spec()
     model = FilmModel(director_cut)
     registry = ToolRegistry()
     registry.register(python_tool())
@@ -163,6 +168,7 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
         "media.ingest_comfy": lambda outputs, **kw: {"assets": [{"node_id": "video", "asset": outputs["clip"]}]},
         "media.inspect_video": inspect,
         "media.vision": lambda **kw: {"images": [IMAGE]},
+        "media.frame_vision": lambda **kw: {"images": [IMAGE]},
         "media.compose": compose,
     }.items():
         registry.register(Tool(name, name, {}, {}, fn))
@@ -170,10 +176,11 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
     def runtime():
         return Runtime({"main": model, "vision": model}, registry, journal=SQLiteJournal(journal.path), allow_writes=True)
 
-    result = await runtime().run(compile_agent(load_spec(root / "agent.yaml"), root),
-                                 {"source_text": "A visitor opens a door.", "style": "2D", "language": "en", "target_seconds": 24})
-    assert result.status == "waiting_input", result.error
-    assert len(renders) == 4 and len(images) == 5 and not compositions
+    result = await runtime().run(compile_agent(spec, root),
+                                 {"source_text": "A visitor opens a door.", "style": "2D", "language": "en", "target_seconds": 24,
+                                  "voices": [{"id": "visitor", "asset": asset("previous-episode-voice", "audio/wav")}] if reuse_voice else []})
+    assert result.status == ("succeeded" if reuse_voice else "waiting_input"), result.error
+    assert len(renders) == 4 and len(images) == 5
     assert all(image["prompt"].startswith("Visual style: 2D animation\n\n") for image in images[2:])
     assert "plain background" in images[0]["prompt"]
     assert "No people" in images[1]["prompt"]
@@ -188,17 +195,23 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
     assert model.second_context["previous"]["last_frame"]["id"] == "clip-2-tail"
     assert images[4]["references"][0]["id"] == ("image-1" if director_cut else "clip-2-tail")
     assert recipes[0]["reference_videos"] == []
-    assert recipes[0]["reference_audio"] == ["visitor-voice.png"]
-    assert recipes[2]["reference_audio"] == ["visitor-voice.png"]
+    assert recipes[0]["reference_audio"] == (["previous-episode-voice.png"] if reuse_voice else [])
+    assert recipes[2]["reference_audio"] == (["previous-episode-voice.png"] if reuse_voice else ["clip-2-voice.png"])
     assert recipes[2]["reference_videos"] == ([] if director_cut else ["clip-2-tail-video.png"])
     assert "clip-1-voice.png" not in str(recipes)
-    assert len(result.waiting) == 1
-    chosen = result.waiting[0]["input"]["take"]
-    journal.respond(result.run_id, result.waiting[0]["path"], {"take": chosen})
+    if reuse_voice:
+        assert not result.waiting
+        assert result.output["shots"]["items"][-1]["take"]["accepted"] is False
+    else:
+        assert len(result.waiting) == 1 and not compositions
+        chosen = result.waiting[0]["input"]["take"]
+        journal.respond(result.run_id, result.waiting[0]["path"], {"take": chosen})
     done = await runtime().resume(result.run_id)
     assert done.status == "succeeded", done.error
     assert len(renders) == 4 and len(images) == 5
     assert [a["id"] for a in compositions[0]] == ["clip-2", "clip-4"]
+    assert done.output["voices"][0]["id"] == "visitor"
+    assert done.output["voices"][0]["asset"]["id"] == ("previous-episode-voice" if reuse_voice else "clip-2-voice")
     assert (await runtime().resume(result.run_id)).status == "succeeded"
     assert len(compositions) == 1
 
@@ -233,11 +246,7 @@ async def test_reference_review_retries_locally_and_preserves_completed_assets(t
     assert "No people" in images[0]["prompt"]
     assert "Remove the extra person" in images[1]["prompt"]
     assert images[0]["options"]["seed"] != images[1]["options"]["seed"]
-    if rejections == 2:
-        assert result.status == "waiting_input", result.error
-        waiting = result.waiting[0]
-        journal.respond(result.run_id, waiting["path"], {"frame": waiting["input"]["frame"]})
-        result = await runtime.resume(result.run_id)
+    assert not result.waiting
     assert result.status == "succeeded", result.error
     assert result.output["reference_library"]["items"][0]["asset"]["id"] == "reference-2"
     assert len(images) == 2
@@ -353,7 +362,7 @@ def test_render_validation_catches_missing_speech_before_generation(dialogue, na
     from evosprig.core.json_program import execute
 
     source = (Path(__file__).parents[1] / "examples/episode-studio/code/render_valid.py").read_text()
-    inputs = {"input": {"shot": {"dialogue": dialogue, "narration": narration},
+    inputs = {"input": {"shot": {"dialogue": dialogue, "narration": narration, "action_scene": False},
                         "render_profile": {"controls": {"type": "object"}}},
               "output": {"prompt": "Wind through the grass. No dialogue.", "action": False}}
     rejected = execute(source, inputs)
@@ -364,7 +373,7 @@ def test_render_validation_catches_missing_speech_before_generation(dialogue, na
         assert narration in rejected["feedback"]
     inputs["output"]["prompt"] = "Dialogue: " + " ".join(line["text"] for line in dialogue) + " Voiceover: " + narration
     assert execute(source, inputs)["valid"]
-    inputs["input"]["shot"] = {"dialogue": [], "narration": ""}
+    inputs["input"]["shot"] = {"dialogue": [], "narration": "", "action_scene": False}
     inputs["output"]["prompt"] = "Only wind through the grass."
     assert execute(source, inputs)["valid"]
 

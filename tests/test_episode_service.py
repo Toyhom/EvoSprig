@@ -24,6 +24,24 @@ def test_service_gpu_partitions_follow_the_allocation():
         partition(config, ['0', '1'])
     with pytest.raises(ValueError, match='disjoint'):
         partition({**config, 'media_gpu': 0}, ['0', '1', '2', '3', '4', '5'])
+    assert partition({'director': 'api', 'media_gpu': 0, 'comfy_gpu': 1}, ['GPU-a', 'GPU-b']) == {
+        'media': 'GPU-a', 'comfy': 'GPU-b'}
+
+
+def test_failed_preload_stops_startup_instead_of_waiting_for_the_deadline():
+    import io
+    import urllib.error
+    from types import SimpleNamespace
+
+    ready = module('launch').service_ready
+    def unavailable(status):
+        def open(*args, **kwargs):
+            raise urllib.error.HTTPError('http://localhost/health', 503, 'Unavailable', {},
+                                         io.BytesIO(json.dumps({'status': status}).encode()))
+        return SimpleNamespace(open=open)
+    assert not ready(unavailable('loading'), 'http://localhost/health', 'media')
+    with pytest.raises(RuntimeError, match='preload failed'):
+        ready(unavailable('failed'), 'http://localhost/health', 'media')
 
 
 def test_shutdown_reaps_services_that_ignore_soft_stop():
@@ -76,7 +94,8 @@ async def test_episode_frontend_uses_the_native_project_and_protects_media(tmp_p
         client.headers['Authorization'] = 'Bearer test-local'
         project = (await client.get('/api/projects/episode-studio')).json()
         assert project['spec']['input_schema']['required'] == ['source_text']
-        assert 'voice_library' in project['spec']['graph']['nodes']
+        assert 'voice_catalog' in project['spec']['graph']['nodes']
+        assert 'voice_library' not in project['spec']['graph']['nodes']
         assert (await client.get('/episode-media/' + name)).content == b'video'
         assert (await client.get('/episode-media/services.json')).status_code == 404
         assert (await client.get('/episode/app.js')).status_code == 200
@@ -142,3 +161,60 @@ async def test_bundled_recipe_preserves_render_controls_and_all_reference_types(
     assert sum(n["class_type"] == "LoadImage" for n in action["prompt"].values()) == 6
     assert any(n["class_type"] == "VHS_LoadVideo" for n in action["prompt"].values())
     assert next(n for n in action["prompt"].values() if n["class_type"] == "BasicScheduler")["inputs"]["steps"] == 14
+
+
+async def test_api_deployment_routes_text_and_vision_without_local_model_options(tmp_path, monkeypatch):
+    import runpy
+
+    from evosprig.core.protocols import ModelRequest
+    from evosprig.plugins.openai_compatible import Connection, OpenAICompatibleProvider
+
+    root = ROOT / 'examples/episode-studio'
+    monkeypatch.syspath_prepend(str(root))
+    profile = runpy.run_path(str(root / 'configure.py'))['profile']
+    main = {'base_url': 'https://writer.example/v1', 'model': 'writer', 'api_key_env': 'WRITER_KEY',
+            'capabilities': ['text', 'structured_output'], 'json_mode': 'off'}
+    vision = {'base_url': 'https://vision.example/v1', 'model': 'vision', 'api_key_env': 'VISION_KEY',
+              'capabilities': ['text', 'structured_output', 'vision']}
+    recipe = json.loads((ROOT / 'apps/episode-studio/render-recipe.json').read_text())
+    kwargs = dict(model_url='http://127.0.0.1:18882/v1', model_name='unused',
+                  media_url='http://127.0.0.1:18880', comfy_url='http://127.0.0.1:18884')
+    deployment = profile(recipe, **kwargs, model_connections={'main': main, 'vision': vision})
+    with pytest.raises(ValueError, match='missing capabilities'):
+        profile(recipe, **kwargs, model_connections={'main': main})
+    requests = []
+    def handle(request):
+        payload = json.loads(request.content)
+        requests.append((str(request.url), request.headers['authorization'], payload))
+        return httpx.Response(200, json={'choices': [{'message': {'content': '{"ok":true}'}, 'finish_reason': 'stop'}],
+                                        'usage': {'prompt_tokens': 10, 'completion_tokens': 4}})
+    for name, key in [('main', 'writer-key'), ('vision', 'vision-key')]:
+        connection = Connection.model_validate(deployment['models'][name])
+        monkeypatch.setenv(connection.api_key_env, key)
+        adapter = OpenAICompatibleProvider(connection, transport=httpx.MockTransport(handle))
+        request = ModelRequest(messages=[{'role': 'user', 'content': [{'type': 'text', 'text': 'Review this frame.'},
+                    {'type': 'image_url', 'image_url': {'url': 'data:image/png;base64,cGl4ZWw='}}]}] if name == 'vision' else
+                    [{'role': 'user', 'content': 'Write a shot.'}], max_output_tokens=64, json_output=True)
+        assert json.loads((await adapter.complete(request)).text)['ok']
+    assert requests[0][0] == 'https://writer.example/v1/chat/completions'
+    assert requests[1][1] == 'Bearer vision-key'
+    assert requests[1][2]['messages'][0]['content'][1]['type'] == 'image_url'
+    assert all('chat_template_kwargs' not in row[2] for row in requests)
+    assert 'response_format' not in requests[0][2]
+
+
+def test_api_download_skips_director_and_optional_voice_weights(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    launcher = module('launch')
+    manifest = {'models': {role: {'repo': role, 'revision': 'pinned'}
+                          for role in ('director', 'voice', 'image', 'speech')}, 'render_weights': []}
+    (tmp_path / 'models.json').write_text(json.dumps(manifest))
+    monkeypatch.setattr(launcher, 'APP', tmp_path)
+    downloaded = []
+    monkeypatch.setitem(sys.modules, 'huggingface_hub', SimpleNamespace(
+        snapshot_download=lambda **kw: downloaded.append(kw['repo_id']), hf_hub_download=lambda **kw: None))
+    launcher.download(SimpleNamespace(mirror=None, state=tmp_path, model_dir=tmp_path / 'weights',
+                                      director='api', with_voice=False))
+    assert downloaded == ['image', 'speech']
