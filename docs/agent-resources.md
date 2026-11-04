@@ -52,6 +52,8 @@ Choose all tools or task-based selection, bound tool rounds, and enable parallel
 | `output_errors` | `raise` | `feedback` asks the model to repair invalid output |
 | `max_output_retries` | 1 | 0–3 repairs |
 
+With feedback enabled, field errors are grouped into one repair request. Repairs share the run's token and call budgets.
+
 Model credentials and provider options stay in the deployment profile. Sampling parameters, skills and tool choices are versioned with the workflow. The provider may impose tighter limits than these settings.
 
 ## Improve selected resources

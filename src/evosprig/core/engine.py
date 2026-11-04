@@ -9,6 +9,7 @@ import json
 import time
 import uuid
 from dataclasses import asdict
+from itertools import islice
 
 from jsonschema import Draft202012Validator, ValidationError
 
@@ -729,18 +730,28 @@ class ExecutionSession:
             response = slot["response"]
             calls = response["tool_calls"]
             if not calls:
+                schema_errors = []
                 try:
                     output = (
                         json.loads(response["text"])
                         if node.response_format == "json"
                         else {"text": response["text"]}
                     )
-                    Draft202012Validator(node.output_schema).validate(output)
+                    schema_errors = list(islice(Draft202012Validator(node.output_schema).iter_errors(output), 8))
+                    if schema_errors:
+                        raise schema_errors[0]
                 except (ValueError, ValidationError) as exc:
+                    def describe(error):
+                        missing = ""
+                        if error.validator == "required" and isinstance(error.instance, dict):
+                            fields = [key for key in error.validator_value if key not in error.instance][:8]
+                            missing = f" (missing {fields})"
+                        return f"Output does not satisfy {error.validator} at {list(error.path)}{missing}"[:500]
+
                     reason = (
                         "Invalid JSON"
                         if isinstance(exc, ValueError)
-                        else f"Output does not satisfy {exc.validator} at {list(exc.path)}"
+                        else "\n".join(dict.fromkeys(describe(error) for error in schema_errors))
                     )
                     if feedback(reason, response["text"]):
                         continue

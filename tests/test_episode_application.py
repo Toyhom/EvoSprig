@@ -282,3 +282,18 @@ def test_render_validation_catches_missing_speech_before_generation(dialogue, na
     inputs["input"]["shot"] = {"dialogue": [], "narration": ""}
     inputs["output"]["prompt"] = "Only wind through the grass."
     assert execute(source, inputs)["valid"]
+
+
+def test_plan_feedback_includes_duration_speech_and_identity_in_one_pass():
+    from evosprig.core.json_program import execute
+
+    path = Path(__file__).parents[1] / "examples/episode-studio/code/plan_valid.py"
+    plan = {"characters": [{"id": "visitor", "name": "Visitor"}],
+            "locations": [{"id": "door"}],
+            "shots": [{"id": "opening", "characters": ["visitor"], "location": "elsewhere",
+                       "dialogue": [{"speaker": "visitor", "text": "这是一个需要更多时间才能说完的长句子。"}],
+                       "narration": "", "transition": "continue", "duration_seconds": 3}]}
+    result = execute(path.read_text(), {"output": plan, "input": {"brief": {"language": "zh-CN", "target_seconds": 30}}})
+    assert not result["valid"]
+    for issue in ["requested total is 30", "too much dialogue", "undeclared character or location", "first shot must use cut"]:
+        assert issue in result["feedback"]

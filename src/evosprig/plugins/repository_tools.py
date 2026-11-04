@@ -31,6 +31,7 @@ class RepositoryToolConfig(Contract):
     checks: dict[str, list[str]] = Field(default_factory=dict)
     editable_paths: list[str] = Field(default_factory=list)
     timeout_seconds: float = Field(default=120, gt=0, le=1800)
+    git_timeout_seconds: float = Field(default=120, gt=0, le=1800)
     max_file_bytes: int = Field(default=200_000, ge=1, le=1_000_000)
     max_output_bytes: int = Field(default=60_000, ge=1024, le=1_000_000)
 
@@ -54,7 +55,7 @@ class RepositoryWorkspace:
         self.root = Path(state) / digest([scope.key, str(self.repository)])
         self.root.mkdir(parents=True, exist_ok=True)
 
-    def command(self, argv, cwd):
+    def command(self, argv, cwd, *, timeout=None):
         # Test children receive a small environment; model and deployment secrets
         # are not inherited. Run the worker in a container for untrusted code.
         environment = {key: os.environ[key] for key in ("PATH", "SYSTEMROOT", "LD_LIBRARY_PATH") if key in os.environ}
@@ -73,7 +74,7 @@ class RepositoryWorkspace:
         reader.start()
         timed_out = False
         try:
-            process.wait(timeout=self.config.timeout_seconds)
+            process.wait(timeout=self.config.timeout_seconds if timeout is None else timeout)
         except subprocess.TimeoutExpired:
             timed_out = True
         finally:
@@ -93,7 +94,8 @@ class RepositoryWorkspace:
     def git(self, *args, cwd=None, success=True):
         directory = cwd or self.repository
         result = self.command([self.git_executable, "-c", "core.hooksPath=" + os.devnull,
-                               "-c", "safe.directory=" + str(directory), *args], directory)
+                               "-c", "safe.directory=" + str(directory), *args], directory,
+                              timeout=self.config.git_timeout_seconds)
         if success and (result["exit_code"] or result["timed_out"] or result["truncated"]):
             raise ExecutionError("Git operation failed: " + result["output"][:2000])
         return result

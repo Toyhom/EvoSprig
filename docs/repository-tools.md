@@ -30,3 +30,5 @@ Set `editable_paths` on write bindings to filenames or directory prefixes ending
 Check commands are argv lists configured by the deployer. The tool starts them without a shell, limits execution time and captured output, and terminates their process group when they finish. It forwards `PATH`, `SYSTEMROOT` and `LD_LIBRARY_PATH`; configure required test settings in the worker. Tests execute repository code: deploy the worker inside your container or sandbox when that code is untrusted. Git worktrees separate changes; the container supplies process and filesystem isolation.
 
 Use [event triggers](triggers.md) to accept repository tasks once per delivery, and human nodes to review the resulting patch. The [repository agent](../examples/repository-agent/) combines these tools with triage, implementation and review agents.
+
+`timeout_seconds` limits each configured check. `git_timeout_seconds` separately limits Git operations; both default to 120 seconds. A short check budget therefore still allows time to collect its patch and result.

@@ -5,6 +5,25 @@ from evosprig.plugins.mock import MockProvider
 from evosprig.sdk import Builder
 
 
+async def test_schema_repair_reports_multiple_fields_with_bounded_feedback():
+    import json
+
+    fields = {f"field_{index}": {"type": "integer"} for index in range(12)}
+    b = Builder("repair-fields", {}, {}, spec_version="0.3").model("main", "main")
+    b.node("answer", "model", model="main", response_format="json", output_errors="feedback",
+           max_output_retries=1, output_schema={"type": "object", "properties": fields, "required": list(fields)})
+    b.output(answer={"ref": "nodes.answer.output"})
+    model = MockProvider([ModelResponse(text=json.dumps({key: "private-invalid-value" for key in fields})),
+                          ModelResponse(text=json.dumps({key: index for index, key in enumerate(fields)}))])
+    result = await Runtime({"main": model}).run(compile_agent(b.build_spec()), {})
+    assert result.status == "succeeded" and result.usage["model_calls"] == 2
+    message = model.requests[1].messages[-1]["content"]
+    assert all(f"['{name}']" in message for name in sorted(fields)[:8])
+    assert all(f"['{name}']" not in message for name in sorted(fields)[8:])
+    assert message.count("Output does not satisfy") == 8
+    assert "private-invalid-value" not in message
+
+
 def build(*, retries=2):
     b = Builder("output-repair", {}, {}, spec_version="0.3").model("main", "main")
     b.node(
