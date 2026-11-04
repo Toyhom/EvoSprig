@@ -110,3 +110,70 @@ def test_sqlite_reopens_fixed_snapshot_and_operation(spec, example_root, tmp_pat
     reclaimed = second.claim("run", "restart", 30)
     assert second.operation(reclaimed, "op")["output"] == {"value": 42}
     assert second.get("run")["input"] == {"question": "hello"}
+
+
+def test_legacy_migration_preserves_pending_run_and_fences_owner(spec, example_root, tmp_path, advance_clock):
+    import json
+    import sqlite3
+
+    from evosprig.core.journal import new_run
+
+    path = tmp_path / 'legacy.sqlite'
+    record = new_run('run', compile_agent(spec, example_root), {'question': 'hello'}, Scope(spec.id), {})
+    record.update(owner='old', generation=7, lease_until=time.time()+30, status='running')
+    record['checkpoint']['output'] = {'image': 'data:image/png;base64,' + 'A' * 2_000_000}
+    with sqlite3.connect(path) as db:
+        db.execute('CREATE TABLE runtime_runs (id TEXT PRIMARY KEY, body TEXT NOT NULL)')
+        db.execute('INSERT INTO runtime_runs VALUES (?,?)', ('run', json.dumps(record)))
+    journal = SQLiteJournal(path)
+    assert journal.get('run') == record
+    assert SQLiteJournal(path).get('run') == record
+    with pytest.raises(LeaseConflict):
+        journal.claim('run', 'next')
+    advance_clock(31)
+    lease = journal.claim('run', 'next')
+    assert lease.generation == 8
+    journal.save(lease, record['checkpoint'], 'succeeded', [{'type': 'run.succeeded'}], release=True)
+    assert journal.get('run')['checkpoint'] == record['checkpoint']
+    assert journal.summaries(Scope(spec.id))[0]['status'] == 'succeeded'
+
+
+def test_controls_do_not_read_or_rewrite_large_checkpoint(spec, example_root, tmp_path, monkeypatch):
+    import sqlite3
+
+    journal = SQLiteJournal(tmp_path / 'large.sqlite')
+    record = create(journal, spec, example_root)
+    lease = journal.claim('run', 'worker')
+    record['checkpoint']['output'] = {'image': 'data:image/png;base64,' + 'A' * 8_000_000}
+    journal.save(lease, record['checkpoint'], 'running', [])
+    with sqlite3.connect(journal.path) as db:
+        before = db.execute('SELECT body FROM runtime_checkpoints').fetchone()[0]
+    monkeypatch.setattr(journal, '_read', lambda *a: pytest.fail('control path read the snapshot'))
+    for _ in range(5):
+        journal.heartbeat(lease)
+        journal.operation(lease, 'job', {'tool': 'render'})
+        assert journal.control('run')['owner'] == 'worker'
+        assert journal.due() == []
+    journal.cancel('run', Scope(spec.id))
+    assert journal.control('run')['cancel_requested']
+    with sqlite3.connect(journal.path) as db:
+        assert db.execute('SELECT body FROM runtime_checkpoints').fetchone()[0] == before
+
+
+def test_expired_lease_is_rejected_after_checkpoint_serialization(spec, example_root, tmp_path, monkeypatch, advance_clock):
+    import evosprig.plugins.sqlite_journal as module
+
+    journal = SQLiteJournal(tmp_path / 'race.sqlite')
+    record = create(journal, spec, example_root)
+    lease = journal.claim('run', 'old')
+    encode = module.canonical_json
+    def slow_encode(value):
+        if value is record['checkpoint']:
+            advance_clock(31)
+            journal.claim('run', 'new')
+        return encode(value)
+    monkeypatch.setattr(module, 'canonical_json', slow_encode)
+    with pytest.raises(LeaseLost):
+        journal.save(lease, record['checkpoint'], 'succeeded', [{'type': 'run.succeeded'}])
+    assert journal.control('run')['owner'] == 'new'
+    assert journal.events('run') == []

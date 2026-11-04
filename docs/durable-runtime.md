@@ -13,6 +13,13 @@ monotonic generation to reject stale commits. Completed work is reused after
 restarts. Multiple local workers may share the journal. SQLite files and locks need
 a filesystem with supported locking; object storage is unsuitable.
 
+Lease renewal runs independently of the execution loop. SQLite stores lease,
+cancellation and scheduling state separately from checkpoints, so polling a
+multimodal run does not deserialize its images and message history. Existing
+journals migrate atomically when opened; stop older workers before upgrading.
+`Runtime(..., lease_seconds=30)` sets the lease duration for your storage latency.
+Snapshot and operation writes continue to check the worker's generation and expiry.
+
 `execution.timeout_seconds` bounds active worker time across resumes. The default
 is 60 seconds; AgentSpec 0.3 allows up to 86,400 seconds for long applications.
 Time spent suspended for human input or an external job is excluded. Configure an

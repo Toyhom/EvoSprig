@@ -227,3 +227,25 @@ async def test_uncertain_submit_retries_same_key_and_poll_failure_keeps_job(tmp_
     assert final.status == "succeeded"
     assert len(attempts) == 2 and len(set(attempts)) == 1
     assert polls == ["existing-job", "existing-job"]
+
+
+async def test_blocked_event_loop_does_not_starve_lease(tmp_path):
+    import threading
+
+    # Simulate synchronous checkpoint/application work exceeding the lease.
+    # The event loop cannot service an asyncio heartbeat during this interval.
+    calls = []
+    async def blocking():
+        time.sleep(2)
+        calls.append(1)
+        return {'value': 42}
+
+    store = SQLiteJournal(tmp_path / 'blocked.sqlite')
+    runtime = Runtime({}, registry(Tool('test.counter', 'blocking', EMPTY, NUMBER, blocking)),
+                      journal=store, lease_seconds=1.5)
+    result = await runtime.run(compile_agent(tool_spec()), {})
+    assert result.status == 'succeeded', result.error
+    assert result.output == {'value': 42}
+    assert calls == [1]
+    assert store.control(result.run_id)['owner'] is None
+    assert not any(t.name == 'evosprig-lease' for t in threading.enumerate())

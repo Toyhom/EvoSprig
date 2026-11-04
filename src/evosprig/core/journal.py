@@ -139,6 +139,7 @@ class RunJournal(Protocol):
         self, run_id: str, version: AgentVersion, inputs: dict, scope: Scope, metadata: dict
     ) -> dict: ...
     def get(self, run_id: str, scope: Scope | None = None) -> dict: ...
+    def control(self, run_id: str, scope: Scope | None = None) -> dict: ...
     def claim(self, run_id: str, owner: str, lease_seconds: float) -> Lease: ...
     def heartbeat(self, lease: Lease, lease_seconds: float) -> None: ...
     def save(
@@ -196,6 +197,15 @@ class MemoryJournal:
             if scope is not None and record["scope"] != asdict(scope):
                 raise KeyError("run not found in scope")
             return copy.deepcopy(record)
+
+    def control(self, run_id, scope=None):
+        with self._lock:
+            record = self._runs[run_id]
+            if scope is not None and record["scope"] != asdict(scope):
+                raise KeyError("run not found in scope")
+            return {key: record[key] for key in (
+                "owner", "generation", "lease_until", "cancel_requested", "status",
+            )}
 
     def claim(self, run_id, owner, lease_seconds=30.0):
         with self._lock:

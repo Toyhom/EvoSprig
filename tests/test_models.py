@@ -241,9 +241,10 @@ async def test_saved_connection_defaults_resume_without_allowing_behavior_change
     runtime = Runtime({"main": provider(connection)}, journal=journal)
     run_id = runtime.create_run(compile_agent(spec), {})
     with journal._transaction() as db:
-        record = journal._read(db, run_id)
-        del record["metadata"]["models"]["main"]["connection"]["json_mode"]
-        journal._write(db, record)
+        db.execute(
+            "UPDATE runtime_runs SET body=json_remove(body, '$.metadata.models.main.connection.json_mode') WHERE id=?",
+            (run_id,),
+        )
     changed = Runtime({"main": provider(connection.model_copy(update={"json_mode": "off"}))}, journal=journal)
     with pytest.raises(ExecutionError, match="original model bindings"):
         await changed.resume(run_id)

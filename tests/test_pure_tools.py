@@ -93,9 +93,9 @@ async def test_lease_loss_prevents_following_write(tmp_path):
     async def calculate():
         # A second worker supersedes the first while its pure work is in flight.
         with sqlite3.connect(path) as db:
-            record = json.loads(db.execute("SELECT body FROM runtime_runs").fetchone()[0])
+            record = json.loads(db.execute("SELECT body FROM runtime_run_control").fetchone()[0])
             record["generation"] += 1
-            db.execute("UPDATE runtime_runs SET body=?", (json.dumps(record),))
+            db.execute("UPDATE runtime_run_control SET body=?", (json.dumps(record),))
         return {}
 
     registry = ToolRegistry()

@@ -6,6 +6,7 @@ import asyncio
 import copy
 import inspect
 import json
+import threading
 import time
 import uuid
 from dataclasses import asdict
@@ -33,6 +34,29 @@ from .version import AgentVersion
 class Suspended(Exception):
     def __init__(self, status: str):
         self.status = status
+
+
+class LeaseHeartbeat:
+    """Keep the lease alive while synchronous checkpoint work occupies the loop."""
+
+    def __init__(self, journal, lease, seconds):
+        self.stopped = threading.Event()
+        self.error = None
+
+        def renew():
+            while not self.stopped.wait(seconds / 3):
+                try:
+                    journal.heartbeat(lease, seconds)
+                except Exception as exc:
+                    self.error = exc
+                    return
+
+        self.thread = threading.Thread(target=renew, name="evosprig-lease", daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        self.stopped.set()
+        self.thread.join()
 
 
 async def invoke(function, *args, **kwargs):
@@ -135,16 +159,15 @@ class Engine:
         session = ExecutionSession(self, record, lease, cancel, on_event)
         parent = asyncio.current_task()
         lost = None
+        heartbeat = LeaseHeartbeat(self.journal, lease, self.lease_seconds)
 
         async def watch():
             nonlocal lost
-            next_heartbeat = time.monotonic() + self.lease_seconds / 3
             while True:
                 await asyncio.sleep(min(self.lease_seconds / 3, 0.5))
                 try:
-                    if time.monotonic() >= next_heartbeat:
-                        self.journal.heartbeat(lease, self.lease_seconds)
-                        next_heartbeat = time.monotonic() + self.lease_seconds / 3
+                    if heartbeat.error:
+                        raise LeaseLost("worker could not renew its lease") from heartbeat.error
                     session.check(force=True)
                     if (
                         (shutdown and shutdown.is_set())
@@ -238,8 +261,10 @@ class Engine:
             }
             session.finish("failed")
         finally:
+            heartbeat.stopped.set()
             watcher.cancel()
             await asyncio.gather(watcher, return_exceptions=True)
+            await asyncio.to_thread(heartbeat.stop)
         return self.result(run_id, scope)
 
 
@@ -300,8 +325,9 @@ class ExecutionSession:
         if self.cancel and self.cancel.is_set():
             raise asyncio.CancelledError
         now = time.monotonic()
-        if force or self.control is None or now - self.control_checked_at >= 0.25:
-            record = self.journal.get(self.lease.run_id)
+        if (force or self.control is None or now - self.control_checked_at >= 0.25
+                or self.control["lease_until"] <= time.time()):
+            record = getattr(self.journal, "control", self.journal.get)(self.lease.run_id)
             self.control = {key: record[key] for key in (
                 "owner", "generation", "lease_until", "cancel_requested",
             )}
