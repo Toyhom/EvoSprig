@@ -432,3 +432,11 @@ h1,h2,h3,.brand,.workflow-node-heading strong,.group-heading strong { font-famil
 .debug-panel{margin:-4px -4px 20px;padding:14px;background:#f8fafc;border:1px solid #dbe2e9;border-radius:12px}.debug-heading{display:flex;align-items:center;justify-content:space-between}.debug-panel p{font-size:12px;overflow-wrap:anywhere}.debug-fields{border:1px solid #dbe2e9;border-radius:8px;margin:10px 0;padding:10px;min-width:0}.debug-fields legend{font-size:12px;font-weight:600;padding:0 4px}.debug-fields textarea{min-height:65px}.debug-error{color:#b42318}.debug-panel .primary{width:100%;margin-top:12px}
 
 .comfy-import{margin:16px 24px}.comfy-import-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.comfy-import input{width:100%}.comfy-import .check input{width:auto}.comfy-import details{margin:12px 0}.comfy-import .debug-error{white-space:pre-wrap;overflow-wrap:anywhere}
+.run-steps{margin:14px 0;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#fff;padding:12px}
+.run-steps>summary{cursor:pointer;font-weight:600}.run-steps>summary>span{font-weight:400;color:#64748b;margin-left:8px;font-size:12px}
+.run-step-list{max-height:280px;overflow:auto;margin-top:10px;display:grid;gap:3px}
+.run-step{display:flex;align-items:center;gap:9px;text-align:left;width:100%;min-height:34px;border:0;background:transparent;font-size:12px;padding:7px 9px;border-radius:6px;color:#475569}
+.run-step:hover,.run-step.selected{background:#f1f5f9}.run-step.selected{box-shadow:inset 2px 0 #64748b}
+.run-step .step-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1e293b}.run-step>span:not(.step-name){flex-shrink:0}
+.step-dot{width:7px;height:7px;border-radius:50%;background:#94a3b8}.step-succeeded{background:#299269}.step-failed{background:#dc5757}.step-running{background:#5283c7}.step-waiting_input,.step-waiting_external{background:#d19a37}
+.run-step-detail{margin-top:12px;border-top:1px solid #e5e7eb;padding-top:12px}.run-step-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;overflow-wrap:anywhere}.run-step-heading button{flex-shrink:0}.run-step-detail>p{color:#64748b;font-size:12px}.run-step-detail details{margin:10px 0}

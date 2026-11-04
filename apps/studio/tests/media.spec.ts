@@ -13,7 +13,7 @@ test('review and result panels preview selected media without loading it in the 
   const spec = {
     spec_version: '0.3', id, input_schema: { type: 'object' }, output_schema: {}, models: {}, tools: {}, resources: {},
     graph: { entry: 'review', nodes: { review: { type: 'human', output_schema: { type: 'object' }, inputs: {
-      takes: { value: [image, image, video, { ...image, uri: 'javascript:alert(1)' }, { ...image, uri: 'file:///private.png' }] }
+      takes: { value: [image, image, {frame:image,clip:video}, { ...image, uri: 'javascript:alert(1)' }, { ...image, uri: 'file:///private.png' }] }
     } } }, edges: [], output: { selection: { ref: 'nodes.review.output' } } }
   };
   expect((await request.post('/api/projects', { data: { spec } })).status()).toBe(201);
@@ -27,6 +27,7 @@ test('review and result panels preview selected media without loading it in the 
   await expect(page.locator('.media-grid img')).toHaveCount(1);
   await expect.poll(() => imageRequests).toBe(1);
   await expect(page.locator('.media-grid video')).toHaveAttribute('preload', 'none');
+  await expect(page.locator('.media-grid video')).toHaveAttribute('poster', image.uri);
   await expect(page.locator('.media-grid video')).not.toHaveAttribute('autoplay');
   await expect(page.locator('.media-grid a')).toHaveCount(2);
   await page.getByLabel('Your response', { exact: true }).fill(JSON.stringify({ frame: image }));

@@ -1,6 +1,7 @@
 import { version as studioVersion } from '../package.json';
 import { AgentSettings } from './agent-settings';
 import { DebugPanel } from './debug-panel';
+import type {DebugTarget} from './run-steps';
 import { ComfyImport } from './comfy-import';
 import { edgeTypes } from './workflow-edge';
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
@@ -74,6 +75,7 @@ function App() {
   const [canvas,setCanvas]=useState<CanvasState>({groups:{}});
   const [groupSelection,setGroupSelection]=useState<string[]>([]);
   const [debugOpen,setDebugOpen]=useState(false);
+  const [debugSource,setDebugSource]=useState<DebugTarget>();
   const [comfyOpen,setComfyOpen]=useState(false);
   const groups=cleanGroups(canvas.groups[pathKey(graphPath)]??[],nodes.map(n=>n.id));
   const debugNodes=Array.from(new Set([...nodes.filter(n=>n.selected).map(n=>n.id),...groupSelection.flatMap(id=>leaves(id,groups)),...(selected?[selected]:[])]));
@@ -86,6 +88,7 @@ function App() {
   });
   const currentLayout=()=>({...doc?.layout,...Object.fromEntries(nodes.map(n=>[layoutKey(graphPath,n.id),n.position]))});
   const loadGraph=(spec:Spec,path:string[],layout:Document['layout'])=>{
+    setDebugSource(undefined);
     const graph=graphAt(spec,path);
     setNodes(orderedNodes({...spec,graph}).map(([id,config],index)=>({id,sourcePosition:Position.Right,targetPosition:Position.Left,
       position:layout[layoutKey(path,id)]??{x:index*330+40,y:150},data:{label:id,config}})));
@@ -278,7 +281,7 @@ function App() {
     setNodes(items => [...items, { id, sourcePosition: Position.Right, targetPosition: Position.Left, position: { x: 60 + nodes.length * 260, y: 150 }, data: { label: `${id} · ${nodeKind}`, config } }]);
     mutate();
   };
-  const select = (node: FlowNode) => { if (node.id === selected || !commitNodeDraft()) return; setSelectedEdge(null);setSelected(node.id); setNodeText(JSON.stringify(node.data.config, null, 2)); };
+  const select = (node: FlowNode) => { if (node.id === selected || !commitNodeDraft()) return; setDebugSource(undefined);setSelectedEdge(null);setSelected(node.id); setNodeText(JSON.stringify(node.data.config, null, 2)); };
   const applyNode = (config: NodeSpec) => { setNodes(items => items.map(item => item.id === selected ? { ...item,
     data: { label: `${item.id} · ${config.type}`, config } } : item)); setNodeText(JSON.stringify(config, null, 2)); setNodeDraftDirty(false); mutate(); };
   const active = nodes.find(node => node.id === selected);
@@ -303,6 +306,16 @@ function App() {
         body: JSON.stringify({ input: JSON.parse(input), revision: doc.revision, mock, allow_writes:allowWrites, ...(versionId?{version_id:versionId}:{use_release:useRelease}) }) })).json();
       setStatus('running');await watchRun(started.run_id);
     } catch (e) { error(e); } finally { runStarting.current = false; setBusy(false); }
+  };
+  const debugStep=(target:DebugTarget)=>{
+    if(!doc||busy||runId)return;
+    if(dirty||nodeDraftDirty){setStatus(lang==='zh'?'先保存修改，再使用历史输入调试。':'Save your changes before debugging with saved inputs.');return;}
+    try{
+      const node=graphAt(doc.spec,target.path).nodes[target.name];
+      if(!node)throw new Error(lang==='zh'?'当前项目中已没有这个节点。':'This node is no longer in the current project.');
+      loadGraph(doc.spec,target.path,currentLayout());setSelected(target.name);setNodeText(JSON.stringify(node,null,2));
+      setDebugSource(target);setDebugOpen(true);setCanvasFocus(false);setTab('canvas');
+    }catch(e){error(e);}
   };
   const exportProject = async (versionId?:string) => {
     if (!doc) return;
@@ -348,7 +361,7 @@ function App() {
           <span className="revision">r{doc.revision}</span></nav>
         {tab==='resources' ? <ResourcesPanel key={doc.id} doc={{...doc,spec:currentSpec()}} api={api} lang={lang} onError={error} onChange={next=>{setDoc(next);setNodes(items=>items.map(node=>({...node,data:{...node.data,config:graphAt(next.spec,graphPath).nodes[node.id]}})));mutate();}}/>
         :tab==='memory'?<MemoryPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>
-        :tab==='runs'?<RunsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error}/>
+        :tab==='runs'?<RunsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onDebug={debugStep} debugDisabled={busy||!!runId}/>
         :tab==='improve'?<ImprovePanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} dirty={dirty || nodeDraftDirty}/>
         :tab==='versions'?<VersionsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onExport={exportProject} onRun={run}/>
         :<div className="editor">
@@ -358,7 +371,7 @@ function App() {
               : tab === 'spec' ? <textarea className="source-editor" aria-label="AgentSpec JSON" value={specText} onChange={e => { setSpecText(e.target.value); mutate(); }} spellCheck={false}/>
                 : <pre className="source-editor code-view">{dirty ? `${t.runHint}\n\n` : ''}{code}</pre>}
           </section>
-          <aside className="inspector">{debugOpen&&debugNodes.length>0&&<DebugPanel key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}:${debugNodes.join()} `} doc={doc} nodes={debugNodes} path={graphPath} api={api} lang={lang} initialInput={(()=>{try{return JSON.parse(input);}catch{return {};}})()} sourceRunId={result?.run_id} mock={mock} allowWrites={allowWrites} disabled={dirty||nodeDraftDirty||!!runId} onStart={id=>{setResult(null);watchRun(id);}} onClose={()=>setDebugOpen(false)}/>}<div className="inspector-heading"><Icon name="settings"/><span>{t.node}</span></div>
+          <aside className="inspector">{debugOpen&&debugNodes.length>0&&<DebugPanel key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}:${debugNodes.join()}:${debugSource?.runId??''}:${debugSource?.source_prefix??''}`} doc={doc} nodes={debugNodes} path={graphPath} api={api} lang={lang} initialInput={(()=>{try{return JSON.parse(input);}catch{return {};}})()} sourceRunId={result?.run_id} initialSource={debugSource} mock={mock} allowWrites={allowWrites} disabled={dirty||nodeDraftDirty||!!runId} onStart={id=>{setResult(null);watchRun(id);}} onClose={()=>setDebugOpen(false)}/>}<div className="inspector-heading"><Icon name="settings"/><span>{t.node}</span></div>
             {groupSelection.length===1&&groups.filter(g=>g.id===groupSelection[0]).map(group=><div className="group-settings" key={group.id}><label>{lang==='zh'?'分组名称':'Group name'}<input aria-label="Group name" value={group.label} maxLength={80} onChange={e=>setGroups(groups.map(g=>g.id===group.id?{...g,label:e.target.value}:g))}/></label><button onClick={()=>setGroups(groups.map(g=>g.id===group.id?{...g,collapsed:!g.collapsed}:g))}>{group.collapsed?(lang==='zh'?'展开分组':'Expand group'):(lang==='zh'?'折叠分组':'Collapse group')}</button><label>{lang==='zh'?'分组布局':'Group layout'}<select aria-label="Group layout" value={group.direction??'DOWN'} onChange={e=>setGroups(groups.map(g=>g.id===group.id?{...g,direction:e.target.value as 'RIGHT'|'DOWN'}:g))}><option value="DOWN">{lang==='zh'?'纵向':'Vertical'}</option><option value="RIGHT">{lang==='zh'?'横向':'Horizontal'}</option></select></label><button onClick={()=>ungroup(group.id)}>{lang==='zh'?'取消分组':'Ungroup'}</button></div>)}
             {selectedEdge&&<label>{lang==='zh'?'分支条件':'Branch condition'}<select aria-label="Edge condition" value={typeof edges.find(edge=>edge.id===selectedEdge)?.data?.when==='boolean'?String(edges.find(edge=>edge.id===selectedEdge)?.data?.when):'always'} onChange={e=>{const value=e.target.value;setEdges(items=>items.map(edge=>edge.id===selectedEdge?{...edge,data:{when:value==='always'?undefined:value==='true'},label:value==='always'?undefined:value}:edge));mutate();}}><option value="always">{lang==='zh'?'始终执行':'Always'}</option><option value="true">true</option><option value="false">false</option></select></label>}
             {active ? <><h3>{active.id}<span className="pill">{active.data.config.type}</span></h3>
@@ -376,7 +389,7 @@ function App() {
           </aside>
         </div>}
         <section className="results"><div className="results-heading"><span><Icon name="code" size={15}/>{t.output}</span>{result&&<span className={`status-badge status-${result.status}`}>{result.status}</span>}</div>{!result&&<p className="results-placeholder">{lang==='zh'?'运行工作流后，在这里查看输出、用量和事件。':'Run your workflow to inspect its output, usage and events.'}</p>}
-          {result && <RunDetails key={result.run_id} run={result} api={api} lang={lang} onError={error} onRefresh={()=>watchRun(result.run_id)}/> }
+          {result && <RunDetails key={result.run_id} run={result} api={api} lang={lang} onError={error} onRefresh={()=>watchRun(result.run_id)} onDebug={debugStep} debugDisabled={busy||!!runId}/> }
         </section>
       </>}
       <footer role="status"><span className="status-message"><span className="dot"/>{status}</span><span className="footer-meta">EvoSprig Studio</span></footer>

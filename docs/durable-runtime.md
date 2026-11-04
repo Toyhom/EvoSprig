@@ -30,6 +30,12 @@ evosprig cancel RUN_ID --workspace ./workspace
 has changed. The API exposes run history, input, resume, cancel and resumable SSE
 under `/api/projects/{id}/runs` and `/api/runs/{id}`.
 
+Inspect a saved step with `GET /api/runs/{id}/nodes/{node_path}`, for example
+`graph/shots/item-1/takes/iteration-0/render`. The response contains that step's
+inputs, output, status, correction feedback and canvas location. Node failures
+emit `node.failed`; the run error includes the first failing `node_id`.
+Studio uses these records to open the corresponding item or take for debugging.
+
 Write tools require a durable journal, runtime `allow_writes=True` and spec
 `execution.allow_side_effects: true`. Idempotent tools must honor the provided
 operation key. A receipt-unknown non-idempotent operation pauses for reconciliation;

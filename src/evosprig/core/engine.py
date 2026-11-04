@@ -245,6 +245,7 @@ class ExecutionSession:
         self.previous_active = self.cp["active_seconds"]
         self.bound_tools = {}
         self.halted = None
+        self.failed_node = None
         self.tool_slots = asyncio.Semaphore(self.spec.execution.max_parallel_tools)
         self.model_slots = asyncio.Semaphore(self.spec.execution.max_parallel_nodes)
 
@@ -257,6 +258,8 @@ class ExecutionSession:
                 self.on_event(event)
 
     def finish(self, status, delay=0):
+        if status == "failed" and self.failed_node and self.cp["error"]:
+            self.cp["error"]["node_id"] = self.failed_node
         self.save(
             "run." + status,
             status=status,
@@ -493,6 +496,10 @@ class ExecutionSession:
         except BaseException as exc:
             if self.halted is None:
                 self.halted = exc
+                if isinstance(exc, Exception) and not isinstance(exc, LeaseLost):
+                    self.failed_node = path
+                    slot["status"] = "failed"
+                    self.save("node.failed", path, error_type=type(exc).__name__)
             raise
 
     async def map_parallel(self, node, items, arguments, path):

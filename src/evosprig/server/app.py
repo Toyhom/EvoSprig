@@ -383,6 +383,32 @@ def create_app(
             "cancel_requested": record["cancel_requested"],
         }
 
+    @app.get("/api/runs/{run_id}/nodes/{node_path:path}")
+    async def inspect_run_node(run_id: str, node_path: str):
+        from evosprig.core.debug import execution_node
+
+        summary = run_record(run_id)
+        if summary.get("legacy"):
+            raise HTTPException(404, "node execution is unavailable")
+        record = journal.get(run_id)
+        slot = record["checkpoint"]["nodes"].get(node_path)
+        if slot is None:
+            raise HTTPException(404, "node execution not found")
+        try:
+            spec = AgentSpec.model_validate_json(record["version"]["spec_json"])
+            node, path, prefix = execution_node(spec, node_path)
+        except (ValueError, KeyError, IndexError):
+            raise HTTPException(404, "node execution is unavailable") from None
+        debug = record["metadata"].get("context", {}).get("debug", {})
+        return {"node_id": node_path, "name": node_path.rsplit("/", 1)[-1],
+                "type": node.type, "status": slot["status"],
+                "inputs": slot.get("inputs"), "output": slot.get("output"),
+                "feedback": [event["data"] for event in summary["events"]
+                             if event.get("node_id") == node_path
+                             and event["type"] in {"model.feedback", "tool.feedback"}][-5:],
+                "error": summary["error"] if (summary["error"] or {}).get("node_id") == node_path else None,
+                "path": debug.get("path", []) + path, "source_prefix": prefix}
+
     @app.get("/api/projects/{project_id}/runs")
     async def project_runs(project_id: str):
         store.get(project_id, identity=current_principal.get().key)

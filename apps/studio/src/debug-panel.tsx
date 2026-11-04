@@ -49,11 +49,11 @@ function JsonField({value,onChange,label,lang}:{value:unknown;onChange:(v:unknow
   return <label>{label}<textarea ref={field} aria-label={label} value={text} onChange={e=>{setText(e.target.value);try{const v=JSON.parse(e.target.value);onChange(v);setError('');e.target.setCustomValidity('');}catch{const message=lang==='zh'?'JSON 格式有误':'Invalid JSON';setError(message);e.target.setCustomValidity(message);}}}/>{error&&<small role="alert">{error}</small>}</label>;
 }
 
-export function DebugPanel({doc,nodes,path,api,lang,initialInput,sourceRunId,mock,allowWrites,disabled,onStart,onClose}:{doc:Document;nodes:string[];path:string[];api:Api;lang:Lang;initialInput:Record<string,unknown>;sourceRunId?:string;mock:boolean;allowWrites:boolean;disabled:boolean;onStart:(id:string)=>void;onClose:()=>void}) {
+export function DebugPanel({doc,nodes,path,api,lang,initialInput,sourceRunId,initialSource,mock,allowWrites,disabled,onStart,onClose}:{doc:Document;nodes:string[];path:string[];api:Api;lang:Lang;initialInput:Record<string,unknown>;sourceRunId?:string;initialSource?:{runId:string;source_prefix:string};mock:boolean;allowWrites:boolean;disabled:boolean;onStart:(id:string)=>void;onClose:()=>void}) {
   const [plan,setPlan]=useState<Plan|null>(null);const [error,setError]=useState('');const [busy,setBusy]=useState(false);
   const [project,setProject]=useState<unknown>(path.length?{}:initialInput);const [upstream,setUpstream]=useState<Record<string,unknown>>({});
-  const [reuse,setReuse]=useState<string>();
-  const [sourcePrefix,setSourcePrefix]=useState('graph');
+  const [reuse,setReuse]=useState<string|undefined>(initialSource?.runId);
+  const [sourcePrefix,setSourcePrefix]=useState(initialSource?.source_prefix??'graph');
   const request={revision:doc.revision,nodes,path,...(reuse?{source_run_id:reuse,source_prefix:sourcePrefix}:{})};
   useEffect(()=>{let active=true;setPlan(null);setError('');api(`/projects/${doc.id}/debug/plan`,{method:'POST',body:JSON.stringify(request)}).then(r=>r.json()).then((next:Plan)=>{if(!active)return;setPlan(next);setProject((current:unknown)=>fillDefaults(next.input_schema.properties.project,reuse&&next.previous_input?next.previous_input:current));setUpstream(fillDefaults(next.input_schema.properties.upstream,next.upstream) as Record<string,unknown>);}).catch(e=>{if(active)setError(String(e));});return()=>{active=false;};},[doc.id,doc.revision,JSON.stringify(nodes),JSON.stringify(path),reuse,sourcePrefix,api]);
   return <section className="debug-panel" aria-label={lang==='zh'?'节点调试':'Node debug'}><div className="debug-heading"><strong>{lang==='zh'?'调试所选节点':'Debug selection'}</strong><button onClick={onClose} aria-label={lang==='zh'?'关闭调试':'Close debug'}>×</button></div><p>{nodes.join(' · ')}</p><p className="hint">{lang==='zh'?'填写输入，检查这一段的结果。上游节点不会重新运行。':'Supply inputs and inspect this section. Upstream nodes stay idle.'}</p>

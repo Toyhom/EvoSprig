@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { MemoryControls } from './memory-controls';
 import { MediaPreview } from './media-preview';
 import { HumanResponse } from './human-response';
+import {RunSteps,type DebugTarget} from './run-steps';
 import { usedResources } from './types';
 import type { Api, Document, Lang, Run } from './types';
 
@@ -57,9 +58,10 @@ export function MemoryPanel({doc,api,lang,onError}:Props) {
   </section>;
 }
 
-export function RunDetails({run,api,lang,onError,onRefresh}:{run:Run;api:Api;lang:Lang;onError:(e:unknown)=>void;onRefresh:()=>void}){
+export function RunDetails({run,api,lang,onError,onRefresh,onDebug,debugDisabled}:{run:Run;api:Api;lang:Lang;onError:(e:unknown)=>void;onRefresh:()=>void;onDebug?:(target:DebugTarget)=>void;debugDisabled?:boolean}){
   const act=async(path:string,body?:unknown)=>{try{await api(`/runs/${run.run_id}/${path}`,post(body));onRefresh();}catch(e){onError(e);}};
   return <div><div className="metrics"><span className={`status-badge status-${run.status}`}>{run.status}</span><span className="mono">{short(run.agent_version)}</span><span>{String(run.usage?.input_tokens??0)} / {String(run.usage?.output_tokens??0)} tokens</span></div>
+    <RunSteps run={run} api={api} lang={lang} onDebug={onDebug} disabled={debugDisabled}/>
     <MediaPreview value={run.output} lang={lang}/>
     <pre className="json-block">{json(run.output??run.error??{})}</pre>
     {run.waiting?.map(wait=><article className="card" key={run.run_id+wait.path}><h3>{wait.kind==='human'?say(lang,'等待你的确认','Waiting for your input'):say(lang,'等待外部结果','Waiting for external result')}</h3><p className="mono">{wait.path}</p>
@@ -72,11 +74,11 @@ export function RunDetails({run,api,lang,onError,onRefresh}:{run:Run;api:Api;lan
   </div>;
 }
 
-export function RunsPanel({doc,api,lang,onError}:Props){
+export function RunsPanel({doc,api,lang,onError,onDebug,debugDisabled}:Props&{onDebug?:(target:DebugTarget)=>void;debugDisabled?:boolean}){
   const [runs,setRuns]=useState<Run[]>([]);const [selected,setSelected]=useState<string|null>(null);const [revision,setRevision]=useState(0);
   useEffect(()=>{let active=true;let timer:ReturnType<typeof setTimeout>;const update=async()=>{try{const next:Run[]=await(await api(`/projects/${doc.id}/runs`)).json();if(!active)return;setRuns(next);timer=setTimeout(update,1500);}catch(e){if(active)onError(e);}};void update();return()=>{active=false;clearTimeout(timer);};},[doc.id,api,revision]);
   const run=runs.find(item=>item.run_id===selected)??runs[0];
-  return <section className="panel"><h2>{say(lang,'运行历史与恢复','Run history and recovery')}</h2>{!runs.length?<Empty>{say(lang,'运行项目后，可在这里查看历史。','Run the project to see its history here.')}</Empty>:<div className="history-layout"><div className="history-list">{runs.map(item=><button className={run?.run_id===item.run_id?'selected-record':''} key={item.run_id} onClick={()=>setSelected(item.run_id)}><strong>{item.status}</strong><small>{short(item.run_id)} · {short(item.agent_version)}</small></button>)}</div><article className="card">{run&&<RunDetails key={run.run_id} run={run} api={api} lang={lang} onError={onError} onRefresh={()=>setRevision(n=>n+1)}/>}</article></div>}</section>;
+  return <section className="panel"><h2>{say(lang,'运行历史与恢复','Run history and recovery')}</h2>{!runs.length?<Empty>{say(lang,'运行项目后，可在这里查看历史。','Run the project to see its history here.')}</Empty>:<div className="history-layout"><div className="history-list">{runs.map(item=><button className={run?.run_id===item.run_id?'selected-record':''} key={item.run_id} onClick={()=>setSelected(item.run_id)}><strong>{item.status}</strong><small>{short(item.run_id)} · {short(item.agent_version)}</small></button>)}</div><article className="card">{run&&<RunDetails key={run.run_id} run={run} api={api} lang={lang} onError={onError} onRefresh={()=>setRevision(n=>n+1)} onDebug={onDebug} debugDisabled={debugDisabled}/>}</article></div>}</section>;
 }
 
 type SuiteInfo={suite_id:string;suite:{id:string;search:unknown[];selection:unknown[];release:unknown[];test:unknown[]}};

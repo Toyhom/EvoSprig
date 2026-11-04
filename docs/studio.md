@@ -34,6 +34,8 @@ Inside a map or loop, choose a saved item or take. Studio restores that executio
 
 Start with a planning node, then try an asset group and a single rendering step. **History** shows each result and any service error. Once those sections work, run the complete application.
 
+**Steps** shows completed work, tool waits and failures, including each map item and loop take. Select a step to see its saved inputs, output and media. **Debug with these inputs** opens that node on the canvas with the same item or take selected. Edit the inputs or prompt, then run the node on its own.
+
 ## Tune model behavior
 
 The inspector's **Execution settings** controls a node's output-token limit and structured-output repair policy. An empty token limit inherits the application default. Choose feedback repair for a model that occasionally produces invalid JSON, and set a maximum retry count. Every retry still consumes the shared execution budget.

@@ -10,6 +10,33 @@ from .expressions import resolve_inputs, resolve_value
 from .spec import AgentSpec, Graph
 
 
+def execution_node(spec: AgentSpec, node_path: str):
+    """Map a saved execution address to its node and editable graph path."""
+    parts = node_path.split("/")
+    if len(parts) < 2 or parts[0] != "graph":
+        raise ValueError("invalid node execution path")
+    graph, path, index = spec.graph, [], 1
+    while index < len(parts):
+        name = parts[index]
+        node = graph.nodes[name]
+        if index == len(parts) - 1:
+            return node, path, "/".join(parts[:-1])
+        marker = parts[index + 1]
+        if node.type in {"map", "loop"} and node.body is not None:
+            kind = "item" if node.type == "map" else "iteration"
+            if not re.fullmatch(kind + r"-[0-9]+", marker):
+                raise ValueError("invalid subflow execution")
+            graph = node.body
+            path += [name, "body"]
+        elif node.type == "parallel" and marker in node.branches:
+            graph = node.branches[marker]
+            path += [name, "branches", marker]
+        else:
+            raise ValueError("invalid subflow execution")
+        index += 2
+    raise ValueError("node execution path ends at a subflow")
+
+
 def saved_debug_context(spec, path, checkpoint, initial_input, requested_prefix="graph"):
     """Recover a map item, loop iteration or branch without running its parents."""
     pattern, graph, index = "graph", spec.graph, 0
