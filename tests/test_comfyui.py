@@ -136,6 +136,19 @@ async def test_recipe_describes_saved_controls_without_rendering(ui, info, tmp_p
             .output(settings={"ref": "nodes.read.output"}).build_spec())
     target = tmp_path / "export"
     export_python(compile_snapshot(spec, {}), target, tool_bindings={"film.settings": config.model_dump(mode="json")})
+    import io
+    import zipfile
+
+    from evosprig.exporters.importer import inspect_archive
+
+    archive_data = io.BytesIO()
+    with zipfile.ZipFile(archive_data, "w", zipfile.ZIP_DEFLATED) as archive:
+        for path in target.rglob("*"):
+            if path.is_file():
+                archive.write(path, path.relative_to(target))
+    imported, report = inspect_archive(archive_data.getvalue())
+    assert imported.version_id == compile_snapshot(spec, {}).version_id
+    assert report["tool_bindings"]["film.settings"]["kind"] == "comfy_recipe_info"
     completed = subprocess.run([sys.executable, "app.py", "--input", "{}"], cwd=target,
                                env={**os.environ, "PYTHONPATH": str(target / "src")}, capture_output=True, text=True, check=True)
     assert json.loads(completed.stdout)["output"]["settings"]["defaults"]["steps"] == 12

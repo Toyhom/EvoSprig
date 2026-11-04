@@ -43,16 +43,52 @@
 
 ![Episode Studio：输入故事，查看制作进度](assets/application.png)
 
+需要 **Linux、Python 3.12、Node.js 20+、Git 和 NVIDIA CUDA 驱动**。API 导演方案使用两张 GPU 分别运行图像和视频工具；默认本地导演方案使用六张 80 GB GPU。可以先使用 API 导演：
+
 ```bash
-python apps/episode-studio/launch.py setup --model-dir /path/to/models --env-root /path/to/environments
-python apps/episode-studio/launch.py start
+git clone --depth 1 https://github.com/Toyhom/EvoSprig.git
+cd EvoSprig
+mkdir -p .evosprig/episode
+cp apps/episode-studio/model-api.example.json .evosprig/episode/model-api.json
+export EPISODE_MODEL_API_KEY="你的 API Key"
+python3.12 apps/episode-studio/launch.py setup --director api \
+  --model-config .evosprig/episode/model-api.json \
+  --model-dir "$PWD/models" --env-root "$PWD/.venvs"
+python3.12 apps/episode-studio/launch.py start
 ```
+
+安装器创建应用和模型环境、下载固定版本的权重，并构建画布编辑器。将 `--model-dir` 指向容量充足的模型磁盘，`--env-root` 指向环境目录。需要国内镜像时，在 setup 命令后加 `--mirror https://hf-mirror.com`。安装中断后，可以重复相同命令继续。
+
+setup 前，编辑 `.evosprig/episode/model-api.json`。示例使用 `https://api.moonshot.cn/v1`、`kimi-k3.1-pro` 和凭据环境变量 `EPISODE_MODEL_API_KEY`，同时负责导演与视觉检查。若要分开设置，在 `main` 旁增加 `vision` 连接；视觉检查模型必须支持图片输入。每次在新终端 start 前都要设置相应凭据变量，启动器不自动读取 `.env`。
+
+完全本地运行时，setup 改用 `--director local` 并去掉 `--model-config`。安装后可在 `.evosprig/episode/services.json` 修改 GPU 分配和端口。[models.json](../../apps/episode-studio/models.json) 列出了图像、视频模型来源。
 
 打开 **http://127.0.0.1:18767/episode/**，切换中文，粘贴故事，选择 **开始制作**。剧本、角色与镜头会逐步出现；完成后，在 **制作记录** 中播放影片。
 
 通过 **打开画布** 修改智能体，使用 **调试所选节点** 单独尝试一个节点或一组流程。在 **打开渲染工作流** 中修改渲染节点，再导出到 ComfyUI。
 
 **[安装、API 模型与国内镜像](../../apps/episode-studio/)** · **[ComfyUI 导入与导出](../../docs/comfyui.md)**
+
+### 停止和重新打开
+
+```bash
+python3.12 apps/episode-studio/launch.py status
+python3.12 apps/episode-studio/launch.py stop
+```
+
+模型在制作之间保持加载；`stop` 停止当前会话的服务并释放显存。重新启动时复用同一个 state 目录，即可保留制作记录。若 **18767** 端口被占用，启动前修改 `services.json` 中的 `ports.app`。
+
+### 导入已安装的 EvoSprig 继续开发
+
+首次 start 后，模型和工具配置位于 `.evosprig/episode/deployment.yaml`：
+
+```bash
+evosprig serve --project examples/episode-studio/agent.yaml \
+  --profile .evosprig/episode/deployment.yaml \
+  --workspace .evosprig/episode-editor --studio-dir apps/studio/dist --port 18768
+```
+
+保持图像和 ComfyUI 服务运行，打开 **http://127.0.0.1:18768**，即可修改团队和调试节点。通过 **导出** 生成 Python 或 HTTP 应用 ZIP；在另一个 Studio 中使用 **导入项目** 继续编辑，并接回目标机器的模型、工具配置和媒体服务。[框架安装与 SDK 开发](../../README.zh-CN.md)。
 
 ### 修改团队，接着拍下一集
 

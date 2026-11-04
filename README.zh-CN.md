@@ -16,6 +16,7 @@
 
 ## News · 项目动态
 
+- **2026-11-04** · **[ComfyUI 工作流](docs/comfyui.md)** — 导入工作流 JSON，在画布中编辑、调试工具节点，再导出到 ComfyUI。
 - **2026-11-04** · **[Episode Studio](examples/episode-studio/README.zh-CN.md)**：把小说或一句创意拍成动画，智能体团队负责剧本、固定角色、逐镜制作和自动检查。
 - **2026-11-02** · EvoSprig 初版开源：自进化智能体共性开发平台，支持代码与画布开发、任务评估和持续改进。
 

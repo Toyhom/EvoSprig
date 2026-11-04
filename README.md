@@ -16,6 +16,7 @@
 
 ## News
 
+- **2026-11-04** · **[ComfyUI workflows](docs/comfyui.md)** — import workflow JSON, edit and debug its tool nodes on the canvas, and export back to ComfyUI.
 - **2026-11-04** · **[Episode Studio](examples/episode-studio/)** — a multi-agent production team that turns stories into animated films, with a recurring cast and automatic shot review.
 - **2026-11-02** · EvoSprig is open source: a platform for building and evolving agent applications with Python or a visual canvas.
 

@@ -7,6 +7,15 @@
     "max_connections": 8,
     "max_keepalive_connections": 4,
     "json_mode": "without_tools",
-    "capabilities": ["text", "structured_output", "vision"]
+    "capabilities": [
+      "text",
+      "structured_output",
+      "vision"
+    ],
+    "token_limit_field": "max_completion_tokens",
+    "send_sampling_parameters": false,
+    "options": {
+      "reasoning_effort": "low"
+    }
   }
 }

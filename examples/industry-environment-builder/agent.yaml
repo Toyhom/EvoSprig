@@ -1,0 +1,447 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 7
+  max_output_tokens: 8192
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 32
+  max_total_tokens: 200000
+  timeout_seconds: 1200.0
+graph:
+  edges:
+  - source: api
+    target: implementation
+    when: null
+  - source: api_graph
+    target: dataset
+    when: null
+  - source: context
+    target: schema
+    when: null
+  - source: dataset
+    target: api
+    when: null
+  - source: implementation
+    target: review_environment
+    when: null
+  - source: schema
+    target: sop
+    when: null
+  - source: sop
+    target: api_graph
+    when: null
+  entry: context
+  nodes:
+    api:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        api_graph:
+          default: null
+          optional: false
+          ref: nodes.api_graph.output.text
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+        dataset:
+          default: null
+          optional: false
+          ref: nodes.dataset.output.text
+        schema:
+          default: null
+          optional: false
+          ref: nodes.schema.output.text
+        sop:
+          default: null
+          optional: false
+          ref: nodes.sop.output.text
+      instructions:
+        resource: api
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    api_graph:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+        schema:
+          default: null
+          optional: false
+          ref: nodes.schema.output.text
+        sop:
+          default: null
+          optional: false
+          ref: nodes.sop.output.text
+      instructions:
+        resource: api_graph
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    context:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+      instructions:
+        resource: context
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    dataset:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        api_graph:
+          default: null
+          optional: false
+          ref: nodes.api_graph.output.text
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+        schema:
+          default: null
+          optional: false
+          ref: nodes.schema.output.text
+        sop:
+          default: null
+          optional: false
+          ref: nodes.sop.output.text
+      instructions:
+        resource: dataset
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    implementation:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        api:
+          default: null
+          optional: false
+          ref: nodes.api.output.text
+        api_graph:
+          default: null
+          optional: false
+          ref: nodes.api_graph.output.text
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+        dataset:
+          default: null
+          optional: false
+          ref: nodes.dataset.output.text
+        schema:
+          default: null
+          optional: false
+          ref: nodes.schema.output.text
+        sop:
+          default: null
+          optional: false
+          ref: nodes.sop.output.text
+      instructions:
+        resource: implementation
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    review_environment:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        api:
+          default: null
+          optional: false
+          ref: nodes.api.output.text
+        api_graph:
+          default: null
+          optional: false
+          ref: nodes.api_graph.output.text
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+        dataset:
+          default: null
+          optional: false
+          ref: nodes.dataset.output.text
+        implementation:
+          default: null
+          optional: false
+          ref: nodes.implementation.output.text
+        schema:
+          default: null
+          optional: false
+          ref: nodes.schema.output.text
+        sop:
+          default: null
+          optional: false
+          ref: nodes.sop.output.text
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        properties:
+          approved:
+            const: true
+          notes:
+            type: string
+        required:
+        - approved
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: human
+      until: null
+    schema:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+      instructions:
+        resource: schema
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+    sop:
+      body: null
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: input.brief
+        context:
+          default: null
+          optional: false
+          ref: nodes.context.output.text
+        schema:
+          default: null
+          optional: false
+          ref: nodes.schema.output.text
+      instructions:
+        resource: sop
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        properties:
+          text:
+            type: string
+        required:
+        - text
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: model
+      until: null
+  output:
+    api:
+      default: null
+      optional: false
+      ref: nodes.api.output.text
+    api_graph:
+      default: null
+      optional: false
+      ref: nodes.api_graph.output.text
+    context:
+      default: null
+      optional: false
+      ref: nodes.context.output.text
+    dataset:
+      default: null
+      optional: false
+      ref: nodes.dataset.output.text
+    implementation:
+      default: null
+      optional: false
+      ref: nodes.implementation.output.text
+    review:
+      default: null
+      optional: false
+      ref: nodes.review_environment.output
+    schema:
+      default: null
+      optional: false
+      ref: nodes.schema.output.text
+    sop:
+      default: null
+      optional: false
+      ref: nodes.sop.output.text
+id: industry-environment-builder
+input_schema:
+  properties:
+    brief:
+      type: string
+  required:
+  - brief
+  type: object
+models:
+  main:
+    binding: main-model
+    requires:
+    - text
+output_schema:
+  type: object
+resources:
+  api:
+    path: prompts/api.md
+    role: prompt
+  api_graph:
+    path: prompts/api_graph.md
+    role: prompt
+  context:
+    path: prompts/context.md
+    role: prompt
+  dataset:
+    path: prompts/dataset.md
+    role: prompt
+  implementation:
+    path: prompts/implementation.md
+    role: prompt
+  schema:
+    path: prompts/schema.md
+    role: prompt
+  sop:
+    path: prompts/sop.md
+    role: prompt
+spec_version: '0.3'
+tools: {}

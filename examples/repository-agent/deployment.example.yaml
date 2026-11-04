@@ -1,0 +1,76 @@
+models:
+  main:
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    api_key_env: DEEPSEEK_API_KEY
+    capabilities:
+    - text
+    - structured_output
+    - tool_calling
+    json_mode: without_tools
+    options:
+      thinking:
+        type: disabled
+tools:
+  repository.open:
+    kind: repository
+    name: repository.open
+    operation: open
+    repository_env: AGENT_REPOSITORY
+    editable_paths: &id001
+    - src/
+    checks:
+      unit: &id002
+      - python
+      - -m
+      - unittest
+      - discover
+      - -s
+      - tests
+      - -v
+    timeout_seconds: 120
+  repository.list:
+    kind: repository
+    name: repository.list
+    operation: list
+    repository_env: AGENT_REPOSITORY
+    editable_paths: *id001
+    checks:
+      unit: *id002
+    timeout_seconds: 120
+  repository.read:
+    kind: repository
+    name: repository.read
+    operation: read
+    repository_env: AGENT_REPOSITORY
+    editable_paths: *id001
+    checks:
+      unit: *id002
+    timeout_seconds: 120
+  repository.write:
+    kind: repository
+    name: repository.write
+    operation: write
+    repository_env: AGENT_REPOSITORY
+    editable_paths: *id001
+    checks:
+      unit: *id002
+    timeout_seconds: 120
+  repository.diff:
+    kind: repository
+    name: repository.diff
+    operation: diff
+    repository_env: AGENT_REPOSITORY
+    editable_paths: *id001
+    checks:
+      unit: *id002
+    timeout_seconds: 120
+  repository.check:
+    kind: repository
+    name: repository.check
+    operation: check
+    repository_env: AGENT_REPOSITORY
+    editable_paths: *id001
+    checks:
+      unit: *id002
+    timeout_seconds: 120

@@ -76,9 +76,16 @@ def inspect_archive(data: bytes):
             raise ValueError("export version lock mismatch")
         bindings = json.loads(files["tool-bindings.json"])
         # Config validation is inert; imported credentials are always environment references.
+        from evosprig.plugins.comfy_tools import (
+            ComfyCollectConfig,
+            ComfyJobConfig,
+            ComfyNodeConfig,
+            ComfyRecipeConfig,
+        )
         from evosprig.plugins.external_http import ExternalHTTPConfig
         from evosprig.plugins.http_tools import HTTPToolConfig
         from evosprig.plugins.mcp_tools import MCPToolConfig
+        from evosprig.plugins.repository_tools import RepositoryToolConfig
         from evosprig.plugins.sqlite_tools import SQLiteToolConfig
 
         for name, binding in bindings.items():
@@ -87,6 +94,12 @@ def inspect_archive(data: bytes):
                 "mcp": MCPToolConfig,
                 "external_http": ExternalHTTPConfig,
                 "sqlite": SQLiteToolConfig,
+                "repository": RepositoryToolConfig,
+                "comfy_node": ComfyNodeConfig,
+                "comfy_collect": ComfyCollectConfig,
+                "comfy_job": ComfyJobConfig,
+                "comfy_recipe": ComfyRecipeConfig,
+                "comfy_recipe_info": ComfyRecipeConfig,
             }.get(binding.get("kind"))
             if cls is None or cls.model_validate(binding).name != name:
                 raise ValueError("unknown tool binding")

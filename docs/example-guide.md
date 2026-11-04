@@ -20,3 +20,9 @@ Start the README with its title and `![Workflow in EvoSprig Studio](canvas.png)`
 When evolution produces a useful change, show the original output, actual prompt or skill edit, and selected output in one image. Give the method and task context; accompany numeric comparisons with the task count and evaluator. Otherwise, show one final application result. Keep each application page self-contained and concise.
 
 Cite the source of an application pattern and the papers behind named methods. Connect real tool contracts. Test shared capabilities in the framework's test suite.
+
+## An application page must be runnable on its own
+
+Include the required Python/Node versions, checkout and environment commands, dependency installation, exact model profile location, endpoint/model fields and credential environment variables. Provide a valid first input and an executable run command. Document required services, their install/start commands and ports, data loading, write permissions, human responses, output locations and how to resume or stop the application.
+
+Include a canvas entry point and an import/export path for someone who already uses EvoSprig. Link to the framework's main setup for SDK development. Use `examples/quickstart.py` for standard applications: register the spec/profile/data in `quickstarts.json` and include a schema-valid sample input. Setup must preserve user edits. Test the command path and the export/import round trip; do not rely on a generic mock response for structured applications.

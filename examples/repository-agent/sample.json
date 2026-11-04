@@ -1,0 +1,4 @@
+{
+  "request": "Fix the CSV invoice parser so quoted customer names containing commas are parsed correctly. Preserve the existing API and pass the tests.",
+  "check": "unit"
+}

@@ -1,0 +1,54 @@
+{
+  "book-studio": {},
+  "career-coach": {},
+  "content-studio": {},
+  "cowork": {
+    "sample": "request.json"
+  },
+  "customer-support": {
+    "profile": "deployment.example.yaml"
+  },
+  "data-analyst": {
+    "profile": "deployment.example.yaml",
+    "csv": "data/orders.csv"
+  },
+  "data-interpreter": {
+    "profile": "deployment.example.yaml"
+  },
+  "debate": {},
+  "document-chat": {
+    "documents": "documents"
+  },
+  "hello": {},
+  "industry-environment-builder": {},
+  "meeting-assistant": {},
+  "motion-graphics": {
+    "profile": "deployment.example.yaml"
+  },
+  "personal-memory": {},
+  "rai-manipulation": {
+    "profile": "deployment.example.yaml",
+    "sample": "request.json"
+  },
+  "receipt-assistant": {
+    "profile": "deployment.example.yaml"
+  },
+  "repository-agent": {
+    "profile": "deployment.example.yaml"
+  },
+  "research-team": {
+    "documents": "documents"
+  },
+  "software-team": {
+    "profile": "deployment.example.yaml"
+  },
+  "study-coach": {},
+  "travel-planner": {
+    "profile": "deployment.example.yaml"
+  },
+  "video-studio": {
+    "spec": "local-agent.yaml",
+    "profile": "deployment.local.yaml"
+  },
+  "xiaohongshu-studio": {}
+}

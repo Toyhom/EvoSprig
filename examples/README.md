@@ -61,17 +61,18 @@ Bring your own representative tasks to [LLM-as-judge or a custom evaluator](../d
 
 ## Start running
 
-Install `python -m pip install -e '.[server]'` and configure a compatible model API. The applications use `DEEPSEEK_API_KEY` by default; [deployment profiles](../docs/deployment.md) let you choose another provider. Software, Python and receipt applications can use the optional [Toolbox](../apps/toolbox/README.md). The [local media worker](../apps/media-service/) provides image/video tools for the video studio.
+Every application page includes its installation, model/API configuration, tool services, a first input, and instructions for opening it in Studio. Start with the page of the application you want to use.
 
-Each application guide includes its run command. For example:
+Most examples share a small launcher. After the installation shown on their page:
 
 ```bash
-evosprig run examples/book-studio/agent.yaml \
-  --input-file examples/book-studio/sample.json
+python examples/quickstart.py book-studio setup
+export DEEPSEEK_API_KEY="your-api-key"
+python examples/quickstart.py book-studio run
 ```
 
-Open the same AgentSpec in Studio to edit it, inspect runs and compare versions. The [catalog builder](build_catalog.py) creates seven of the workflows with the Python SDK.
+`setup` creates an editable profile and input under `.evosprig/examples/<name>` and loads the example's data. `run` and `studio` call EvoSprig's native CLI. `pack --out application.zip` exports the same application for standalone use or import into another Studio. To configure another model at setup, add `--base-url https://your-provider.example/v1 --model your-model --key-env MODEL_API_KEY`; otherwise edit the generated deployment file. Use `--workspace` on every command to select another state directory.
 
-For a first run without a model connection, try [Hello](hello/). For a local animation renderer, [Motion graphics](motion-graphics/) uses Pillow and FFmpeg.
+[Episode Studio](episode-studio/) has its own model installer. [Industry assistant](industry-assistant/) runs inside business evaluation sessions. [Hello](hello/) is a small first workflow; [Motion graphics](motion-graphics/) uses a CPU renderer.
 
 Adding an application? Follow the [example conventions](../docs/example-guide.md).
