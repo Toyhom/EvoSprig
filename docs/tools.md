@@ -176,6 +176,8 @@ tool_limit: 2
 
 ## Code, browser and OCR tools
 
+The built-in `code.python` interpreter runs deterministic JSON transformations. These computations use node checkpoints, with `execution.pure_checkpoint_interval` controlling batching; model calls and external tool operations flush pending computations before they start.
+
 The optional [Toolbox](../apps/toolbox/README.md) provides Python execution, HTML interaction checks/screenshots and offline English OCR through standard HTTP bindings. Artifacts are returned as download receipts, so binary images do not fill the model's context. Use the same contracts to bind your own sandbox or media service.
 
 ## Bounded output repair

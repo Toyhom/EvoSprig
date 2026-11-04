@@ -19,4 +19,5 @@ def python_tool():
         },
         {},
         execute,
+        pure=True,
     )
