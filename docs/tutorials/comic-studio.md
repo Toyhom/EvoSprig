@@ -2,78 +2,145 @@
 
 [English](comic-studio.md) · [简体中文](../zh-CN/tutorials/comic-studio.md) · [Learning path](README.md)
 
-[![Watch lesson 1: Comic Studio](assets/comic-01.jpg)](assets/comic-01.mp4)
+[![Build Comic Studio from an empty canvas](assets/comic-01.jpg)](assets/comic-01.mp4)
 
-**[Watch the 10-minute walkthrough](assets/comic-01.mp4)** · Chinese subtitles · [Import the lesson project](assets/comic-project.zip)
+**[Watch lesson 1](assets/comic-01.mp4)** · Chinese subtitles · [Classroom materials](assets/comic-materials.zip) · [Completed application](assets/comic-project.zip)
 
-| Time | Topic |
+Build a comic application from an empty canvas, export it, then give the deployed application another story. The lesson creates each node and connection, adds character references and a visual review loop, and switches to Python before deployment.
+
+| Time | In the video |
 | --- | --- |
-| 00:12 | Read the four-step workflow |
-| 00:58 | Shared model and connections |
-| 01:44 | Writer prompt, continuity skill and harness |
-| 03:16 | Story input and a real selected-node debug |
-| 04:25 | Shared character references, map and retake loop |
-| 05:57 | Panel director, image tool and visual reviewer |
-| 07:29 | Feedback, history and page layout |
-| 08:38 | Switch to Python and export |
-| 09:24 | The finished comic |
+| 00:10 | Empty canvas, resource library and application input |
+| 01:05 | Writer, character references, panel map and page layout |
+| 02:30 | Panel subflow, drawing tools and visual review loop |
+| 04:55 | Connect the nodes and save |
+| 06:00 | Debug one node and inspect its result |
+| 06:30 | Python view and HTTP export |
+| 07:08 | Configure and start the independent application |
+| 07:50 | Make the first comic |
+| 08:38 | Submit another story to the same application |
+| 09:20 | Finished comic pages |
 
-The lesson project contains the Chinese prompts edited in the video. Import its ZIP in Studio, or unpack it and follow its README. Copy `deployment.example.yaml` to `deployment.yaml`, configure the text and vision connections, then supply a story JSON and the image service described below.
+## 1. Prepare the tools
 
-**Goal:** customize a complete comic application on the canvas. You will edit the writer, shared character references, panel loop and visual review, then open the Python view.
-
-Start from the [working Comic Studio template](../../examples/comic-studio/). Its image and page-layout tools are already connected, so the lesson focuses on the agent design. Install and configure it using the example's **Run** section, including a multimodal reviewer and a running image service. Then open:
+You need Python 3.12+, Node.js 20+, Git, a text model, a vision model and an image-generation service. One multimodal API can serve both agent roles.
 
 ```bash
-python examples/quickstart.py comic-studio studio --port 18766
+git clone --depth 1 https://github.com/Toyhom/EvoSprig.git
+cd EvoSprig
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[models,server,artifacts]'
+npm --prefix apps/studio ci
+npm --prefix apps/studio run build
+python examples/quickstart.py comic-studio setup
 ```
 
-## 1. Read the four-part workflow
+Edit `.evosprig/examples/comic-studio/deployment.yaml`. Set `models.main` and `models.vision`: `base_url`, the provider's served `model` ID, and `api_key_env`. Set those key environment variables in the terminal that starts Studio. For DeepSeek Flash text calls, use `options: {thinking: {type: disabled}}`. The visual reviewer needs a connection with `vision` capability.
 
-The main canvas has **adapt → cast → panels → pages**. `adapt` turns the story into a structured plan. `cast` prepares shared character references. `panels` runs a subflow for every panel. `pages` lays out the images and lettering.
+Start the [image service](../../apps/media-service/README.md) at `http://127.0.0.1:18880`, with `--preload image --idle-unload-seconds 0`. For Chinese lettering, set a CJK font, such as [Noto Sans CJK](https://github.com/notofonts/noto-cjk):
 
-Use **Arrange** to fit the graph. Open the nested `panels` workflow instead of expanding every implementation detail at once.
+```bash
+export EVOSPRIG_COMIC_FONT="/path/to/NotoSansCJKsc-Regular.otf"
+export EVOSPRIG_IMAGE_ORIGIN="http://127.0.0.1:18880"
+evosprig serve --workspace .evosprig/comic-classroom \
+  --profile .evosprig/examples/comic-studio/deployment.yaml \
+  --studio-dir apps/studio/dist --port 18766
+```
 
-## 2. Set one model for the team
+Open `http://127.0.0.1:18766`. Unzip the classroom materials. `library.json` contains tools, prompts, skills and short data-processing functions. `SETTINGS.md` lists the input connections; `schemas/` contains the schemas to paste into the form.
 
-Open **Model connections**, enter your provider URL, model ID and API-key environment variable, then save the connection. Choose it as **Application default model**. Nodes using `main` share this choice.
+## 2. Start with an empty canvas
 
-The visual reviewer uses the `vision` connection. Select it on that node and enable the image input. One multimodal model can serve both roles; a text model and a separate vision model also work.
+Enter `comic-classroom` in **New project name**, create it, then select the starter node and press Delete. In **Resources → Import tool and resource library**, choose `library.json`.
 
-## 3. Give the writer an output contract
+Return to Canvas. Open **Workflow settings** and paste `schemas/application-input.json` into Application input. Set the output schema and execution budget from the corresponding files. The application takes one field, `story`. Choose the configured `main` connection as **Application default model**.
 
-Select `adapt`. Read its prompt and the `continuity` skill. Change the story direction to a four-panel comic with a clear beginning, turn and ending. Keep the output fields: title, style, characters and panels. Each panel includes camera, characters, description, caption and dialogue.
+## 3. Create the four main nodes
 
-In the harness, keep structured-output feedback enabled and limit retries. Save before running. Try a short story about a child lending a blue umbrella to an older neighbor; keep the cast small while learning.
+Type a node name, choose its type, then click **Add node**. Use the inspector to choose its resource or tool and add input fields. A field can read an upstream result or hold a fixed value.
 
-## 4. Keep references shared
+| Node | Type | Configure |
+| --- | --- | --- |
+| `adapt` | Agent | Prompt `adapter`, skill `continuity`, input `story ← input.story`; JSON output from the supplied schema |
+| `cast` | Tool | Tool `assets`; characters and style from `adapt` |
+| `panels` | Map | Items `nodes.adapt.output.panels`; shared catalog from `cast` and style from `adapt` |
+| `pages` | Tool | Tool `layout`; title from `adapt`, panels from `nodes.panels.output.items` |
 
-Select `cast`. This is a required tool step: the workflow always prepares the character catalog. Its output feeds the panel subflow. The agents decide the character descriptions; the tool performs the image work.
+The writer defines the cast before planning the panels. Keep its output repair enabled with two attempts and a 3,200-token output limit. Its prompt assigns four panels a beginning, a problem, an action and an ending. The continuity skill keeps clothing, props and character IDs consistent across the plan.
 
-Change a character's costume in the plan and follow how its reference ID reaches each panel. This is the place to make cast-wide changes.
+## 4. Build one panel, then its review loop
 
-## 5. Open the panel and retake loops
+Open the `panels` subflow and delete its starter node. Create:
 
-Open `panels`, then `takes`. The inner sequence is **direct → draw → preview → review → remember**. The director writes the image prompt; the image tool draws; preview makes the frame available to the reviewer. The reviewer returns `accepted` and specific `feedback`.
+| Node | Type | Job |
+| --- | --- | --- |
+| `context` | Code | Select `frame_context`; choose the current panel's character references |
+| `takes` | Loop | Up to three attempts; stop when `input.accepted` is true |
+| `letter` | Code | Select `panel`; return the image, caption and dialogue |
 
-Edit the director's prompt to name the panel's camera and action, and reuse the supplied character references. Keep the loop at three attempts while testing. The next attempt receives the previous feedback; acceptance stops the loop early.
+Open `takes` and create five nodes:
 
-## 6. Debug one panel
+| Node | Type | Configure |
+| --- | --- | --- |
+| `direct` | Agent | Prompt `frame_director`; receives current context and prior feedback |
+| `draw` | Tool | Tool `image`; receives the prompt, references and image options |
+| `preview` | Tool | Tool `preview`; reads the generated asset |
+| `review` | Agent | Prompt `frame_review`, model `vision`; mark `images` as an image input |
+| `remember` | Code | Select `frame_carry`; carry the image and review into the next attempt |
 
-Save. Use **History**, open a completed panel's step, and choose **Debug with these inputs**. Check the selected map item and loop iteration before running. You can change the director or reviewer and retry that part with its saved inputs.
+Use `SETTINGS.md` for each field and the nested workflow outputs. Choose a JSON response for the agents, and paste their output schemas from `schemas/`. The reviewer returns `accepted` and specific `feedback`: for example, add the missing older man on the right and show the closed umbrella passing between their hands.
 
-For a new project with no history, select `adapt` and use **Debug selection** with the story input first. Inspect its plan before spending image-generation time.
+## 5. Connect, save and debug
 
-## 7. Make the page, then open Python
+Drag from the right handle of a node to the left handle of the next:
 
-Return to the main workflow. `pages` receives the panel images, captions and dialogue and produces a PDF, image and editable HTML. Run with **Live models** and **Allow configured write tools**. The worker follows image jobs in the background.
+- Main workflow: **adapt → cast → panels → pages**.
+- Each panel: **context → takes → letter**.
+- Each attempt: **direct → draw → preview → review → remember**.
 
-Open **Python** after saving. These are the same nodes, resources, model bindings and loops. Use **Export → Python** to continue in an editor.
+Set each subflow's outputs in **Workflow settings**. At the root, return `chapter`, `plan`, `catalog` and `panels` using the supplied field table. Arrange and save.
 
-![A finished four-panel comic](../../examples/comic-studio/assets/page.jpg)
+Select `adapt`, choose **Live model**, enter a short story and choose **Debug selection**. Inspect the cast and four-panel plan before running image generation. Later, **History → Debug with these inputs** lets you rerun one panel with its saved references and feedback.
 
-## Try it yourself
+## 6. Open Python and export
 
-Change the story and one character trait. Keep the output contract, shared-reference flow and review loop. Compare the plan and resulting panels, then adjust the smallest role responsible for a problem.
+Save, then choose **Python**. The view contains the same nodes, resources and loops you just created. Choose **HTTP service** in the export selector and download the ZIP.
 
-**Next:** [move from canvas to Python](canvas-to-python.md). Lookup: [node resources](../agent-resources.md), [Studio debugging](../studio.md), [model services](../local-models.md).
+Extract it into a new directory. Copy your configured `deployment.yaml` into that directory and keep the image service running. Copy [comic_app.py](comic_app.py) alongside `serve.py`; it provides the simple story form used in the video. The completed classroom ZIP already includes it.
+
+## 7. Run the independent application
+
+From the extracted application directory:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.lock
+python -m pip install --no-deps .
+export EVOSPRIG_SERVICE_TOKEN="choose-a-local-service-token"
+# Also set the model-key variables named in deployment.yaml.
+export EVOSPRIG_COMIC_FONT="/path/to/NotoSansCJKsc-Regular.otf"
+export EVOSPRIG_IMAGE_ORIGIN="http://127.0.0.1:18880"
+python serve.py --profile deployment.yaml --workspace runtime \
+  --port 18770 --allow-writes
+```
+
+In another terminal, activate the same environment and set the same service token:
+
+```bash
+export EVOSPRIG_SERVICE_TOKEN="choose-a-local-service-token"
+python comic_app.py --workspace runtime --port 18771
+```
+
+Open **http://127.0.0.1:18771/**, enter a story and select **Make a comic**. The application follows image jobs in the background and shows the completed page, PDF and HTML. Use `/?lang=zh` for Chinese.
+
+Submit another story in the same form. The deployed team, tools and model services are reused. Open Studio again when you want to change how the application works.
+
+![A page made by the classroom application](assets/comic-result.jpg)
+
+Give that same application a new story about a rabbit and a fox watering a sunflower:
+
+![A second story made by the same deployed application](assets/comic-reuse.jpg)
+
+**Next:** [change the application in Python](canvas-to-python.md) or [configure self-evolution](improve-an-agent.md). Reference: [canvas authoring](../studio.md), [model connections](../model-connections.md), [export and deployment](../deployment.md).

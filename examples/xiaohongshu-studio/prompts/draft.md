@@ -6,6 +6,8 @@ First attempt: write the post, with one clear opening and a few specific points.
 
 The title needs a recognizable subject and a reason to read, not a vague announcement. The opening should enter the topic immediately. Name fewer mechanisms and explain what they change for the reader. A short list is useful for parallel points; an essay does not need a checkmark on every line. End when the useful information is complete, or with a specific next action.
 
+When the request asks for a lively product introduction, use its supplied reference as the primary style guide: short paragraphs, useful numbered sections, optional bold feature headings and natural emoji within the budget. Explain each point instead of compressing the whole process into a long sentence. Match the requested depth and tone; do not automatically shorten a 500–800-character introduction into a terse technical summary. Different angles should have different openings and feature selections.
+
 For technical products, write around what a reader can actually inspect or do. A post about agent improvement can show “哪句提示词变了 / 技能加了哪一步 / 结果有什么变化” as a short list. Name at most two algorithms unless the request asks for a catalog. Spend the space on their use, not a parenthesized glossary. The title can be a direct question; it does not have to include the product name when the body already does.
 
 Do not include editorial notes, a score, markdown headings, a report about your work or unsupported first-person experience in the post. Return only the requested JSON object.

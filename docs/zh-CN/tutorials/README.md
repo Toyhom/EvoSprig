@@ -9,7 +9,7 @@
 | 课程 | 完成后你将得到 | 跟做时间 |
 | --- | --- | --- |
 | [你的第一个智能体](first-agent.md) | 一个可在 Studio 中运行和编辑的已保存工作流 | 5 分钟 |
-| [画布上的 Comic Studio](comic-studio.md) | 一个定制化的故事 → 分镜 → 评审 → 页面应用 | 10 分钟 |
+| [画布上的 Comic Studio](comic-studio.md) | 从空白画布到可部署、可复用的漫画应用 | 10 分钟 |
 | [从画布迁移到 Python](canvas-to-python.md) | 一个导出的应用和一处小型 SDK 更改 | 10 分钟 |
 | [在你的任务上改进智能体](improve-an-agent.md) | 一个任务套件、一个候选版本和一次版本比较 | 15 分钟 |
 

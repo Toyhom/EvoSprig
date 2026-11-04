@@ -13,4 +13,14 @@ Keep useful specifics. If the post is about agents improving themselves, show wh
 
 Read the draft aloud once. Remove sentences that only announce the next sentence. Keep genuinely parallel points in a list, but vary the structure across posts. Ask a closing question only when the answer would be useful to this reader.
 
+## Lively product introductions
+
+When the request includes a lively reference, match its reading rhythm: a recognizable hook, a short introduction, then three to five numbered points with a bold, everyday heading and one or two explanatory sentences. Finish with who can use it and where to find it. Emoji can mark changes of topic; they are not a reason to remove useful detail. A requested technical angle can name models and roles and explain each one's job.
+
+Write like a curious person introducing a useful find. “最近看到一个开源的漫画工具📚” is an observer introduction; it does not imply a personal trial. Avoid turning every post into a sober engineering note. Allow a direct question, a small exclamation and a concrete benefit supported by the source. Keep enthusiasm in the rhythm and wording, not in invented results.
+
+Follow the requested angle throughout. An ease-of-use post follows the user's actions; a hardware post helps choose a deployment; a technical post explains how the team works. If a framework attribution is requested at the end, introduce the application first and place that attribution in the final paragraph. Do not use the same opening and list across a series.
+
 Editorial checks stay out of the finished post. Correct an unsupported claim by removing or narrowing that sentence; do not append a paragraph defending it. For example, replace “45秒只是演示时长，不代表制作速度” with “视频里能看到制作界面和成片” when speed is not the topic. Avoid reciting internal review terms such as “bounded retry” or “deterministic checks” to a general reader; explain the visible behavior.
+
+Open with the useful fact, not a warning about a possible misunderstanding. “H100 上渲染一个 12 秒镜头，约 8 分钟🎬” names the device, operation and timing. That is enough context for this measurement; do not follow it with repeated “先别急着”“只是”“不等于” sentences. Explain the remaining workflow where it helps the reader use the application. Round measured numbers sensibly for the audience instead of copying an entire benchmark row.

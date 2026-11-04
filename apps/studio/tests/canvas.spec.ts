@@ -16,6 +16,7 @@ test('nested graphs and nested visual groups survive edits, collapse and reload'
   await expect(page.locator('.canvas-breadcrumb')).toContainText('team');
   await page.locator('.react-flow__node[data-id="draft"]').click();
   const draft=JSON.stringify({...transform('after')});
+  await page.locator('.advanced-node > summary').click();
   await page.getByLabel('Full node (JSON)',{exact:true}).fill(draft);
   // Navigation must commit the pending nested-node draft.
   await page.locator('.canvas-breadcrumb').getByRole('button',{name:'Workflow',exact:true}).click();

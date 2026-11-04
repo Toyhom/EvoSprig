@@ -4,6 +4,14 @@
 
 Open an AgentSpec in Studio, edit its nodes, then save and run the same application you use from Python. Studio starts in English and includes Chinese translations.
 
+## Create and configure nodes
+
+Give a new project a name, then add nodes by name and type. The first node on an empty canvas becomes the entry point. **Workflow settings** defines application input, output fields and the execution budget. Drag between node handles to connect execution order.
+
+The inspector separates node design from execution settings. Input fields accept an upstream reference, such as `nodes.writer.output.title`, or a fixed JSON value. Tool and code nodes select from the project's declared tools and code resources. Map nodes select a list and item limit; loop nodes set an attempt limit and an acceptance reference. Expand **Output schema** to define the result format. **Advanced node JSON** exposes the complete configuration.
+
+In **Resources**, import a tool and resource library with format `evosprig.library.v1`. Each resource supplies `path`, `role` and `content`; each tool supplies `plugin` and `version`. Use libraries to reuse prompts, skills and functions while building a new graph. The [comic lesson](tutorials/comic-studio.md) includes a library and a complete walkthrough.
+
 ## Choose the right node
 
 | Node | Use it for | Appearance |

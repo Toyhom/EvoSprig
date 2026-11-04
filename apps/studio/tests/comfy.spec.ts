@@ -24,6 +24,7 @@ test('import, run, edit and export a ComfyUI graph from the canvas',async({page,
   const document=await(await request.get('/api/projects/'+id)).json();
   const original=document.spec.graph.nodes.comfy_1;
   await page.locator('.react-flow__node[data-id="comfy_1"]').click();
+  await page.locator('.advanced-node > summary').click();
   await page.getByLabel('Full node (JSON)',{exact:true}).fill(JSON.stringify({...original,inputs:{value:{value:14}}}));
   await page.getByRole('button',{name:'Save',exact:true}).click();
   await expect(page.getByRole('status')).toContainText('Saved');

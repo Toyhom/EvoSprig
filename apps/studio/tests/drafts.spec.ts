@@ -42,6 +42,7 @@ test('project changes can be kept, saved before switching, or explicitly discard
 
 test('invalid node drafts survive failed saves and canceled page reloads', async ({ page, request }) => {
   const id = await createProject(page);
+  await page.locator('.advanced-node > summary').click();
   const editor = page.getByLabel('完整节点（JSON）');
   const draft = JSON.parse(await editor.inputValue());
   await editor.fill('{');

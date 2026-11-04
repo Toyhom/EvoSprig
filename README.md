@@ -22,9 +22,8 @@
 
 Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate versions, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
-[![Play: EvoSprig in 52 seconds — canvas, code and self-evolution](docs/assets/evosprig-demo.jpg)](docs/assets/evosprig-demo.mp4)
+https://github.com/user-attachments/assets/7d70ff67-afae-4112-a85b-22d6d7a18f36
 
-**[Watch EvoSprig in 52 seconds · sound on](docs/assets/evosprig-demo.mp4)**
 
 ## What will you build?
 

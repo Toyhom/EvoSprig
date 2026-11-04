@@ -1,3 +1,4 @@
+import {NodeFields,WorkflowFields} from './node-fields';
 import {DefaultModel,ModelsPanel} from './model-connections';
 import { ServicesPanel } from "./services-panel";
 import { version as studioVersion } from '../package.json';
@@ -51,6 +52,7 @@ function App() {
   useEffect(() => { document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'; try { localStorage.setItem('evosprig.language', lang); } catch { /* Storage can be disabled by the browser. */ } }, [lang]);
   const [token, setToken] = useState('');
   const [projectQuery,setProjectQuery]=useState('');
+  const [projectName,setProjectName]=useState('');
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [exportTarget,setExportTarget]=useState('python');
   const [imported,setImported]=useState<{spec:Spec;resources:Record<string,string>;report:unknown}|null>(null);
@@ -64,6 +66,8 @@ function App() {
   const [nodes, setNodes] = useState<FlowNode[]>([]); const [edges, setEdges] = useState<Edge[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('canvas');
+  const [newNodeName,setNewNodeName]=useState('');
+  const [workflowSettings,setWorkflowSettings]=useState(false);
   const [nodeKind,setNodeKind]=useState<NodeKind>('model'); const [selectedEdge,setSelectedEdge]=useState<string|null>(null);
   const [allowWrites,setAllowWrites]=useState(false); const [useRelease,setUseRelease]=useState(false);
   const [specText, setSpecText] = useState(''); const [code, setCode] = useState('');
@@ -182,10 +186,11 @@ function App() {
     return () => { active = false; };
   }, []);
   useEffect(() => () => { runWatch.current++; if (poll.current) clearTimeout(poll.current); }, []);
-  const currentSpec = (): Spec => {
+  const currentSpec = (includeDraft = true): Spec => {
     if (!doc) throw new Error('Select a project');
     return withGraph(doc.spec,graphPath,{ ...graphAt(doc.spec,graphPath),
-      nodes: Object.fromEntries(nodes.map(node => [node.id, node.id === selected && nodeDraftDirty ? parseNodeDraft() : node.data.config])),
+      entry:nodes.some(n=>n.id===graphAt(doc.spec,graphPath).entry)?graphAt(doc.spec,graphPath).entry:(nodes[0]?.id??''),
+      nodes: Object.fromEntries(nodes.map(node => [node.id, includeDraft && node.id === selected && nodeDraftDirty ? parseNodeDraft() : node.data.config])),
       edges: edges.map(({source,target,data})=>({source,target,...(typeof data?.when==='boolean'?{when:data.when}:{} )})) });
   };
   const parseNodeDraft = (): NodeSpec => {
@@ -246,6 +251,8 @@ function App() {
   }))});
   const save = async (): Promise<boolean> => {
     if (!doc) return false;
+    const invalid=document.querySelector<HTMLInputElement|HTMLTextAreaElement>('.editor input:invalid,.editor textarea:invalid');
+    if(invalid){invalid.reportValidity();setStatus(lang==='zh'?'请先修正标记的字段。':'Correct the marked field before saving.');return false;}
     setBusy(true);
     try {
       const spec = tab === 'spec' ? JSON.parse(specText) : currentSpec();
@@ -264,8 +271,10 @@ function App() {
   };
   const addNode = () => {
     if (!doc) return;
-    const id = 'node' + (Math.max(0, ...nodes.map(node => Number(node.id.replace('node', '')) || 0)) + 1);
-    const spec=structuredClone(doc.spec);
+    const id = newNodeName.trim() || 'node' + (Math.max(0, ...nodes.map(node => Number(node.id.replace('node', '')) || 0)) + 1);
+    if(!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(id)||nodes.some(n=>n.id===id)){setStatus(lang==='zh'?'节点名需为英文标识，且不能重复。':'Choose a unique node identifier.');return;}
+    if(!commitNodeDraft())return;
+    const spec=structuredClone(currentSpec());
     if(nodeKind==='map') spec.spec_version='0.3';
     else if(!['model','agent','tool'].includes(nodeKind) && spec.spec_version==='0.1') spec.spec_version='0.2';
     if(['model','agent'].includes(nodeKind)&&!Object.keys(spec.models).length) spec.models.main={binding:'main-model',requires:['text']};
@@ -277,15 +286,16 @@ function App() {
       spec.spec_version='0.3';
       let alias='python';while(spec.tools[alias]&&spec.tools[alias].plugin!=='code.python')alias+='_';
       spec.tools[alias]={plugin:'code.python',version:'1'};
-      let resource=id+'_code';while(spec.resources[resource])resource+='_';
-      spec.resources[resource]={path:`code/${resource}.py`,role:'code'};
-      resources[resource]='def run(inputs):\n    return inputs\n';config.tool=alias;config.code=resource;
+      let resource=Object.keys(spec.resources).find(key=>spec.resources[key].role==='code');
+      if(!resource){resource=id+'_code';while(spec.resources[resource])resource+='_';spec.resources[resource]={path:`code/${resource}.py`,role:'code'};resources[resource]='def run(inputs):\n    return inputs\n';}
+      config.tool=alias;config.code=resource;
     }
     setDoc({...doc,spec,resources});
     setNodes(items => [...items, { id, sourcePosition: Position.Right, targetPosition: Position.Left, position: { x: 60 + nodes.length * 260, y: 150 }, data: { label: `${id} · ${nodeKind}`, config } }]);
+    setNewNodeName('');setSelected(id);setNodeText(JSON.stringify(config,null,2));setNodeDraftDirty(false);setWorkflowSettings(false);setCanvasFit(n=>n+1);
     mutate();
   };
-  const select = (node: FlowNode) => { if (node.id === selected || !commitNodeDraft()) return; setDebugSource(undefined);setSelectedEdge(null);setSelected(node.id); setNodeText(JSON.stringify(node.data.config, null, 2)); };
+  const select = (node: FlowNode) => { setWorkflowSettings(false); if (node.id === selected || !commitNodeDraft()) return; setDebugSource(undefined);setSelectedEdge(null);setSelected(node.id); setNodeText(JSON.stringify(node.data.config, null, 2)); };
   const applyNode = (config: NodeSpec) => { setNodes(items => items.map(item => item.id === selected ? { ...item,
     data: { label: `${item.id} · ${config.type}`, config } } : item)); setNodeText(JSON.stringify(config, null, 2)); setNodeDraftDirty(false); mutate(); };
   const active = nodes.find(node => node.id === selected);
@@ -347,8 +357,8 @@ function App() {
       <div className="projects">{visibleProjects.map(item => <button key={item.id} className={doc?.id === item.id ? 'project active' : 'project'} aria-current={doc?.id===item.id?'page':undefined} title={item.id}
         disabled={!!runId || busy} onClick={() => { if(item.id===doc?.id){setSidebarOpen(false);return;} replaceProject(async () => { try { load(await (await api(`/projects/${item.id}`)).json()); } catch (e) { error(e); } }); }}>
         <Icon name="folder"/><span className="project-name">{item.id}</span><small>r{item.revision}</small></button>)}{!visibleProjects.length&&<p className="sidebar-empty">{lang==='zh'?(projectQuery?'没有匹配的项目':'创建第一个项目'):(projectQuery?'No matching projects':'Create your first project')}</p>}</div>
-      <div className="project-actions"><button className="new-project" aria-label={'＋ '+t.create} disabled={!!runId || busy} onClick={() => replaceProject(async () => {
-        try { const id = `agent-${Date.now().toString(36)}`; setProjectQuery(''); load(await (await api('/projects', { method: 'POST', body: JSON.stringify({ spec: starter(id) }) })).json()); await refresh(); }
+      <div className="project-actions"><input className="new-project-name" aria-label="New project name" placeholder={lang==='zh'?'新工程名称（可选）':'New project name (optional)'} value={projectName} onChange={e=>setProjectName(e.target.value)}/><button className="new-project" aria-label={'＋ '+t.create} disabled={!!runId || busy} onClick={() => replaceProject(async () => {
+        try { const id = projectName.trim() || `agent-${Date.now().toString(36)}`; if(!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(id))throw Error(lang==='zh'?'工程名需以英文字母开头。':'Start the project name with a letter.');setProjectName(''); setProjectQuery(''); load(await (await api('/projects', { method: 'POST', body: JSON.stringify({ spec: starter(id) }) })).json()); await refresh(); }
         catch (e) { error(e); }
       })}><Icon name="plus"/>{t.create}</button>
       <label className="new-project import-project"><Icon name="upload"/>{lang==='zh'?'导入工程':'Import project'}<input aria-label="Import project ZIP" type="file" accept=".zip" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{const item=await(await api('/import/inspect',{method:'POST',headers:{'Content-Type':'application/zip'},body:file})).json();setImported(item);setImportId(item.spec.id+'-import');setSidebarOpen(false);}catch(err){error(err);}e.target.value='';}}/></label></div>
@@ -372,29 +382,29 @@ function App() {
         :tab==='runs'?<RunsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onDebug={debugStep} debugDisabled={busy||!!runId}/>
         :tab==='improve'?<ImprovePanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} dirty={dirty || nodeDraftDirty}/>
         :tab==='versions'?<VersionsPanel key={doc.id} doc={doc} api={api} lang={lang} onError={error} onExport={exportProject} onRun={run}/>
-        :<div className="editor">
+        :<div className="editor" inert={busy} aria-busy={busy}>
           <section className="workspace">
-            {tab === 'canvas' ? <><div className="canvas-tools"><div className="canvas-breadcrumb"><button disabled={busy} onClick={()=>navigate([])}>{lang==='zh'?'工作流':'Workflow'}</button>{graphPath.map((part,i)=>part==='body'||part==='branches'||graphPath[i+1]==='branches'?null:<button key={i} disabled={busy} onClick={()=>navigate(graphPath.slice(0,i+(graphPath[i+1]==='body'?2:1)))}><Icon name="arrow" size={12}/>{part}</button>)}</div><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','map','human','code'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button disabled={busy||!!runId||dirty||nodeDraftDirty||!debugNodes.length} onClick={()=>{setCanvasFocus(false);setDebugOpen(true);}}><Icon name="play"/>{lang==='zh'?'调试所选':'Debug selection'}</button><button onClick={groupSelected} disabled={!nodes.some(n=>n.selected)&&!groupSelection.length}><Icon name="layers"/>{lang==='zh'?'分组':'Group'}</button><button disabled={busy} onClick={async()=>{setBusy(true);try{const layout=await arrange(nodes,edges,groups);setNodes(items=>items.map(item=>({...item,position:layout.find(n=>n.id===item.id)?.position??item.position})));setCanvasFit(n=>n+1);mutate();}catch(e){error(e);}finally{setBusy(false);}}}><Icon name="grid"/>{t.layout}</button><button aria-pressed={canvasFocus} onClick={()=>setCanvasFocus(value=>!value)}><Icon name={canvasFocus?"collapse":"expand"}/>{lang==='zh'?(canvasFocus?'退出专注':'专注画布'):(canvasFocus?'Exit focus':'Focus canvas')}</button></div></div>
+            {tab === 'canvas' ? <><div className="canvas-tools"><div className="canvas-breadcrumb"><button disabled={busy} onClick={()=>navigate([])}>{lang==='zh'?'工作流':'Workflow'}</button>{graphPath.map((part,i)=>part==='body'||part==='branches'||graphPath[i+1]==='branches'?null:<button key={i} disabled={busy} onClick={()=>navigate(graphPath.slice(0,i+(graphPath[i+1]==='body'?2:1)))}><Icon name="arrow" size={12}/>{part}</button>)}</div><div className="canvas-actions"><div className="canvas-tool-group create-node-group"><input aria-label="New node name" placeholder={lang==='zh'?'节点名（可选）':'Node name (optional)'} value={newNodeName} onChange={e=>setNewNodeName(e.target.value)}/><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','map','human','code'] as const).map(kind=><option key={kind} value={kind}>{lang==='zh'?({model:'模型',agent:'智能体',tool:'工具',transform:'数据映射',condition:'条件',join:'汇合',loop:'循环',parallel:'并行',map:'逐项处理',human:'人工',code:'代码'}[kind]):kind}</option>)}</select><button disabled={busy||!!runId} onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button></div><div className="canvas-tool-group"><button disabled={busy||!!runId||dirty||nodeDraftDirty||!debugNodes.length} onClick={()=>{setCanvasFocus(false);setDebugOpen(true);}}><Icon name="play"/>{lang==='zh'?'调试所选':'Debug selection'}</button><button onClick={groupSelected} disabled={!nodes.some(n=>n.selected)&&!groupSelection.length}><Icon name="layers"/>{lang==='zh'?'分组':'Group'}</button><button disabled={busy} onClick={async()=>{setBusy(true);try{const layout=await arrange(nodes,edges,groups);setNodes(items=>items.map(item=>({...item,position:layout.find(n=>n.id===item.id)?.position??item.position})));setCanvasFit(n=>n+1);mutate();}catch(e){error(e);}finally{setBusy(false);}}}><Icon name="grid"/>{t.layout}</button><button aria-pressed={canvasFocus} onClick={()=>setCanvasFocus(value=>!value)}><Icon name={canvasFocus?"collapse":"expand"}/>{lang==='zh'?(canvasFocus?'退出专注':'专注画布'):(canvasFocus?'Exit focus':'Focus canvas')}</button><button aria-label="Workflow settings" aria-pressed={workflowSettings} onClick={()=>{if(commitNodeDraft()){setWorkflowSettings(v=>!v);setSelected(null);}}}><Icon name="settings"/>{lang==='zh'?'工作流设置':'Workflow settings'}</button></div></div></div>
               <ReactFlow onlyRenderVisibleElements key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}`} nodes={displayNodes} nodeTypes={nodeTypes} edgeTypes={edgeTypes} elevateNodesOnSelect={false} multiSelectionKeyCode="Shift" edges={view.edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => {if(node.type==='groupCard'){if(commitNodeDraft())setSelected(null);}else {const actual=nodes.find(n=>n.id===node.id);if(actual)select(actual);}}} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.08} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView revision={String(canvasFit)+String(canvasFocus)+groups.map(g=>g.id+g.collapsed).join()}/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
               : tab === 'spec' ? <textarea className="source-editor" aria-label="AgentSpec JSON" value={specText} onChange={e => { setSpecText(e.target.value); mutate(); }} spellCheck={false}/>
                 : <pre className="source-editor code-view">{dirty ? `${t.runHint}\n\n` : ''}{code}</pre>}
           </section>
-          <aside className="inspector">{debugOpen&&debugNodes.length>0&&<DebugPanel key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}:${debugNodes.join()}:${debugSource?.runId??''}:${debugSource?.source_prefix??''}`} doc={doc} nodes={debugNodes} path={graphPath} api={api} lang={lang} initialInput={(()=>{try{return JSON.parse(input);}catch{return {};}})()} sourceRunId={result?.run_id} initialSource={debugSource} mock={mock} allowWrites={allowWrites} disabled={dirty||nodeDraftDirty||!!runId} onStart={id=>{setResult(null);watchRun(id);}} onClose={()=>setDebugOpen(false)}/>}<div className="inspector-heading"><Icon name="settings"/><span>{t.node}</span></div>
+          <aside className="inspector"><div className="inspector-design">{workflowSettings&&<WorkflowFields key={`${doc.id}:${pathKey(graphPath)}`} spec={currentSpec()} graph={graphAt(currentSpec(),graphPath)} lang={lang} onChange={spec=>{setDoc({...doc,spec});mutate();}} onGraph={graph=>{setDoc({...doc,spec:withGraph(currentSpec(),graphPath,graph)});mutate();}}/>}{debugOpen&&debugNodes.length>0&&<DebugPanel key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}:${debugNodes.join()}:${debugSource?.runId??''}:${debugSource?.source_prefix??''}`} doc={doc} nodes={debugNodes} path={graphPath} api={api} lang={lang} initialInput={(()=>{try{return JSON.parse(input);}catch{return {};}})()} sourceRunId={result?.run_id} initialSource={debugSource} mock={mock} allowWrites={allowWrites} disabled={dirty||nodeDraftDirty||!!runId} onStart={id=>{setResult(null);watchRun(id);}} onClose={()=>setDebugOpen(false)}/>}<div className="inspector-heading"><Icon name="settings"/><span>{t.node}</span></div>
             {groupSelection.length===1&&groups.filter(g=>g.id===groupSelection[0]).map(group=><div className="group-settings" key={group.id}><label>{lang==='zh'?'分组名称':'Group name'}<input aria-label="Group name" value={group.label} maxLength={80} onChange={e=>setGroups(groups.map(g=>g.id===group.id?{...g,label:e.target.value}:g))}/></label><button onClick={()=>setGroups(groups.map(g=>g.id===group.id?{...g,collapsed:!g.collapsed}:g))}>{group.collapsed?(lang==='zh'?'展开分组':'Expand group'):(lang==='zh'?'折叠分组':'Collapse group')}</button><label>{lang==='zh'?'分组布局':'Group layout'}<select aria-label="Group layout" value={group.direction??'DOWN'} onChange={e=>setGroups(groups.map(g=>g.id===group.id?{...g,direction:e.target.value as 'RIGHT'|'DOWN'}:g))}><option value="DOWN">{lang==='zh'?'纵向':'Vertical'}</option><option value="RIGHT">{lang==='zh'?'横向':'Horizontal'}</option></select></label><button onClick={()=>ungroup(group.id)}>{lang==='zh'?'取消分组':'Ungroup'}</button></div>)}
             {selectedEdge&&<label>{lang==='zh'?'分支条件':'Branch condition'}<select aria-label="Edge condition" value={typeof edges.find(edge=>edge.id===selectedEdge)?.data?.when==='boolean'?String(edges.find(edge=>edge.id===selectedEdge)?.data?.when):'always'} onChange={e=>{const value=e.target.value;setEdges(items=>items.map(edge=>edge.id===selectedEdge?{...edge,data:{when:value==='always'?undefined:value==='true'},label:value==='always'?undefined:value}:edge));mutate();}}><option value="always">{lang==='zh'?'始终执行':'Always'}</option><option value="true">true</option><option value="false">false</option></select></label>}
             {active ? <><h3>{active.id}<span className="pill">{active.data.config.type}</span></h3>
               {childGraphs(active.data.config).map(child=><button key={child.label} disabled={busy} onClick={()=>navigate([...graphPath,active.id,...child.path])}>{lang==='zh'?'打开子流程':'Open subflow'} · {child.label}</button>)}
               {['model','agent'].includes(active.data.config.type)&&<AgentSettings api={api} key={active.id} id={active.id} node={active.data.config} doc={doc} lang={lang} onChange={(node,changes)=>{const spec=currentSpec();if(changes?.models)spec.models=changes.models;if(changes?.definitions)spec.resources=changes.definitions;if(changes?.tools)spec.tools=changes.tools;if(node.type==='agent')spec.spec_version='0.3';setDoc({...doc,spec,resources:changes?.resources??doc.resources});applyNode(node);}}/>}
-              {active.data.config.type==='code'&&<label>{lang==='zh'?'JSON 值上限（字符）':'JSON value limit (characters)'}<input type="number" aria-label="Code JSON value limit" min={1024} max={8388608} placeholder="1048576" value={active.data.config.code_max_value_chars??''} onChange={e=>applyNode({...active.data.config,code_max_value_chars:e.target.value?Number(e.target.value):null})}/></label>}
-              <label>{t.nodeJson}<textarea className="node-json" aria-label={t.nodeJson} value={nodeText} onChange={e => { setNodeText(e.target.value); setNodeDraftDirty(true); }}/></label>
-              <button onClick={() => { try { applyNode(parseNodeDraft()); } catch (e) { error(e); } }}>{t.apply}</button></> : <div className="inspector-empty"><span className="empty-symbol"><Icon name="settings" size={21}/></span><strong>{lang==='zh'?'选择一个节点':'Select a node'}</strong><p>{lang==='zh'?'点击画布中的节点，查看和编辑参数。':'Click a node on the canvas to edit its properties.'}</p></div>}
-            <div className="divider"/><div className="section-label input-heading"><Icon name="play" size={14}/>{t.input}</div><label><textarea aria-label={t.input} value={input} onChange={e => setInput(e.target.value)}/></label>
+              <NodeFields key={`${doc.id}:${pathKey(graphPath)}:${active.id}`} node={active.data.config} doc={doc} graph={graphAt(currentSpec(false),graphPath)} lang={lang} onChange={applyNode}/>{active.data.config.type==='code'&&<label>{lang==='zh'?'JSON 值上限（字符）':'JSON value limit (characters)'}<input type="number" aria-label="Code JSON value limit" min={1024} max={8388608} placeholder="1048576" value={active.data.config.code_max_value_chars??''} onChange={e=>applyNode({...active.data.config,code_max_value_chars:e.target.value?Number(e.target.value):null})}/></label>}
+              <details className="advanced-node"><summary>{lang==='zh'?'高级：完整节点':'Advanced: full node'}</summary><label>{t.nodeJson}<textarea className="node-json" aria-label={t.nodeJson} value={nodeText} onChange={e => { setNodeText(e.target.value); setNodeDraftDirty(true); }}/></label>
+              <button onClick={() => { try { applyNode(parseNodeDraft()); } catch (e) { error(e); } }}>{t.apply}</button></details></> : <div className="inspector-empty"><span className="empty-symbol"><Icon name="settings" size={21}/></span><strong>{lang==='zh'?'选择一个节点':'Select a node'}</strong><p>{lang==='zh'?'点击画布中的节点，查看和编辑参数。':'Click a node on the canvas to edit its properties.'}</p></div>}
+            </div><section className="run-settings"><div className="section-label input-heading"><Icon name="play" size={14}/>{t.input}</div><label><textarea aria-label={t.input} value={input} onChange={e => setInput(e.target.value)}/></label>
             <select aria-label="Run mode" value={mock ? 'mock' : 'live'} onChange={e => setMock(e.target.value === 'mock')}><option value="mock">{t.offline}</option><option value="live">{t.live}</option></select>
             <label className="check"><input type="checkbox" checked={allowWrites} onChange={e=>setAllowWrites(e.target.checked)}/>{lang==='zh'?'允许已配置的写入工具':'Allow configured write tools'}</label>
             <label className="check"><input type="checkbox" checked={useRelease} onChange={e=>setUseRelease(e.target.checked)}/>{lang==='zh'?'运行发布版本':'Run active release'}</label>
             <button className="primary run" aria-label={'▷ '+t.run} onClick={()=>run()} disabled={busy || dirty || nodeDraftDirty || !!runId}><Icon name="play" size={14}/>{t.run}</button>
             {runId && <button onClick={() => api(`/runs/${runId}/cancel`, { method: 'POST' }).catch(error)}>{t.cancel}</button>}
-            <p className="hint">{t.runHint}</p>
+            <p className="hint">{t.runHint}</p></section>
           </aside>
         </div>}
         <section className="results"><div className="results-heading"><span><Icon name="code" size={15}/>{t.output}</span>{result&&<span className={`status-badge status-${result.status}`}>{result.status}</span>}</div>{!result&&<p className="results-placeholder">{lang==='zh'?'运行工作流后，在这里查看输出、用量和事件。':'Run your workflow to inspect its output, usage and events.'}</p>}

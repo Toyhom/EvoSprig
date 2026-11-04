@@ -28,6 +28,24 @@ export function ResourcesPanel({doc,lang,onChange,onError}:Props & {onChange:(do
   return <section className="panel"><h2>{say(lang,'提示与技能资源','Prompt and skill resources')}</h2>
     <p className="muted">{say(lang,'编辑资源后保存项目。改进任务只会修改你选中的资源。','Save after editing. Improvement jobs change only the resources you select.')}</p>
     <div className="inline-form"><select aria-label="Resource type" value={role} onChange={e=>setRole(e.target.value as 'prompt'|'skill'|'code')}><option value="prompt">Prompt</option><option value="skill">Skill</option><option value="code">Code</option></select><input aria-label="Resource name" value={name} onChange={e=>setName(e.target.value)}/><button onClick={()=>{try{add();}catch(e){onError(e);}}}>{say(lang,'将指令保存为资源','Create instruction resource')}</button></div>
+    <label className="library-import import-project">{say(lang,'导入工具与资源库','Import tool and resource library')}<input type="file" accept=".json" aria-label="Import resource library" onChange={async event=>{
+      const file=event.target.files?.[0];if(!file)return;
+      try{
+        if(file.size>2_000_000)throw Error('Library exceeds 2 MB');
+        const library=JSON.parse(await file.text()),spec=structuredClone(doc.spec),content={...resources};
+        if(library.format!=='evosprig.library.v1')throw Error('Expected evosprig.library.v1');
+        for(const [key,item] of Object.entries(library.resources??{}) as [string,{path:string;role:'prompt'|'skill'|'code';content:string}][]){
+          if(!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(key)||spec.resources[key])throw Error('Invalid or existing resource: '+key);
+          if(!item||typeof item.content!=='string'||typeof item.path!=='string'||!['prompt','skill','code'].includes(item.role))throw Error('Invalid resource: '+key);
+          spec.resources[key]={path:item.path,role:item.role};content[key]=item.content;
+        }
+        for(const [key,item] of Object.entries(library.tools??{}) as [string,{plugin:string;version:string}][]){
+          if(!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(key)||spec.tools[key]||typeof item?.plugin!=='string')throw Error('Invalid or existing tool: '+key);
+          spec.tools[key]={plugin:item.plugin,version:item.version??'1'};
+        }
+        onChange({...doc,spec,resources:content});
+      }catch(error){onError(error);}finally{event.target.value='';}
+    }}/></label><p className="hint">{say(lang,'资源库包含提示词、技能、代码和工具声明。节点和连线在画布中创建。','Libraries provide prompts, skills, code and tool declarations. Create nodes and connections on the canvas.')}</p>
     {!Object.keys(doc.spec.resources).length && <Empty>{say(lang,'先将模型指令保存为资源，即可运行改进。','Create an instruction resource to enable improvement.')}</Empty>}
     {Object.entries(doc.spec.resources).map(([key,meta])=><article className="card" key={key}><h3>{key} <span className="pill">{meta.role}</span></h3><p className="mono muted">{meta.path}</p>
       <textarea className="resource-editor" aria-label={`Resource ${key}`} value={resources[key]??''} onChange={e=>onChange({...doc,resources:{...resources,[key]:e.target.value}})}/></article>)}
