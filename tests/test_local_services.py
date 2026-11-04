@@ -6,7 +6,12 @@ import sys
 import pytest
 import yaml
 
-from evosprig.local_services import ServiceConfig, ServiceManager, prepare_services
+from evosprig.local_services import (
+    ServiceConfig,
+    ServiceManager,
+    prepare_services,
+    service_environment,
+)
 
 
 @pytest.fixture
@@ -16,13 +21,13 @@ def service(tmp_path):
         port = sock.getsockname()[1]
     source = tmp_path / "model.py"
     source.write_text('''from http.server import HTTPServer,BaseHTTPRequestHandler
-import json
+import json,os
 class Handler(BaseHTTPRequestHandler):
     loads=0
     def log_message(self,*args): pass
     def do_GET(self):
         self.send_response(200);self.end_headers()
-        self.wfile.write(json.dumps({"loaded":self.loads>0,"loads":self.loads}).encode())
+        self.wfile.write(json.dumps({"loaded":self.loads>0,"loads":self.loads,"devices":os.environ.get("CUDA_VISIBLE_DEVICES")}).encode())
     def do_POST(self):
         if not self.headers.get("Idempotency-Key"):
             self.send_response(422);self.end_headers();return
@@ -86,3 +91,23 @@ def test_service_config_rejects_remote_and_credential_urls():
     for url in ["https://host/health", "http://" + "user:password@localhost/health"]:
         with pytest.raises(ValueError):
             ServiceConfig(health_url=url)
+
+
+def test_gpu_placement_selects_inside_allocation_and_reaches_the_child(service, monkeypatch):
+    profile, _ = service
+    monkeypatch.setenv('CUDA_VISIBLE_DEVICES', 'GPU-one,GPU-two')
+    raw = yaml.safe_load(profile.read_text())
+    raw['services']['model']['gpu_devices'] = [1]
+    profile.write_text(yaml.safe_dump(raw))
+    manager = ServiceManager(profile)
+    status = manager.ensure('model')
+    assert status['health']['devices'] == 'GPU-two'
+    assert status['cuda_visible_devices'] == 'GPU-two'
+    config = ServiceConfig(health_url='http://localhost/health', gpu_devices=[2])
+    with pytest.raises(ValueError, match='outside'):
+        service_environment(config)
+    assert service_environment(config, {})['CUDA_VISIBLE_DEVICES'] == '2'
+    with pytest.raises(ValueError, match='unique'):
+        ServiceConfig(health_url='http://localhost/health', gpu_devices=[0, 0])
+    assert service_environment(ServiceConfig(health_url='http://localhost/health'),
+                               {'CUDA_VISIBLE_DEVICES': '3,7'})['CUDA_VISIBLE_DEVICES'] == '3,7'

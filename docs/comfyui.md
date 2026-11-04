@@ -1,5 +1,7 @@
 # ComfyUI tools
 
+[English](comfyui.md) · [简体中文](zh-CN/comfyui.md) · [Documentation](README.md)
+
 Import a ComfyUI workflow, connect its tools to agents, and export an editable workflow again. Models, adapters, conditioning, sampling and output nodes keep their individual connections. Episode Studio includes a [render recipe](../apps/episode-studio/render-recipe.json) to start from.
 
 ## Open a workflow

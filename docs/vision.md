@@ -1,5 +1,7 @@
 # Images and vision models
 
+[English](vision.md) · [简体中文](zh-CN/vision.md) · [Documentation](README.md)
+
 Model and agent nodes can consume images alongside ordinary structured inputs. Studio also previews image and video assets in run results and human approval steps: select **Show media** to open them. Declare the `vision` capability and select the input bindings that contain images:
 
 ```python

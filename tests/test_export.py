@@ -179,3 +179,25 @@ def test_exported_document_application_can_load_its_own_data(tmp_path):
     assert citations[0]["text"] == doc.read_text()
     assert citations[0]["source"] == "documents/handbook.md"
     assert not (target / "src/evosprig/server/app.py").exists()
+
+
+def test_export_preserves_capabilities_for_shared_and_vision_bindings(tmp_path):
+    import yaml
+
+    from evosprig.config import make_models
+    from evosprig.core.version import compile_snapshot
+    from evosprig.sdk import Builder
+
+    builder = Builder("vision-export", {"type": "object"}, {"type": "object"})
+    builder.default_model("shared", ["text", "structured_output"])
+    builder.model("review", "shared", ["text", "vision"])
+    builder.node("writer", "model", inputs={}, instructions="Write.", output_schema={})
+    builder.node("reviewer", "model", model="review", inputs={}, instructions="Review.", output_schema={})
+    builder.edge("writer", "reviewer").output(result={"ref": "nodes.reviewer.output"})
+    version = compile_snapshot(builder.build_spec(), {})
+    export_python(version, tmp_path / "app")
+    profile = tmp_path / "app/deployment.example.yaml"
+    data = yaml.safe_load(profile.read_text())
+    assert data["models"]["shared"]["capabilities"] == ["structured_output", "text", "vision"]
+    assert data["models"]["shared"]["model"] == "your-vision-model"
+    assert set(make_models(version.spec, profile)) == {"shared"}

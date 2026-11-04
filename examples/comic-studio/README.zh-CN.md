@@ -14,6 +14,12 @@
 
 **《雨中的蓝伞》**：同一组人物参考，四个分格，一页完整小故事。
 
+## 跟着做一遍
+
+[![十分钟带你开发智能体：漫画工作室](../../docs/tutorials/assets/comic-01.jpg)](../../docs/tutorials/assets/comic-01.mp4)
+
+[观看第一期](../../docs/tutorials/assets/comic-01.mp4) · [图文教程与课堂工程](../../docs/zh-CN/tutorials/comic-studio.md)
+
 ## 如何工作
 
 改编智能体规划分格和角色，分格导演撰写画面指令，本地图像工具共用人物参考，视觉审核可发起有限次数重画。排版工具添加文字，输出 PDF、页面图片和可编辑 HTML。在画布上选择对应 map 项，可以单独重画一格。

@@ -10,13 +10,13 @@
 
 [English](README.md) · **简体中文**
 
-[快速开始](docs/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/evolution.md) · [文档](docs/README.md) · [论文引用](docs/references.md)
+[入门教程](docs/zh-CN/tutorials/README.md) · [快速开始](docs/zh-CN/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/zh-CN/evolution.md) · [文档](docs/zh-CN/README.md) · [论文引用](docs/zh-CN/references.md)
 
 </div>
 
 ## News · 项目动态
 
-- **2026-11-04** · **[ComfyUI 工作流](docs/comfyui.md)** — 导入工作流 JSON，在画布中编辑、调试工具节点，再导出到 ComfyUI。
+- **2026-11-04** · **[ComfyUI 工作流](docs/zh-CN/comfyui.md)** — 导入工作流 JSON，在画布中编辑、调试工具节点，再导出到 ComfyUI。
 - **2026-11-04** · **[Episode Studio](examples/episode-studio/README.zh-CN.md)**：把小说或一句创意拍成动画，智能体团队负责剧本、固定角色、逐镜制作和自动检查。
 - **2026-11-02** · EvoSprig 初版开源：自进化智能体共性开发平台，支持代码与画布开发、任务评估和持续改进。
 
@@ -77,7 +77,7 @@
 - **可控自进化**：23 种无需训练模型的策略、21 个方法家族，包括 SkillOpt、ADAS、ModularRSI、DarwinX 和 Arbor，支持提示词、技能、harness、流程与代码进化；资源、预算和发布条件由你控制。
 - **适配真实应用的评估**：只提供任务输入即可使用 LLM judge，也可接入参考答案、业务评分器或评测环境；支持答案、节点、轨迹、工具和环境结果等粒度。
 - **代码与画布一致**：统一 AgentSpec，支持多智能体、并行、动态 map、循环与人工审核，以及多层分组、折叠展开和子流程编辑。
-- **连同业务环境一起构建**：从金融、政务或制造业场景生成数据结构、SOP、工具与数据草稿，将验证后的业务沙箱接入评估和自进化。[使用方法](docs/industry-environments.md)。
+- **连同业务环境一起构建**：从金融、政务或制造业场景生成数据结构、SOP、工具与数据草稿，将验证后的业务沙箱接入评估和自进化。[使用方法](docs/zh-CN/industry-environments.md)。
 - **可用的长期记忆**：作用域隔离、混合检索、上下文块、时序关系、关联经验和保留来源的摘要。
 - **面向实际工作的工具**：视觉输入、HTTP、MCP、SQL 与 Python 插件，可选代码执行、浏览器和 OCR 服务，以及只读并发与错误反馈。
 - **恢复和独立部署**：持久检查点、外部任务回执、版本比较与回滚；导出 Python、HTTP 服务或容器构建工程。
@@ -114,12 +114,14 @@ evosprig serve --project examples/hello/agent.yaml \
 
 [学习教练](examples/study-coach/)使用 GSM8K 改编的教学任务，一轮 Self-Refine 自动修改两个共享技能，让出题和反馈围绕给定教材；页面直接展示实际改动和答案。
 
-[书籍创作](examples/book-studio/)与[文档问答](examples/document-chat/)直接展示实际提示词修改和精选输出对照。使用自己的输入开启 [LLM-as-judge](docs/evaluation.md)，或提供评测集与环境。[配置指南](docs/agent-resources.md)说明如何完成首次改进。
+[书籍创作](examples/book-studio/)与[文档问答](examples/document-chat/)直接展示实际提示词修改和精选输出对照。使用自己的输入开启 [LLM-as-judge](docs/zh-CN/evaluation.md)，或提供评测集与环境。[配置指南](docs/zh-CN/agent-resources.md)说明如何完成首次改进。
 
 ## 文档与贡献
 
-**[应用开发：画布与 Python](docs/build-applications.md)** · **[框架扩展](docs/extend-framework.md)** · **[接入自进化算法](docs/optimizer-plugins.md)**
+[教程](docs/zh-CN/tutorials/README.md)一步步带你做出应用；[参考文档](docs/zh-CN/README.md)按主题查模型、工具、记忆、评估和部署。两套内容均提供中英文。
 
-[架构](docs/architecture.md) · [记忆](docs/memory.md) · [工具](docs/tools.md) · [部署](docs/deployment.md) · [路线图](docs/roadmap.md) · [贡献指南](CONTRIBUTING.md)
+**[应用开发：画布与 Python](docs/zh-CN/build-applications.md)** · **[框架扩展](docs/zh-CN/extend-framework.md)** · **[接入自进化算法](docs/zh-CN/optimizer-plugins.md)**
+
+[架构](docs/zh-CN/architecture.md) · [记忆](docs/zh-CN/memory.md) · [工具](docs/zh-CN/tools.md) · [部署](docs/zh-CN/deployment.md) · [路线图](docs/zh-CN/roadmap.md) · [贡献指南](CONTRIBUTING.md)
 
 [Apache-2.0](LICENSE)

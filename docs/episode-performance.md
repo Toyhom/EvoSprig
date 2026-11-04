@@ -1,5 +1,7 @@
 # Episode Studio runtime and resource use
 
+[English](episode-performance.md) · [简体中文](zh-CN/episode-performance.md) · [Documentation](README.md)
+
 Episode Studio separates the director, image generation, video rendering and CPU media work into services. A production session loads its models once and reuses them across shots and films. An API director removes the local language-model allocation.
 
 ## Measured rendering

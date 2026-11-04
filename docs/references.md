@@ -1,5 +1,7 @@
 # Research references
 
+[English](references.md) · [简体中文](zh-CN/references.md) · [Documentation](README.md)
+
 Original research behind EvoSprig’s [evolution methods](evolution.md), [memory](memory.md) and [tool use](tools.md).
 
 ## Training-free evolution

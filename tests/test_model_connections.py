@@ -42,3 +42,21 @@ async def test_shared_deployment_connections_are_operator_managed(tmp_path):
         response = await client.put('/api/models', json={'name': 'writer', 'connection': {
             'base_url': 'https://provider.example/v1', 'model': 'writer', 'api_key_env': 'MODEL_KEY'}})
         assert response.status_code == 403
+
+
+async def test_service_placement_is_saved_and_respects_the_parent_allocation(tmp_path, monkeypatch):
+    import socket
+
+    with socket.socket() as sock:
+        sock.bind(('127.0.0.1', 0))
+        port = sock.getsockname()[1]
+    profile = tmp_path / 'deployment.yaml'
+    profile.write_text(yaml.safe_dump({'models': {}, 'services': {'writer': {
+        'health_url': f'http://127.0.0.1:{port}/health', 'autostart': False}}}))
+    monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '3,7')
+    app = create_app(tmp_path / 'workspace', profile=profile)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url='http://localhost') as client:
+        assert (await client.put('/api/services/writer/placement', json={'gpu_devices': [1]})).status_code == 200
+        assert yaml.safe_load(profile.read_text())['services']['writer']['gpu_devices'] == [1]
+        assert (await client.put('/api/services/writer/placement', json={'gpu_devices': [2]})).status_code == 422
+        assert (await client.put('/api/services/writer/placement', json={'gpu_devices': [-1]})).status_code == 422

@@ -1,5 +1,7 @@
 # Memory and documents
 
+[English](memory.md) · [简体中文](zh-CN/memory.md) · [Documentation](README.md)
+
 SQLite is the baseline `MemoryStore`. Each record belongs to an exact
 `tenant / user / project / role / namespace` scope. Selection applies that scope
 before relevance ranking. The baseline supports explicit writes, exact deduplication,

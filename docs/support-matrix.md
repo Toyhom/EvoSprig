@@ -1,5 +1,7 @@
 # Supported capabilities
 
+[English](support-matrix.md) · [简体中文](zh-CN/support-matrix.md) · [Documentation](README.md)
+
 | Area | Available |
 | --- | --- |
 | Authoring | Python Builder, YAML/JSON AgentSpec 0.1/0.2/0.3, Studio canvas, nested visual groups and subflow editor |

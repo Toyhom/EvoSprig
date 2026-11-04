@@ -1,4 +1,4 @@
-import {ModelsPanel} from './model-connections';
+import {DefaultModel,ModelsPanel} from './model-connections';
 import { ServicesPanel } from "./services-panel";
 import { version as studioVersion } from '../package.json';
 import { AgentSettings } from './agent-settings';
@@ -270,7 +270,7 @@ function App() {
     else if(!['model','agent','tool'].includes(nodeKind) && spec.spec_version==='0.1') spec.spec_version='0.2';
     if(['model','agent'].includes(nodeKind)&&!Object.keys(spec.models).length) spec.models.main={binding:'main-model',requires:['text']};
     if(nodeKind==='tool'&&!Object.keys(spec.tools).length) spec.tools.add={plugin:'builtin.add',version:'1'};
-    const config = nodeTemplate(nodeKind,Object.keys(spec.models)[0],Object.keys(spec.tools)[0]);
+    const config = nodeTemplate(nodeKind,spec.models.main?'main':Object.keys(spec.models)[0],Object.keys(spec.tools)[0]);
     if(nodeKind==='tool' && spec.tools[config.tool!]?.plugin==='builtin.add') config.inputs={a:{value:1},b:{value:2}};
     const resources={...doc.resources};
     if(nodeKind==='code'){
@@ -355,7 +355,7 @@ function App() {
       <button className="new-project" disabled={busy||!!runId} onClick={()=>{setComfyOpen(true);setSidebarOpen(false);}}>ComfyUI · {lang==='zh'?'导入工作流':'Import workflow'}</button><div className="sidebar-bottom"><details className="connection-settings"><summary><Icon name="settings"/>{t.settings}</summary>
         <input aria-label={t.token} placeholder={t.token} type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} />
         <button disabled={busy || !!runId} onClick={() => replaceProject(() => refresh().then(items => { if (items.length) load(items[0]); }).catch(error))}>{t.reload}</button>
-      </details><ModelsPanel api={api} lang={lang}/><ServicesPanel api={api} lang={lang}/><div className="sidebar-meta"><span>v{studioVersion}</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
+      </details>{doc&&<DefaultModel api={api} lang={lang} doc={doc} onChange={models=>{if(!commitNodeDraft())return;setDoc({...doc,spec:{...currentSpec(),models}});mutate();}}/>}<ModelsPanel api={api} lang={lang}/><ServicesPanel api={api} lang={lang}/><div className="sidebar-meta"><span>v{studioVersion}</span><button className="language" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>中文 / EN</button></div></div>
     </aside>
     <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty || nodeDraftDirty?' is-dirty':''}`}>{dirty || nodeDraftDirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
       <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => replaceProject(async () => { if (doc) await api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error); })} disabled={!doc || !!runId || busy}><Icon name="refresh"/></button>

@@ -1,5 +1,7 @@
 # Repository tools
 
+[English](repository-tools.md) · [简体中文](zh-CN/repository-tools.md) · [Documentation](README.md)
+
 Give a coding agent its own Git worktree and a named test command. The source checkout stays available while the agent reads files, writes changes, runs checks and returns a patch.
 
 Install Git on the worker's `PATH`. Set an environment variable to your local repository, then configure a `repository` binding for each operation:

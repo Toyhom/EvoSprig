@@ -1,5 +1,7 @@
 # Configure an agent
 
+[English](agent-resources.md) · [简体中文](zh-CN/agent-resources.md) · [Documentation](README.md)
+
 An agent combines a model, a main prompt, reusable skills and a selected set of tools. These settings are part of its behavior version and travel with an exported application.
 
 ![Prompt and skill settings in Studio](assets/agent-settings.png)

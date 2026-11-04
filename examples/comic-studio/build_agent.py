@@ -6,6 +6,8 @@ from evosprig.core.spec import save_spec
 from evosprig.plugins.artifact_tools import obj
 from evosprig.sdk import Builder
 
+DEFAULT_MODEL = "main"
+
 TEXT = {"type": "string"}
 ANY = {"type": "object"}
 ASSET = obj(id=TEXT, uri=TEXT, media_type=TEXT)
@@ -18,14 +20,14 @@ def build():
     def ref(path):
         return {"ref": path}
     b = Builder("comic-studio", obj(story={"type": "string", "maxLength": 6000}), ANY, spec_version="0.3")
-    b.model("main", "main", ["text", "structured_output"])
+    b.default_model(DEFAULT_MODEL, ["text", "structured_output"])
     b.tool("assets", "media.assets").tool("image", "comic.image").tool("preview", "comic.vision").tool("layout", "artifacts.comic").tool("python", "code.python")
     b.model("vision", "vision", ["text", "structured_output", "vision"])
     b.resource("frame_director", "prompts/frame_director.md").resource("frame_review", "prompts/frame_review.md")
     b.resource("adapter", "prompts/adapter.md").skill("continuity", "skills/continuity.md")
     for name in ["panel", "frame_context", "frame_carry"]:
         b.resource(name, f"code/{name}.py", role="code")
-    b.node("adapt", "agent", model="main", instructions={"resource": "adapter"}, skills=["continuity"],
+    b.node("adapt", "agent", instructions={"resource": "adapter"}, skills=["continuity"],
            inputs={"story": ref("input.story")}, response_format="json",
            output_schema=obj(title=TEXT, style=TEXT, characters=CHARACTERS,
                              panels={"type": "array", "items": PANEL, "minItems": 4, "maxItems": 8}),

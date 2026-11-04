@@ -1,5 +1,7 @@
 # Durable runtime
 
+[English](durable-runtime.md) · [简体中文](zh-CN/durable-runtime.md) · [Documentation](README.md)
+
 AgentSpec 0.2 adds `transform`, `condition`, `join`, bounded `loop`, named `parallel`
 branches and `human` input nodes. The original 0.1 documents keep their canonical
 representation. Conditions use typed predicates; no Python expressions are evaluated.

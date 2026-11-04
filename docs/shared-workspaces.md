@@ -1,5 +1,7 @@
 # Shared documents, peer messages and wake-ups
 
+[English](shared-workspaces.md) · [简体中文](zh-CN/shared-workspaces.md) · [Documentation](README.md)
+
 Agents and people can edit the same project documents. EvoSprig stores content, revision history and write receipts in `documents.sqlite`, scoped by tenant, user and project.
 
 ```python

@@ -10,7 +10,7 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-[Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md) · [Research references](docs/references.md)
+[Tutorials](docs/tutorials/README.md) · [Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md) · [Research references](docs/references.md)
 
 </div>
 
@@ -124,6 +124,8 @@ Explore the **[book-writing comparison](examples/book-studio/)** and **[document
 Bring your own inputs to **[LLM-as-judge](docs/evaluation.md)**, or connect your evaluator. The **[method guide](docs/evolution.md)** explains which feedback each strategy uses.
 
 ## Documentation
+
+Follow the [tutorials](docs/tutorials/README.md) to build your first application. Use the [reference](docs/README.md#reference) to look up models, tools, memory, evaluation and deployment. Both are available in [Chinese](docs/zh-CN/README.md).
 
 **[Build applications: canvas and Python](docs/build-applications.md)** · **[Extend the framework](docs/extend-framework.md)** · **[Add an evolution algorithm](docs/optimizer-plugins.md)**
 

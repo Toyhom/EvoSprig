@@ -1,5 +1,7 @@
 # Evolve the application harness
 
+[English](harness-search.md) · [简体中文](zh-CN/harness-search.md) · [Documentation](README.md)
+
 Choose the parts of an application that may change, supply your tasks, and run a search. A candidate can include prompts, skill libraries, Python resources, per-agent harness settings, model choices and workflow topology. EvoSprig executes the complete candidate through its runtime and stores its version and diff.
 
 ## Give each agent a harness

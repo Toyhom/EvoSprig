@@ -5,6 +5,15 @@ type Connection={name:string;base_url:string;model:string;api_key_env:string;cap
 type Catalog={editable:boolean;services:string[];models:Connection[]};
 const providers:Record<string,string>={OpenAI:'https://api.openai.com/v1',DeepSeek:'https://api.deepseek.com',Kimi:'https://api.moonshot.cn/v1',MiniMax:'https://api.minimax.io/v1',Qwen:'https://dashscope.aliyuncs.com/compatible-mode/v1','Local / Custom':'http://127.0.0.1:8000/v1'};
 const empty:Connection={name:'',base_url:providers.OpenAI,model:'',api_key_env:'MODEL_API_KEY',capabilities:['text','structured_output','tool_calling'],json_mode:'without_tools',timeout_seconds:300};
+export function DefaultModel({api,lang,doc,onChange}:{api:Api;lang:Lang;doc:Document;onChange:(models:Spec['models'])=>void}){
+ const [catalog,setCatalog]=useState<Connection[]>([]);
+ useEffect(()=>{let live=true;const update=()=>{api('/models').then(r=>r.json()).then(data=>{if(live)setCatalog(data.models);}).catch(()=>{});};update();window.addEventListener('evosprig-models',update);return()=>{live=false;window.removeEventListener('evosprig-models',update);};},[api]);
+ const binding=doc.spec.models.main?.binding??'';
+ return <label className="default-model">{lang==='zh'?'应用默认模型':'Application default model'}<select aria-label="Application default model" value={binding} onChange={e=>{const connection=catalog.find(item=>item.name===e.target.value);if(connection)onChange({...doc.spec.models,main:{binding:connection.name,requires:doc.spec.models.main?.requires??connection.capabilities}});}}>
+  {!catalog.some(item=>item.name===binding)&&<option value={binding}>{binding||(lang==='zh'?'先添加模型连接':'Add a model connection')}</option>}
+  {catalog.map(item=><option key={item.name} value={item.name}>{item.name} · {item.model}</option>)}
+ </select><small>{lang==='zh'?'各节点默认使用 main，需要时单独覆盖。':'Nodes use main by default; override individual roles when needed.'}</small></label>;
+}
 export function ModelsPanel({api,lang}:{api:Api;lang:Lang}){
  const [catalog,setCatalog]=useState<Catalog>({editable:false,services:[],models:[]});const [form,setForm]=useState<Connection>(empty);const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
  const say=(en:string,zh:string)=>lang==='zh'?zh:en;
@@ -31,7 +40,7 @@ export function NodeModel({api,lang,node,doc,onChange}:{api:Api;lang:Lang;node:N
  const available=catalog.filter(item=>!Object.values(doc.spec.models).some(model=>model.binding===item.name));
  return <section className="setting-section"><h4>{say('Model','模型')}</h4>
   <label>{say('Model binding','模型绑定')}<select aria-label="Model binding" value={node.model??''} onChange={e=>{const value=e.target.value;if(value.startsWith('connection:')){const name=value.slice(11),connection=catalog.find(c=>c.name===name)!;let alias=name;while(doc.spec.models[alias])alias+='_';onChange({...node,model:alias},{...doc.spec.models,[alias]:{binding:name,requires:connection.capabilities}});}else onChange({...node,model:value});}}>
-   {Object.entries(doc.spec.models).map(([name,entry])=><option value={name} key={name}>{name}{catalog.find(c=>c.name===entry.binding)?.model?' · '+catalog.find(c=>c.name===entry.binding)!.model:''}</option>)}
+   {Object.entries(doc.spec.models).map(([name,entry])=><option value={name} key={name}>{name==='main'?say('Default (main)','默认（main）'):name}{catalog.find(c=>c.name===entry.binding)?.model?' · '+catalog.find(c=>c.name===entry.binding)!.model:''}</option>)}
    {!!available.length&&<optgroup label={say('Configured connections','已配置连接')}>{available.map(item=><option value={'connection:'+item.name} key={item.name}>{item.name} · {item.model}</option>)}</optgroup>}
   </select></label>
   <p className="hint">{current?`${current.base_url} · ${current.api_key_env}`:say('Add endpoints under Model connections in the sidebar.','在左侧“模型连接”中添加厂商 API 或本地地址。')}</p>

@@ -1,5 +1,7 @@
 # Extend EvoSprig
 
+[English](extend-framework.md) · [简体中文](zh-CN/extend-framework.md) · [Documentation](README.md)
+
 Core contracts live in `src/evosprig/core`. Concrete model, tool and memory implementations live in `plugins`; optimization algorithms live in `evolution`. CLI, Studio and exported applications use the same runtime.
 
 ## Extension contracts

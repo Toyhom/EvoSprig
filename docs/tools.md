@@ -1,5 +1,7 @@
 # Tool connections
 
+[English](tools.md) · [简体中文](zh-CN/tools.md) · [Documentation](README.md)
+
 Python functions use `Tool` and explicit registration. Input/output JSON schemas,
 versions, timeouts, effect class and idempotency are part of the contract. A synchronous
 function runs in a thread; an asynchronous function runs on the event loop.

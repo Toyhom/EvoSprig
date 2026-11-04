@@ -1,0 +1,61 @@
+[English](../studio.md) · **简体中文** · [文档目录](README.md)
+
+<a id="build-on-the-canvas"></a>
+
+# 在画布上构建
+
+在 Studio 中打开 AgentSpec，编辑其节点，然后保存并运行你在 Python 中使用的同一个应用。Studio 启动时使用英文，并包含中文翻译。
+
+<a id="choose-the-right-node"></a>
+
+## 选择合适的节点
+
+| 节点 | 用途 | 外观 |
+| --- | --- | --- |
+| Agent | 模型选择工具并针对任务进行迭代 | 带有其工具集的 Agent 卡片 |
+| Model | 一个模型步骤，例如起草或分类 | 紧凑的推理卡片 |
+| Tool | 必须运行的操作：OCR、SQL、Python、HTTP | 带有能力图标的任务卡片 |
+| Transform / join | 映射值并将分支汇合在一起 | 小型实用节点 |
+| Condition | 确定性谓词 | 带有 true/false 端口的分支卡片 |
+| Human | 审核或提供明确响应 | 审批卡片 |
+| Loop / map / parallel | 重复工作、批次或多个团队 | 带有入口按钮的子流卡片 |
+
+同一个类型化工具既可用于确定性的 tool 节点，也可提供给 agent 使用。将业务操作保留在工具中，将编排保留在图节点中。有关 Python、HTTP 和 MCP 契约，请参阅[自定义工具](tools.md)。
+
+<a id="organize-a-large-application"></a>
+
+## 组织大型应用
+
+**按住 Shift 选择节点 → Group** 会创建可视组。在检查器中重命名它，将其折叠为摘要，或展开以检查各个节点。选择同一层级的组可创建另一个外层组。取消分组会保留节点和连接。折叠的连接会汇总跨组边界的链接；展开组即可编辑各个连接。
+
+可视组不会增加执行步骤，也不会更改行为版本。它们会随项目的画布元数据一起保存。示例项目可以包含 `studio.json` sidecar；首次创建项目时，`evosprig serve --project` 会加载它。现有工作区编辑会保留。**Arrange** 使用带嵌套组边界的分层布局。展开的组默认采用垂直布局；在组检查器中选择水平或垂直，然后排列。拖动折叠的组可将其内容一起移动。
+
+Loop、map 和 parallel 卡片会打开真实可执行的子图。使用面包屑导航返回外层图。导航和保存时，编辑内容、待处理的节点 JSON 和位置都会保留。这些子图共享应用声明的模型、工具和提示资源。
+
+选择 **Focus canvas** 以获得更多空间检查大型图。**Exit focus** 或按 Escape 可恢复项目列表和检查器。打开节点调试也会使检查器重新出现。
+
+<a id="try-a-node-or-a-group"></a>
+
+## 试用节点或组
+
+选择一个节点、多个节点或折叠的组，然后选择 **Debug selection**。填写输入字段，或选择 **Use outputs from the last run**。必填字段从显示的默认值开始；仅在需要时添加可选字段。所选节点使用其当前提示和设置执行，面板为周围图提供已保存的输出。
+
+在 map 或 loop 内，选择一个已保存的 item 或 take。Studio 会恢复该次执行的输入，包括上一次 shot 的状态。也可以选择彼此分离的节点：实时输出在所选节点之间流动，而中间输出来自已保存的运行。重复调试运行会保留你上次使用的输入。
+
+从规划节点开始，然后试用资产组和单个渲染步骤。**History** 显示每个结果和任何服务错误。这些部分正常工作后，运行完整应用。
+
+**Steps** 显示已完成的工作、工具等待和失败，包括每个 map item 和 loop take。选择一个步骤以查看其已保存的输入、输出和媒体。**Debug with these inputs** 会在画布上打开该节点，并选中相同的 item 或 take。编辑输入或提示，然后单独运行该节点。
+
+<a id="tune-model-behavior"></a>
+
+## 调整模型行为
+
+检查器中的 **Execution settings** 控制节点的输出 token 限制和结构化输出修复策略。空的 token 限制会继承应用默认值。对于偶尔生成无效 JSON 的模型，选择反馈修复，并设置最大重试次数。每次重试仍会消耗共享的执行预算。
+
+Studio 分组使用 [React Flow](https://reactflow.dev/learn/layouting/sub-flows) 视图模型和 [ELK](https://github.com/kieler/elkjs) 布局引擎。执行遵循显式的 workflow/agent 与子图区分，这些区分也用于 [LangGraph](https://docs.langchain.com/oss/python/langgraph/workflows-agents)；确定性操作使用类型化工具，类似于 [Dify code nodes](https://docs.dify.ai/en/use-dify/nodes/code)。
+
+<a id="agent-configuration"></a>
+
+## Agent 配置
+
+选择 agent 以编辑其主提示、附加可复用技能、选择工具和内存访问，并设置模型参数。**Make prompt evolvable** 会将内联指令转为资源。Improve 页面可以优化提示或附加技能，并在应用输出旁显示其更改。请参阅 [agent 配置](agent-resources.md)。

@@ -24,6 +24,10 @@ class Builder:
         self.data["models"][name] = {"binding": binding, "requires": requires or ["text"]}
         return self
 
+    def default_model(self, binding: str, requires: list[str] | None = None):
+        """Set the shared main connection; nodes can override it with model=alias."""
+        return self.model("main", binding, requires)
+
     def tool(self, name: str, plugin: str, version: str = "1"):
         self.data["tools"][name] = {"plugin": plugin, "version": version}
         return self
@@ -76,4 +80,14 @@ class Builder:
         return self
 
     def build_spec(self) -> AgentSpec:
-        return AgentSpec.model_validate(deepcopy(self.data))
+        data = deepcopy(self.data)
+        def defaults(graph):
+            for node in graph["nodes"].values():
+                if node["type"] in {"agent", "model"} and not node.get("model"):
+                    node["model"] = "main"
+                if node.get("body"):
+                    defaults(node["body"])
+                for branch in node.get("branches", {}).values():
+                    defaults(branch)
+        defaults(data["graph"])
+        return AgentSpec.model_validate(data)

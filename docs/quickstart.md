@@ -1,5 +1,7 @@
 # Quickstart
 
+[English](quickstart.md) · [简体中文](zh-CN/quickstart.md) · [Documentation](README.md)
+
 Requires Python 3.12+. Building Studio also requires Node.js 20+.
 
 ## Install and run

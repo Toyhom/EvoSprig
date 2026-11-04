@@ -10,7 +10,8 @@ test('model connections bind individual agents and expose resident service prelo
    const body=route.request().postDataJSON();connection={name:body.name,...body.connection};
    return route.fulfill({json:{saved:body.name}});
   }
-  return route.fulfill({json:{editable:true,services:['vision-server'],models:connection?[connection]:[]}});
+  const writer={name:'writer-api',base_url:'https://writer.example/v1',model:'writer',api_key_env:'WRITER_KEY',capabilities:['text']};
+  return route.fulfill({json:{editable:true,services:['vision-server'],models:connection?[writer,connection]:[writer]}});
  });
  await page.route('**/api/services/vision-server/warmup',route=>{preloads++;return route.fulfill({json:{ready:true}});});
  await page.goto('/');await page.locator('.project[title="'+id+'"]').click();
@@ -30,13 +31,30 @@ test('model connections bind individual agents and expose resident service prelo
  await page.getByRole('button',{name:'Preload vision-server',exact:true}).click();
  await expect(page.locator('.agent-settings')).toContainText('Ready · retained across runs');
  expect(preloads).toBe(1);
+ await page.getByLabel('Application default model',{exact:true}).selectOption('writer-api');
  await page.getByRole('button',{name:'Save',exact:true}).click();
  await expect(page.locator('.save-state')).toHaveText('Saved');
  const saved=await(await request.get('/api/projects/'+id)).json();
  expect(saved.spec.graph.nodes.writer.model).toBe('main');
  expect(saved.spec.graph.nodes.reviewer.model).toBe('local-vision');
  expect(saved.spec.models['local-vision'].binding).toBe('local-vision');
+ expect(saved.spec.models.main.binding).toBe('writer-api');
  await page.reload();await page.locator('.project[title="'+id+'"]').click();
  await page.locator('.react-flow__node[data-id="reviewer"]').click();
  await expect(page.getByLabel('Model binding',{exact:true})).toHaveValue('local-vision');
+ await expect(page.getByLabel('Application default model',{exact:true})).toHaveValue('writer-api');
+});
+
+test('GPU placement is chosen before preloading and becomes read-only while resident',async({page})=>{
+ let devices:number[]|null=null,ready=false;
+ await page.route('**/api/services',route=>route.fulfill({json:{services:[{name:'writer',ready,reachable:ready,managed:ready,retention:'persistent',gpu_devices:devices,cuda_visible_devices:ready?'GPU-second':null}]}}));
+ await page.route('**/api/services/writer/placement',route=>{devices=route.request().postDataJSON().gpu_devices;return route.fulfill({json:{saved:'writer'}});});
+ await page.route('**/api/services/writer/warmup',route=>{ready=true;return route.fulfill({json:{ready}});});
+ await page.goto('/');await page.getByText('Local models & tools',{exact:true}).click();
+ await page.getByLabel('GPUs writer',{exact:true}).fill('1');
+ await page.getByRole('button',{name:'Save placement',exact:true}).click();
+ expect(devices).toEqual([1]);
+ await page.getByRole('button',{name:'Preload',exact:true}).click();
+ await expect(page.getByLabel('GPUs writer',{exact:true})).toBeDisabled();
+ await expect(page.locator('.service-status')).toContainText('CUDA_VISIBLE_DEVICES=GPU-second');
 });

@@ -1,5 +1,7 @@
 # Self-hosting and application deployment
 
+[English](deployment.md) · [简体中文](zh-CN/deployment.md) · [Documentation](README.md)
+
 The platform provides editing, evaluation and version management. An exported application runs a selected version independently.
 
 ## Run the platform

@@ -1,5 +1,7 @@
 # Architecture
 
+[English](architecture.md) · [简体中文](zh-CN/architecture.md) · [Documentation](README.md)
+
 AgentSpec is the shared contract for Python, Studio, evaluation and export. A version combines a validated graph, content-addressed resources and dependency information. Layout changes do not change the behavior hash.
 
 ![EvoSprig architecture](assets/architecture.svg)

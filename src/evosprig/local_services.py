@@ -13,7 +13,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.error import URLError
 from urllib.parse import urlsplit
 from urllib.request import ProxyHandler, Request, build_opener
@@ -36,9 +36,12 @@ class ServiceConfig(Contract):
     auth_env: str | None = Field(default=None, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
     autostart: bool = True
     retention: Literal["persistent"] = "persistent"
+    gpu_devices: list[Annotated[int, Field(ge=0)]] | None = Field(default=None, min_length=1, max_length=64)
 
     @model_validator(mode="after")
     def local_only(self):
+        if self.gpu_devices is not None and len(set(self.gpu_devices)) != len(self.gpu_devices):
+            raise ValueError("GPU positions must be unique")
         for endpoint in (self.health_url, self.warmup_url):
             if endpoint:
                 url = urlsplit(endpoint)
@@ -50,6 +53,22 @@ class ServiceConfig(Contract):
         if any(not value or "\x00" in value for value in self.command):
             raise ValueError("service command arguments must be nonempty")
         return self
+
+
+def service_environment(config, inherited=None):
+    """Select positions inside an existing allocation, or physical IDs outside one."""
+    env = dict(os.environ if inherited is None else inherited)
+    if config.gpu_devices is not None:
+        visible = env.get("CUDA_VISIBLE_DEVICES")
+        if visible is None:
+            selected = [str(index) for index in config.gpu_devices]
+        else:
+            available = [part.strip() for part in visible.split(",") if part.strip() and part.strip() != "-1"]
+            if any(index >= len(available) for index in config.gpu_devices):
+                raise ValueError("gpu_devices selects a position outside CUDA_VISIBLE_DEVICES")
+            selected = [available[index] for index in config.gpu_devices]
+        env["CUDA_VISIBLE_DEVICES"] = ",".join(selected)
+    return env
 
 
 def _identity(pid):
@@ -139,13 +158,16 @@ class ServiceManager:
             ready = ready and bool(state.get("warmed"))
         return {"name": name, "ready": ready, "reachable": health is not None,
                 "managed": owned, "pid": state.get("pid") if owned else None,
-                "retention": config.retention, "health": health}
+                "retention": config.retention, "health": health,
+                "gpu_devices": config.gpu_devices,
+                "cuda_visible_devices": state.get("cuda_visible_devices") if owned else None}
 
     def ensure(self, name):
         config = self.configs[name]
         if config.auth_env and not os.environ.get(config.auth_env):
             raise ValueError("Local service authentication variable is missing: " + config.auth_env)
-        signature = hashlib.sha256(config.model_dump_json().encode()).hexdigest()
+        fields = config.model_dump(mode="json", exclude={"gpu_devices"} if config.gpu_devices is None else set())
+        signature = hashlib.sha256(json.dumps(fields, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
         with self._lock(name):
             state = self._read(name)
             health = self._health(config)
@@ -156,11 +178,13 @@ class ServiceManager:
                 if not config.command:
                     raise ValueError(f"{name}: service is unavailable; start its server first")
                 cwd = (self.profile.parent / config.cwd).resolve()
+                env = service_environment(config)
                 with (self.root / f"{name}.log").open("ab") as log:
                     child = subprocess.Popen(config.command, cwd=cwd, stdin=subprocess.DEVNULL,
-                                             stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                                             stdout=log, stderr=subprocess.STDOUT, start_new_session=True, env=env)
                 state = {"pid": child.pid, "birth": _identity(child.pid),
-                         "signature": signature, "warmed": False, "started": time.time()}
+                         "signature": signature, "warmed": False, "started": time.time(),
+                         "cuda_visible_devices": env.get("CUDA_VISIBLE_DEVICES")}
                 self._write(name, state)
                 owned = True
             elif not owned:

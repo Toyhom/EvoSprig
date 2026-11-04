@@ -1,30 +1,35 @@
-# Documentation
+# EvoSprig documentation
 
-## Build an agent application
+[English](README.md) · [简体中文](zh-CN/README.md)
 
-Start with the [application developer guide](build-applications.md), covering Python and the visual canvas.
+**Learn by building. Look up details when you need them.**
 
-| Step | Guide |
+## Tutorials
+
+Follow the [learning path](tutorials/README.md) to build, run and improve an application. Each lesson starts with a runnable project and ends with a change you can try.
+
+1. [Your first agent](tutorials/first-agent.md) — install, run and edit instructions.
+2. [Ten minutes to a comic agent](tutorials/comic-studio.md) — design on the canvas, debug a panel and open Python.
+3. [Move from canvas to Python](tutorials/canvas-to-python.md) — export, run independently and keep developing.
+4. [Improve an agent on your tasks](tutorials/improve-an-agent.md) — evaluate, search and compare versions.
+
+## Reference
+
+Use these guides to look up configuration, behavior and interfaces.
+
+| Topic | Guides |
 | --- | --- |
-| Install and run | [Quickstart](quickstart.md) |
-| Choose a starting point | [Episode Studio](../examples/episode-studio/) · [Super-agent](../examples/repository-agent/) · [CoworkOS](../examples/cowork/) · [All examples](../examples/) |
-| Design the agent | [Prompts, skills and model settings](agent-resources.md) · [Studio](studio.md) · [SDK and graphs](architecture.md) |
-| Connect capabilities | [Tools and MCP](tools.md) · [ComfyUI](comfyui.md) · [Repository tools](repository-tools.md) · [Vision](vision.md) · [Memory](memory.md) · [Shared documents and peer messages](shared-workspaces.md) |
-| Improve the application | [Evaluation](evaluation.md) · [Self-evolution](evolution.md) · [Harness and code search](harness-search.md) · [Industry environments](industry-environments.md) |
-| Run in production | [Event triggers](triggers.md) · [Recovery](durable-runtime.md) · [Deployment and export](deployment.md) · [Preload local models](local-models.md) |
+| Installation and application structure | [Quickstart](quickstart.md) · [Developer guide](build-applications.md) · [Architecture and graphs](architecture.md) · [Python SDK and full schema](sdk.md) |
+| Canvas and node design | [Studio](studio.md) · [Prompts, skills and harness](agent-resources.md) |
+| Models | [Default model and node overrides](model-connections.md) · [Vision and provider options](vision.md) · [Preload and GPU placement](local-models.md) · [Model sources](model-sources.md) |
+| Tools and integrations | [Tools and MCP](tools.md) · [Repository tools](repository-tools.md) · [ComfyUI import/export](comfyui.md) |
+| Memory and collaboration | [Memory](memory.md) · [Shared documents and messages](shared-workspaces.md) |
+| Evaluation | [Tasks, metrics and judges](evaluation.md) · [Industry environments](industry-environments.md) |
+| Self-evolution / RSI | [Evolution](evolution.md) · [Editable components](evolution-components.md) · [Harness and code search](harness-search.md) · [Method requirements](method-requirements.md) |
+| Deployment | [Export and deployment](deployment.md) · [Durable runtime and recovery](durable-runtime.md) · [Event triggers](triggers.md) · [Episode performance](episode-performance.md) |
 
-## Extend EvoSprig
+## Extend the framework
 
-Start with the [framework contributor guide](extend-framework.md).
+[Contributor guide](extend-framework.md) · [Optimizer plugins](optimizer-plugins.md) · [Example conventions](example-guide.md) · [Development setup](../CONTRIBUTING.md)
 
-| Extension | Guide |
-| --- | --- |
-| Add an evolution algorithm | [Optimizer plugins](optimizer-plugins.md) |
-| Add a model, tool, memory backend or evaluator | [Extension contracts](extend-framework.md#extension-contracts) |
-| Understand editable components and future methods | [Evolution components](evolution-components.md) · [Method requirements](method-requirements.md) |
-| Contribute an application | [Example conventions](example-guide.md) |
-| Set up development | [Contributing](../CONTRIBUTING.md) |
-
-[Research references](references.md) · [Supported interfaces](support-matrix.md) · [Roadmap](roadmap.md)
-
-[Models for each agent](model-connections.md) · [Preload local models](local-models.md)
+[Applications](../examples/README.md) · [Supported interfaces](support-matrix.md) · [Research references](references.md) · [Roadmap](roadmap.md)

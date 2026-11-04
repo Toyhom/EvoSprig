@@ -1,5 +1,7 @@
 # Match evaluation data to an improvement method
 
+[English](method-requirements.md) · [简体中文](zh-CN/method-requirements.md) · [Documentation](README.md)
+
 The same application task can support several optimization methods. What differs is the feedback each method consumes. EvoSprig's [evaluation contract](evaluation.md) supplies scores, written feedback, node outputs, tool receipts and environment observations without requiring a fixed benchmark collection.
 
 ## Implemented strategies

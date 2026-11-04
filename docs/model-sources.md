@@ -1,5 +1,7 @@
 # Model sources
 
+[English](model-sources.md) · [简体中文](zh-CN/model-sources.md) · [Documentation](README.md)
+
 EvoSprig's source code is licensed under Apache-2.0. Model weights, external runtimes and supplied assets retain their respective licenses. Installers download weights from the upstream repositories to the user's machine; the EvoSprig repository contains source code and download references.
 
 | Component | Upstream source and terms |

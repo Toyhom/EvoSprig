@@ -1,5 +1,7 @@
 # Build an agent application
 
+[English](build-applications.md) · [简体中文](zh-CN/build-applications.md) · [Documentation](README.md)
+
 An EvoSprig application combines a graph, editable resources and deployment bindings. The same AgentSpec opens in Studio and runs through the Python runtime.
 
 ## Start from a working application

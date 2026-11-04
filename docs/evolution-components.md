@@ -1,5 +1,7 @@
 # What can evolve?
 
+[English](evolution-components.md) · [简体中文](zh-CN/evolution-components.md) · [Documentation](README.md)
+
 EvoSprig searches versioned application resources and developer-selected behavior fields. Configure the task set and search space, then choose one of **23 strategies across 21 method families**.
 
 | Component | Search target |

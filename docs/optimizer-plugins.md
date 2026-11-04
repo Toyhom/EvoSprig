@@ -1,5 +1,7 @@
 # Add an evolution algorithm
 
+[English](optimizer-plugins.md) · [简体中文](zh-CN/optimizer-plugins.md) · [Documentation](README.md)
+
 Implement an async function receiving `EvolutionContext` and `StudyConfig`, then register it. EvoSprig supplies candidate versions, task execution, scoring, budgets and release validation.
 
 ## Minimal optimizer

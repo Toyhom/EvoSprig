@@ -14,6 +14,12 @@ Application inspiration: [漫刻 AI](https://agent2048.com/zh/projects/w9ke86rmm
 
 **The blue umbrella**: shared character references, four panels and a complete short story.
 
+## Learn to build it
+
+[![Ten minutes to a comic agent](../../docs/tutorials/assets/comic-01.jpg)](../../docs/tutorials/assets/comic-01.mp4)
+
+[Watch lesson 1](../../docs/tutorials/assets/comic-01.mp4) · [Step-by-step tutorial](../../docs/tutorials/comic-studio.md) · [中文教程](../../docs/zh-CN/tutorials/comic-studio.md)
+
 ## How it works
 
 An adaptation agent plans the panels and cast. A panel director writes scene instructions, image tools reuse character references, and a visual reviewer requests bounded retakes. Then the page tool adds captions and dialogue and exports a PDF, page images and editable HTML. Debug a selected map item to redraw one panel.

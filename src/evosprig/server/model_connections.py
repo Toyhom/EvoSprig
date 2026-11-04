@@ -18,8 +18,39 @@ class ModelConnectionUpdate(Contract):
     connection: Connection
 
 
+class ServicePlacementUpdate(Contract):
+    gpu_devices: list[int] | None = None
+
+
 def install_model_routes(app, profile, *, editable=True):
     lock = asyncio.Lock()
+
+    @app.put("/api/services/{name}/placement")
+    async def save_placement(name: str, body: ServicePlacementUpdate):
+        if not editable:
+            raise HTTPException(403, "Shared services are managed by the server operator")
+        if profile is None:
+            raise HTTPException(409, "Start Studio with --profile deployment.yaml")
+        from evosprig.local_services import ServiceConfig, ServiceManager, service_environment
+
+        async with lock:
+            data = read_profile(profile)
+            if name not in data.get("services", {}):
+                raise HTTPException(404, "Service not found")
+            config = {**data["services"][name], "gpu_devices": body.gpu_devices}
+            try:
+                service_environment(ServiceConfig.model_validate(config))
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from None
+            status = await asyncio.to_thread(ServiceManager(profile).status, name)
+            if status["reachable"] or status["managed"]:
+                raise HTTPException(409, "Stop this service before changing its GPU placement")
+            data["services"][name] = config
+            path = Path(profile)
+            temporary = path.with_name(path.name + ".tmp")
+            temporary.write_text(yaml.safe_dump(data, sort_keys=False))
+            temporary.replace(path)
+        return {"saved": name, "gpu_devices": body.gpu_devices}
 
     @app.get("/api/models")
     async def list_models():

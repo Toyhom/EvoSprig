@@ -1,5 +1,7 @@
 # Build industry agents with their own working environment
 
+[English](industry-environments.md) · [简体中文](zh-CN/industry-environments.md) · [Documentation](README.md)
+
 An industry agent needs more than a question and an answer. It may need to read an application, check a policy, update a record and request approval. EvoSprig connects environment construction, business tools and outcome-based evaluation so you can develop that whole workflow.
 
 ![Industry environment construction and agent development](../examples/industry-environment-builder/assets/overview.svg)

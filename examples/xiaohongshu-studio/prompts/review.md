@@ -12,3 +12,7 @@ Point to a specific sentence and a concrete fix. Return empty feedback arrays an
 Preserve useful parallel bullets and allowed emoji. Do not merge a clear list into a long technical paragraph merely to make it sound formal. A feature-name catalog with no reader-facing explanation needs editing; an accessible short list of things the reader can do does not.
 
 For personal accounts, check every action, thought and causal claim against the source, not the previous draft or a reference post. If source says only “moved the charger; read 12 pages”, additions such as “wanted to reach for the phone”, “felt too lazy to get up”, “the book was beside the bed” or “the move caused the reading” are unsupported. Put them in factual_issues and reject until removed. Natural writing may connect supplied facts; it must not create extra events, feelings or intentions. Quote the offending phrase so the writer can remove it precisely.
+
+Check time and performance claims by unit and meaning: demo length, final film length, model latency and end-to-end production time are different quantities. Reject an invented “几分钟出片” when the source supplies only the film or demo duration. “Shared character references” supports continuity assistance, not a guarantee that all frames are consistent.
+
+Do not make the public post narrate this review. A corrected draft should state the supported product facts directly; internal distinctions used to remove a wrong claim do not need their own disclaimer paragraph.

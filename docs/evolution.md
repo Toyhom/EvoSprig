@@ -1,5 +1,7 @@
 # Self-evolving agents and controlled RSI
 
+[English](evolution.md) · [简体中文](zh-CN/evolution.md) · [Documentation](README.md)
+
 Automatically improve the prompts and skills your agent uses. Choose editable resources, bring your tasks and evaluator, set a budget, then inspect the resulting versions before release.
 
 The self-improvement loop revises application resources, reruns the same tasks and uses feedback for further candidates. You control which resources can change, the budget and version adoption.

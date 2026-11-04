@@ -1,5 +1,7 @@
 # Build on the canvas
 
+[English](studio.md) · [简体中文](zh-CN/studio.md) · [Documentation](README.md)
+
 Open an AgentSpec in Studio, edit its nodes, then save and run the same application you use from Python. Studio starts in English and includes Chinese translations.
 
 ## Choose the right node
