@@ -8,9 +8,11 @@
 
 Give Episode Studio a story. Its agents develop the script, cast and locations, create the reference images, direct each shot and assemble the film with dialogue and sound. The entire production team is editable in EvoSprig.
 
-[**Watch the film ↓**](#on-the-hillside) · [**Make your own ↓**](#make-a-film) · [**Meet the agents**](build_agent.py)
+[**Showcase ↓**](#showcase) · [**Features ↓**](#features) · [**Make a film ↓**](#implementation)
 
-## On the hillside
+## Showcase
+
+### Vera’s Melancholy · opening scene
 
 [![Play the animated opening](assets/hillside.webp)](assets/hillside.mp4)
 
@@ -20,7 +22,7 @@ Give Episode Studio a story. Its agents develop the script, cast and locations, 
 
 From [Vera’s Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉的忧郁), an in-game book in *Genshin Impact*.
 
-## From story to screen
+## Features
 
 | You bring | The team takes care of |
 | --- | --- |
@@ -29,13 +31,15 @@ From [Vera’s Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉�
 | A scene that needs another take | Visual checks, specific corrections and bounded retakes |
 | A longer story | Ordered shots, ending-frame continuity and the final cut with audio |
 
-### It can spot a wrong character
+### Automatic visual review and retakes
 
 ![Automatic visual review corrects the foreground character](assets/retake.jpg)
 
-The editor spots the wrong character in the foreground. The shot director redraws the frame with Vera’s short hair, blue dress and position beside Sachi restored.
+The visual editor checks generated frames against the cast and shot plan. When it finds a mismatch, it sends specific corrections to the shot director and requests another take. Here it restored Vera’s short hair, blue dress and position beside Sachi.
 
-## Make a film
+## Implementation
+
+### Run the application
 
 ![Episode Studio: story input and production progress](assets/application.png)
 
@@ -50,7 +54,7 @@ Use **Open canvas** to change an agent, **Debug selection** to try a node or gro
 
 **[Installation, API models and domestic mirrors](../../apps/episode-studio/)** · **[ComfyUI import/export](../../docs/comfyui.md)**
 
-## Your team, your next episode
+### Edit the team and continue a series
 
 Change the [role instructions](prompts/), [production skills](skills/) and [render recipe](../../apps/episode-studio/render-recipe.json). The render agent keeps the tuned defaults and changes only what the shot needs. Its video-prompt skill follows [MiniMax H3’s official examples](https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing).
 

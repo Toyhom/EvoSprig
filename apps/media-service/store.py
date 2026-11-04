@@ -6,7 +6,24 @@ import sqlite3
 import time
 import uuid
 from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
+
+
+def retry_storage(operation):
+    """Retry read/idempotent transactions without repeating media generation."""
+    @wraps(operation)
+    def wrapped(*args, **kwargs):
+        for attempt in range(4):
+            try:
+                return operation(*args, **kwargs)
+            except sqlite3.OperationalError as exc:
+                # Extended IOERR codes retain the primary code in the low byte.
+                code = getattr(exc, "sqlite_errorcode", 0) & 255
+                if code not in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED, sqlite3.SQLITE_IOERR} or attempt == 3:
+                    raise
+                time.sleep(0.1 * 2 ** attempt)
+    return wrapped
 
 
 class JobStore:
@@ -26,6 +43,7 @@ class JobStore:
         finally:
             db.close()
 
+    @retry_storage
     def submit(self, operation, key, payload):
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         fingerprint = hashlib.sha256((operation + encoded).encode()).hexdigest()
@@ -42,6 +60,7 @@ class JobStore:
                        (identifier, operation, key, fingerprint, encoded, now, now))
             return identifier
 
+    @retry_storage
     def get(self, identifier, operation=None):
         with self.connect() as db:
             row = db.execute("SELECT * FROM jobs WHERE id=?", (identifier,)).fetchone()
@@ -63,6 +82,7 @@ class JobStore:
             db.execute("UPDATE jobs SET status='running', updated=? WHERE id=?", (time.time(), row["id"]))
             return dict(row)
 
+    @retry_storage
     def finish(self, identifier, output=None, error=None):
         with self.connect() as db:
             db.execute("UPDATE jobs SET status=?, output=?, error=?, updated=? WHERE id=? AND status='running'",
@@ -88,6 +108,7 @@ class JobStore:
         with self.connect() as db:
             db.execute("UPDATE jobs SET status='failed', error='Worker interrupted; retry this job or submit a new take', updated=? WHERE status='running'", (time.time(),))
 
+    @retry_storage
     def counts(self):
         with self.connect() as db:
             return {row["status"]: row["count"] for row in db.execute(
@@ -100,7 +121,10 @@ class JobStore:
         try:
             output = backend.execute(row["operation"], json.loads(row["payload"]), row["id"],
                                      lambda: self.get(row["id"])["status"] == "canceled")
-            self.finish(row["id"], output)
         except Exception as exc:
             self.finish(row["id"], error=f"{type(exc).__name__}: {str(exc)[:500]}")
+        else:
+            # A failed completion write must never turn a successful render into
+            # a failed job that could be rendered again by an automatic retry.
+            self.finish(row["id"], output)
         return True

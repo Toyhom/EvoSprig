@@ -1,0 +1,20 @@
+fields:
+  /graph/nodes/editing/max_iterations:
+    kind: integer
+    minimum: 1
+    maximum: 3
+  /graph/nodes/editing/body/nodes/draft/temperature:
+    kind: number
+    minimum: 0.3
+    maximum: 0.8
+modules:
+  angle:
+    - resource:brief
+  writing:
+    - resource:draft
+    - resource:voice
+    - resource:examples
+    - /graph/nodes/editing/body/nodes/draft/temperature
+  editing:
+    - resource:review
+    - /graph/nodes/editing/max_iterations

@@ -159,6 +159,67 @@ def test_cancel_and_interrupted_job_are_not_replayed(service):
     assert store.claim() is None
 
 
+@pytest.mark.parametrize("stage", ["cancellation_read", "completion_commit"])
+def test_transient_storage_error_does_not_repeat_a_render(service, monkeypatch, stage):
+    import sqlite3
+    from contextlib import contextmanager
+
+    store, backend, _ = service
+    job = store.submit("image", "storage-retry", {})
+    original = store.connect
+    calls, failures = [], []
+
+    @contextmanager
+    def broken_once():
+        # Failure starts inside inference, after the claim transaction.
+        fail = bool(calls) and not failures
+        if fail and stage == "cancellation_read":
+            failures.append(stage)
+            error = sqlite3.OperationalError("disk I/O error")
+            error.sqlite_errorcode = sqlite3.SQLITE_IOERR
+            raise error
+        with original() as db:
+            yield db
+        if fail and stage == "completion_commit":
+            failures.append(stage)
+            error = sqlite3.OperationalError("disk I/O error after commit")
+            error.sqlite_errorcode = sqlite3.SQLITE_IOERR
+            raise error
+
+    def execute(operation, payload, identifier, canceled):
+        calls.append(identifier)
+        if stage == "cancellation_read":
+            assert not canceled()
+        return {"id": identifier}
+
+    monkeypatch.setattr(store, "connect", broken_once)
+    backend.execute = execute
+    assert store.run_once(backend)
+    assert calls == [job] and failures == [stage]
+    assert store.get(job)["status"] == "succeeded"
+    assert json.loads(store.get(job)["output"]) == {"id": job}
+    assert not store.run_once(backend)
+
+
+def test_completion_failure_is_not_rewritten_as_a_render_failure(service, monkeypatch):
+    import sqlite3
+
+    store, backend, _ = service
+    job = store.submit("image", "persistent-storage-error", {})
+    calls = []
+    backend.execute = lambda *args: {"id": job}
+
+    def finish(identifier, output=None, error=None):
+        calls.append((identifier, output, error))
+        raise sqlite3.OperationalError("disk I/O error")
+
+    monkeypatch.setattr(store, "finish", finish)
+    with pytest.raises(sqlite3.OperationalError):
+        store.run_once(backend)
+    assert calls == [(job, {"id": job}, None)]
+    assert store.get(job)["status"] == "running"
+
+
 async def test_uploaded_images_can_be_used_for_vision_without_local_file_access(service):
     store, backend, app = service
     data = io.BytesIO()

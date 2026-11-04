@@ -51,6 +51,7 @@
 | 看懂场景并操纵机械臂 | [RAI manipulation (EvoSprig)](examples/rai-manipulation/)：视觉规划、抓取放置和任务检查（[RAI 原项目](https://github.com/RobotecAI/rai)） |
 | 构造业务模拟环境并改进行业智能体 | **[行业环境构造](examples/industry-environment-builder/)** — 业务规则、工具、数据与状态评估 |
 | 准备求职材料并练习面试 | [求职教练](examples/career-coach/)：岗位匹配、简历要点和练习反馈 |
+| 把素材写成小红书笔记 | **[小红书写作台](examples/xiaohongshu-studio/README.zh-CN.md)** — 切入点、文风样例、事实检查与自动改稿 |
 | 把一份公告改写成多个渠道的内容 | [内容工作室](examples/content-studio/)：并行写作、共享文风和事实核对技能 |
 | 讲解知识并根据回答安排练习 | [学习教练](examples/study-coach/)：课程、互动练习与针对性反馈 |
 | 把需求变成能操作的网页 | [软件开发团队](examples/software-team/)：设计、编码、浏览器检查与修复 |

@@ -1,0 +1,4 @@
+{"source": "EvoSprig 是开源的自进化智能体开发框架。它保留候选版本的修改与任务结果，能查看 prompt 哪句话变了、skill 新增了哪些步骤、流程或模型选择如何变化，以及任务结果。支持23种无需训练模型的搜索策略，包括 SkillOpt 优化技能、ADAS 搜索智能体设计、ModularRSI 分模块修改后整合、Arbor 使用假设树组织尝试。开发者提供自己的任务集；没有标准答案时可以配置 LLM 评委，有业务系统或测试规则时可以检查任务是否完成。开发者可以选择是否采用候选版本。", "audience": "正在做 Agent、工作流和智能助手的开发者", "goal": "介绍自进化具体会改什么，让读者愿意拿自己的高频失败任务试一轮", "voice": "observer", "emoji": "light", "required_terms": ["EvoSprig", "23"], "links": ["https://github.com/Toyhom/EvoSprig"]}
+{"source": "周日社区植物交换，10点到12点，带一盆健康植物交换一盆，不收门票，花盆由参与者自带，地点为社区共享花园。", "audience": "附近养植物的年轻人", "voice": "observer", "emoji": "light", "required_terms": ["周日", "花盆"], "max_body_chars": 350}
+{"source": "发票工具能提取日期、金额和商户，发现日期缺失时提示补充。需要用户确认后才能导出，不直接提交报销。只支持PDF和JPG。", "audience": "每月整理报销材料的上班族", "emoji": "light", "max_body_chars": 400}
+{"source": "昨天整理书架，把没读完的三本书放到了第一层。今晚拿起其中一本读了十页，目前只试了这一次。", "voice": "personal", "emoji": "none", "max_body_chars": 250}

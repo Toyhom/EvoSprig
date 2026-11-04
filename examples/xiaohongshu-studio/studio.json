@@ -1,0 +1,39 @@
+{
+  "layout": {
+    "brief": {
+      "x": 400,
+      "y": 60
+    },
+    "editing": {
+      "x": 782,
+      "y": 72
+    },
+    "format": {
+      "x": 1142,
+      "y": 80
+    },
+    "graph/editing/body/check": {
+      "x": 422,
+      "y": 80
+    },
+    "graph/editing/body/draft": {
+      "x": 40,
+      "y": 60
+    },
+    "graph/editing/body/remember": {
+      "x": 1164,
+      "y": 80
+    },
+    "graph/editing/body/review": {
+      "x": 782,
+      "y": 60
+    },
+    "prepare": {
+      "x": 40,
+      "y": 80
+    }
+  },
+  "canvas": {
+    "groups": {}
+  }
+}

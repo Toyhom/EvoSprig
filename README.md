@@ -51,6 +51,7 @@ A production team turns a novel or one sentence into an animated film. Agents ch
 | Sees a scene and controls a robot arm | **[RAI manipulation (EvoSprig)](examples/rai-manipulation/)** — visual planning, pick-and-place and task checks ([original RAI](https://github.com/RobotecAI/rai)) |
 | Builds a business sandbox for agent development | **[Industry environment builder](examples/industry-environment-builder/)** — procedures, tools, data and business-state checks |
 | Tailors a resume and runs interview practice | **[Career coach](examples/career-coach/)** — job fit, application materials and feedback |
+| Writes a Xiaohongshu post from your notes | **[Xiaohongshu Studio](examples/xiaohongshu-studio/)** — reader angles, style examples and guided revisions |
 | Turns one announcement into a content campaign | **[Content studio](examples/content-studio/)** — parallel channels and shared editing skills |
 | Teaches a topic and reviews your answers | **[Study coach](examples/study-coach/)** — lessons, exercises and personal feedback |
 | Turns a brief into a working web app | **[Software team](examples/software-team/)** — design, implementation, browser checks and repair |

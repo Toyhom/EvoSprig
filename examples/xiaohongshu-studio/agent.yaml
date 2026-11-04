@@ -1,0 +1,590 @@
+execution:
+  allow_side_effects: false
+  max_model_calls: 16
+  max_output_tokens: 2400
+  max_parallel_nodes: 1
+  max_parallel_tools: 1
+  max_steps: 48
+  max_total_tokens: 65000
+  timeout_seconds: 600.0
+graph:
+  edges:
+  - source: brief
+    target: editing
+    when: null
+  - source: editing
+    target: format
+    when: null
+  - source: prepare
+    target: brief
+    when: null
+  entry: prepare
+  nodes:
+    brief:
+      body: null
+      branches: {}
+      condition: null
+      harness:
+        max_output_retries: 1
+        max_output_tokens: 2400
+        max_tool_rounds: 1
+        memory: null
+        output_errors: feedback
+        parallel_tool_calls: null
+        tool_errors: null
+        tool_limit: null
+        tool_selection: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: nodes.prepare.output
+      instructions:
+        resource: brief
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: main
+      output_schema:
+        additionalProperties: false
+        properties:
+          angle:
+            type: string
+          example_id:
+            type: string
+          facts:
+            items:
+              type: string
+            maxItems: 12
+            type: array
+          qualifications:
+            items:
+              type: string
+            maxItems: 12
+            type: array
+          reader_need:
+            type: string
+          structure:
+            type: string
+        required:
+        - reader_need
+        - angle
+        - facts
+        - qualifications
+        - example_id
+        - structure
+        type: object
+      response_format: json
+      skills:
+      - source_fidelity
+      - examples
+      temperature: 0.2
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: agent
+      until: null
+    editing:
+      body:
+        edges:
+        - source: check
+          target: review
+          when: null
+        - source: draft
+          target: check
+          when: null
+        - source: review
+          target: remember
+          when: null
+        entry: draft
+        nodes:
+          check:
+            body: null
+            branches: {}
+            code: check
+            condition: null
+            inputs:
+              post:
+                default: null
+                optional: false
+                ref: nodes.draft.output
+              request:
+                default: null
+                optional: false
+                ref: input.request
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          draft:
+            body: null
+            branches: {}
+            condition: null
+            harness:
+              max_output_retries: 1
+              max_output_tokens: 2400
+              max_tool_rounds: 1
+              memory: null
+              output_errors: feedback
+              parallel_tool_calls: null
+              tool_errors: null
+              tool_limit: null
+              tool_selection: null
+            inputs:
+              brief:
+                default: null
+                optional: false
+                ref: input.brief
+              feedback:
+                default: null
+                optional: false
+                ref: input.feedback
+              previous:
+                default: null
+                optional: false
+                ref: input.previous
+              request:
+                default: null
+                optional: false
+                ref: input.request
+            instructions:
+              resource: draft
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              additionalProperties: false
+              properties:
+                body:
+                  minLength: 1
+                  type: string
+                tags:
+                  items:
+                    minLength: 1
+                    type: string
+                  maxItems: 8
+                  minItems: 1
+                  type: array
+                title:
+                  minLength: 1
+                  type: string
+              required:
+              - title
+              - body
+              - tags
+              type: object
+            response_format: json
+            skills:
+            - voice
+            - source_fidelity
+            - examples
+            temperature: 0.6
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: agent
+            until: null
+          remember:
+            body: null
+            branches: {}
+            code: remember
+            condition: null
+            inputs:
+              checks:
+                default: null
+                optional: false
+                ref: nodes.check.output
+              post:
+                default: null
+                optional: false
+                ref: nodes.draft.output
+              review:
+                default: null
+                optional: false
+                ref: nodes.review.output
+              state:
+                default: null
+                optional: false
+                ref: input
+            instructions: ''
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: null
+            output_schema:
+              type: object
+            response_format: text
+            tool: python
+            tool_errors: raise
+            tools: []
+            type: code
+            until: null
+          review:
+            body: null
+            branches: {}
+            condition: null
+            harness:
+              max_output_retries: 1
+              max_output_tokens: 2400
+              max_tool_rounds: 1
+              memory: null
+              output_errors: feedback
+              parallel_tool_calls: null
+              tool_errors: null
+              tool_limit: null
+              tool_selection: null
+            inputs:
+              brief:
+                default: null
+                optional: false
+                ref: input.brief
+              checks:
+                default: null
+                optional: false
+                ref: nodes.check.output
+              post:
+                default: null
+                optional: false
+                ref: nodes.draft.output
+              request:
+                default: null
+                optional: false
+                ref: input.request
+            instructions:
+              resource: review
+            items: null
+            join: all
+            max_items: 32
+            max_iterations: 1
+            model: main
+            output_schema:
+              additionalProperties: false
+              properties:
+                accepted:
+                  type: boolean
+                edits:
+                  items:
+                    type: string
+                  maxItems: 12
+                  type: array
+                factual_issues:
+                  items:
+                    type: string
+                  maxItems: 12
+                  type: array
+                reader_feedback:
+                  items:
+                    type: string
+                  maxItems: 12
+                  type: array
+              required:
+              - accepted
+              - reader_feedback
+              - factual_issues
+              - edits
+              type: object
+            response_format: json
+            skills:
+            - voice
+            - source_fidelity
+            temperature: 0.2
+            tool: null
+            tool_errors: raise
+            tools: []
+            type: agent
+            until: null
+        output:
+          accepted:
+            default: null
+            optional: false
+            ref: nodes.remember.output.accepted
+          brief:
+            default: null
+            optional: false
+            ref: nodes.remember.output.brief
+          changes:
+            default: null
+            optional: false
+            ref: nodes.remember.output.changes
+          feedback:
+            default: null
+            optional: false
+            ref: nodes.remember.output.feedback
+          previous:
+            default: null
+            optional: false
+            ref: nodes.remember.output.previous
+          request:
+            default: null
+            optional: false
+            ref: nodes.remember.output.request
+          rounds:
+            default: null
+            optional: false
+            ref: nodes.remember.output.rounds
+      branches: {}
+      condition: null
+      inputs:
+        brief:
+          default: null
+          optional: false
+          ref: nodes.brief.output
+        changes:
+          value: []
+        feedback:
+          value: []
+        previous:
+          value: {}
+        request:
+          default: null
+          optional: false
+          ref: nodes.prepare.output
+        rounds:
+          value: 0
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 3
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: null
+      tool_errors: raise
+      tools: []
+      type: loop
+      until:
+        left:
+          default: null
+          optional: false
+          ref: input.accepted
+        op: truthy
+        right: null
+    format:
+      body: null
+      branches: {}
+      code: format
+      condition: null
+      inputs:
+        state:
+          default: null
+          optional: false
+          ref: nodes.editing.output
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+    prepare:
+      body: null
+      branches: {}
+      code: prepare
+      condition: null
+      inputs:
+        request:
+          default: null
+          optional: false
+          ref: input
+      instructions: ''
+      items: null
+      join: all
+      max_items: 32
+      max_iterations: 1
+      model: null
+      output_schema:
+        type: object
+      response_format: text
+      tool: python
+      tool_errors: raise
+      tools: []
+      type: code
+      until: null
+  output:
+    changes:
+      default: null
+      optional: false
+      ref: nodes.format.output.changes
+    feedback:
+      default: null
+      optional: false
+      ref: nodes.format.output.feedback
+    post:
+      default: null
+      optional: false
+      ref: nodes.format.output.post
+    ready:
+      default: null
+      optional: false
+      ref: nodes.format.output.ready
+    rounds:
+      default: null
+      optional: false
+      ref: nodes.format.output.rounds
+    text:
+      default: null
+      optional: false
+      ref: nodes.format.output.text
+id: xiaohongshu-studio
+input_schema:
+  additionalProperties: false
+  properties:
+    audience:
+      maxLength: 500
+      type: string
+    emoji:
+      enum:
+      - none
+      - light
+      - lively
+    goal:
+      maxLength: 500
+      type: string
+    links:
+      items:
+        maxLength: 300
+        pattern: ^https?://[^\s]+$
+        type: string
+      maxItems: 3
+      type: array
+    max_body_chars:
+      maximum: 1500
+      minimum: 100
+      type: integer
+    max_title_chars:
+      maximum: 60
+      minimum: 10
+      type: integer
+    references:
+      items:
+        maxLength: 2000
+        type: string
+      maxItems: 3
+      type: array
+    required_terms:
+      items:
+        type: string
+      maxItems: 12
+      type: array
+    source:
+      maxLength: 12000
+      minLength: 1
+      type: string
+    voice:
+      enum:
+      - observer
+      - brand
+      - personal
+  required:
+  - source
+  type: object
+models:
+  main:
+    binding: main
+    requires:
+    - text
+    - structured_output
+output_schema:
+  additionalProperties: false
+  properties:
+    changes:
+      type: array
+    feedback:
+      items:
+        type: string
+      maxItems: 12
+      type: array
+    post:
+      additionalProperties: false
+      properties:
+        body:
+          minLength: 1
+          type: string
+        tags:
+          items:
+            minLength: 1
+            type: string
+          maxItems: 8
+          minItems: 1
+          type: array
+        title:
+          minLength: 1
+          type: string
+      required:
+      - title
+      - body
+      - tags
+      type: object
+    ready:
+      type: boolean
+    rounds:
+      type: integer
+    text:
+      type: string
+  required:
+  - text
+  - post
+  - ready
+  - feedback
+  - rounds
+  - changes
+  type: object
+resources:
+  brief:
+    path: prompts/brief.md
+    role: prompt
+  check:
+    path: code/check.py
+    role: code
+  draft:
+    path: prompts/draft.md
+    role: prompt
+  examples:
+    path: skills/examples.md
+    role: skill
+  format:
+    path: code/format.py
+    role: code
+  prepare:
+    path: code/prepare.py
+    role: code
+  remember:
+    path: code/remember.py
+    role: code
+  review:
+    path: prompts/review.md
+    role: prompt
+  source_fidelity:
+    path: skills/source_fidelity.md
+    role: skill
+  voice:
+    path: skills/voice.md
+    role: skill
+spec_version: '0.3'
+tools:
+  python:
+    plugin: code.python
+    version: '1'

@@ -24,6 +24,7 @@ Start with a working application pattern, connect your model and tools, then mak
 | Sees a scene and rearranges objects | [RAI manipulation (EvoSprig)](rai-manipulation/) | Visual controller, robot tools and physical goal checks |
 | Builds a business sandbox for agent development | [Industry environment builder](industry-environment-builder/) | Scenario, schemas, procedures, tools, data and business checks |
 | Tailors an application and helps me practice | [Career coach](career-coach/) | Resume facts, job requirements and interview skills |
+| Writes a Xiaohongshu post from my notes | [Xiaohongshu Studio](xiaohongshu-studio/) | Reader, voice, example library, fact checks and revision limits |
 | Adapts an announcement for several channels | [Content studio](content-studio/) | Source facts, channels, brand voice and editing skills |
 | Teaches a topic and reviews my answers | [Study coach](study-coach/) | Course material, learning preferences and feedback |
 | Turns an idea into a web app | [Software team](software-team/) | Product roles, acceptance checks, browser tools and design conventions |
