@@ -76,3 +76,26 @@ test('focus and resize keep the arranged graph centered in the visible canvas',a
   await expect(page.getByRole('button',{name:'Focus canvas',exact:true})).toBeVisible();
   await centered();
 });
+
+test('nested collapsed groups keep both connecting edges after save and reload',async({page,request})=>{
+  const id='group-edges-'+Date.now().toString(36);
+  const node={type:'transform',inputs:{},output_schema:{}};
+  const spec={spec_version:'0.3',id,input_schema:{type:'object'},output_schema:{},models:{},tools:{},resources:{},
+    graph:{entry:'before',nodes:{before:node,inside:node,after:node},edges:[{source:'before',target:'inside'},{source:'inside',target:'after'}],output:{}}};
+  const canvas={groups:{graph:[{id:'group:inner',label:'Inner team',members:['inside'],collapsed:true},
+    {id:'group:outer',label:'Whole team',members:['before','group:inner','after'],collapsed:false,direction:'DOWN'}]}};
+  await request.post('/api/projects',{data:{spec,canvas}});
+  await page.goto('/');await page.locator('.project[title="'+id+'"]').click();
+  await page.getByRole('button',{name:'Arrange',exact:true}).click();
+  await expect(page.locator('.react-flow__edge')).toHaveCount(2);
+  await expect(page.locator('.react-flow__node[data-id="group:inner"] .target')).toHaveClass(/react-flow__handle-top/);
+  await page.getByRole('button',{name:'Save',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Saved');
+  await expect(page.locator('.react-flow__edge')).toHaveCount(2);
+  await page.reload();await page.locator('.project[title="'+id+'"]').click();
+  await expect(page.locator('.react-flow__edge')).toHaveCount(2);
+  await page.getByRole('button',{name:'Expand Inner team',exact:true}).click();
+  await expect(page.locator('.react-flow__edge')).toHaveCount(2);
+  await page.getByRole('button',{name:'Collapse Inner team',exact:true}).click();
+  await expect(page.locator('.react-flow__edge')).toHaveCount(2);
+});

@@ -3,12 +3,15 @@
 from copy import deepcopy
 
 from fastapi import HTTPException
+from jsonschema.exceptions import ValidationError as SchemaValidationError
 from pydantic import Field
 
-from evosprig.core.spec import AgentSpec, Contract
+from evosprig.config import read_profile
+from evosprig.core.spec import AgentSpec, Contract, digest
 from evosprig.core.version import SECRET, compile_snapshot
-from evosprig.integrations.comfyui import ComfyWorkflow
-from evosprig.plugins.comfy_tools import import_comfy_spec
+from evosprig.integrations.comfyui import ComfyWorkflow, fields, input_schema
+from evosprig.plugins.comfy_tools import ComfyRecipeConfig, comfy_recipe_tool, import_comfy_spec
+from evosprig.plugins.sqlite_projects import RevisionConflict
 
 from .auth import current_principal
 
@@ -21,7 +24,82 @@ class ImportBody(Contract):
     render: bool = False
 
 
-def install_comfy_routes(app, store):
+class RecipePatch(Contract):
+    revision: int = Field(ge=1)
+    workflow_hash: str
+    changes: dict = Field(default_factory=dict)
+
+
+def install_comfy_routes(app, store, *, profile=None):
+    def recipes(project_id):
+        doc = store.get(project_id, identity=current_principal.get().key)
+        configured = read_profile(profile)
+        allowed = {tool["plugin"] for tool in doc["spec"]["tools"].values()}
+        saved = store.integration(project_id, "comfy_recipes", identity=current_principal.get().key) or {}
+        found = {name: {**binding, "workflow": saved.get(name, binding["workflow"])}
+                 for name, binding in (configured or {}).get("tools", {}).items()
+                 if name in allowed and binding.get("kind") == "comfy_recipe"}
+        return doc, found, saved
+
+    def recipe(project_id, name):
+        doc, found, saved = recipes(project_id)
+        if name not in found:
+            raise HTTPException(404, "render recipe not found")
+        return doc, ComfyRecipeConfig.model_validate(found[name]), saved
+
+    @app.get("/api/projects/{project_id}/recipes")
+    async def list_recipes(project_id: str):
+        _, found, _ = recipes(project_id)
+        return [{"name": name, "node_count": len(ComfyWorkflow(binding["workflow"], binding["object_info"]).nodes)}
+                for name, binding in found.items()]
+
+    @app.get("/api/projects/{project_id}/recipes/{name}")
+    async def get_recipe(project_id: str, name: str):
+        doc, config, _ = recipe(project_id, name)
+        workflow = ComfyWorkflow(config.workflow, config.object_info)
+        classes = {workflow.class_type(node) for node in workflow.nodes}
+        return {"name": name, "revision": doc["revision"], "workflow": workflow.export(),
+                "workflow_hash": digest(config.workflow), "outputs": config.outputs,
+                "nodes": [{"id": node, "class_type": workflow.class_type(node),
+                           "title": value.get("title", workflow.class_type(node)), "mode": value.get("mode", 0),
+                           "position": value.get("pos", [index * 300, 0]),
+                           "input_schemas": {key: input_schema(descriptor) for key, descriptor, _ in
+                                             fields(config.object_info.get(workflow.class_type(node), {}),
+                                                    {k: v[0] for k, v in workflow._widgets(node).items()}
+                                                    if workflow.ui and workflow.class_type(node) in config.object_info else value.get("inputs", {}))},
+                           "inputs": {k: v[0] for k, v in workflow._widgets(node).items()}
+                           if workflow.ui and workflow.class_type(node) in config.object_info else value.get("inputs", {})}
+                          for index, (node, value) in enumerate(workflow.nodes.items())],
+                "object_info": {k: v for k, v in config.object_info.items() if k in classes}}
+
+    @app.post("/api/projects/{project_id}/recipes/{name}")
+    async def edit_recipe(project_id: str, name: str, body: RecipePatch):
+        _, config, saved = recipe(project_id, name)
+        if digest(config.workflow) != body.workflow_hash:
+            raise HTTPException(409, "render graph changed; reload before saving")
+        workflow = ComfyWorkflow(config.workflow, config.object_info)
+        try:
+            for node, changes in body.changes.items():
+                if not isinstance(changes, dict) or changes.keys() - {"inputs", "enabled"}:
+                    raise ValueError("choose inputs or enabled for each node")
+                if "enabled" in changes:
+                    if type(changes["enabled"]) is not bool:
+                        raise ValueError("enabled must be a boolean")
+                    workflow.set_enabled(node, changes["enabled"])
+                for field, value in changes.get("inputs", {}).items():
+                    workflow.set_input(node, field, value)
+            updated = config.model_copy(update={"workflow": workflow.export()})
+            # Validate both editable controls and the actual executable graph.
+            comfy_recipe_tool(updated)
+            workflow.compile(config.outputs)
+            document = store.update_integration(project_id, "comfy_recipes", {**saved, name: workflow.export()},
+                                                body.revision, identity=current_principal.get().key)
+            return {"project": document, "workflow_hash": digest(workflow.export())}
+        except RevisionConflict as exc:
+            raise HTTPException(409, str(exc)) from None
+        except (ValueError, TypeError, KeyError, SchemaValidationError) as exc:
+            raise HTTPException(422, SECRET.sub("[redacted]", str(exc))[:1000]) from None
+
     async def prepare(body):
         info = body.object_info
         if body.server and not info:

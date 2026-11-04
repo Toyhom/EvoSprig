@@ -101,13 +101,14 @@ export function WorkflowNode({ id, data, selected }: NodeProps<WorkflowFlowNode>
     {config.type==='condition'?<><Handle id="true" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'35%'}}/><Handle id="false" type="source" position={vertical?Position.Bottom:Position.Right} style={{[vertical?'left':'top']:'75%'}}/><span className="branch-label branch-true">true</span><span className="branch-label branch-false">false</span></>:<Handle type="source" position={vertical?Position.Bottom:Position.Right}/>}
   </div>;
 }
-function GroupCard({data,selected}:NodeProps<Node<{group:Group;count:number;lang:Lang;onToggle:()=>void;busy?:boolean}>>) {
+function GroupCard({data,selected}:NodeProps<Node<{group:Group;count:number;lang:Lang;direction?:string;onToggle:()=>void;busy?:boolean}>>) {
   const {group,count,lang}=data;
+  const vertical=data.direction==='DOWN';
   return <div className={`canvas-group ${group.collapsed?'is-collapsed':'is-expanded'}${selected?' is-selected':''}`}>
-    {group.collapsed&&<Handle type="target" position={Position.Left}/>}
+    {group.collapsed&&<Handle type="target" position={vertical?Position.Top:Position.Left}/>}
     <div className="group-heading"><Icon name="layers"/><strong>{group.label}</strong><span className="group-count">{count}</span><button aria-label={(group.collapsed?'Expand ':'Collapse ')+group.label} className="nodrag nopan" disabled={data.busy} onClick={data.onToggle}><Icon name={group.collapsed?'expand':'collapse'} size={14}/></button></div>
     {group.collapsed&&<p>{count} {lang==='zh'?'个节点':'nodes'} · {lang==='zh'?'展开查看流程':'Expand to explore'}</p>}
-    {group.collapsed&&<Handle type="source" position={Position.Right}/>}
+    {group.collapsed&&<Handle type="source" position={vertical?Position.Bottom:Position.Right}/>}
   </div>;
 }
 export const nodeTypes = { workflow: WorkflowNode, groupCard:GroupCard };

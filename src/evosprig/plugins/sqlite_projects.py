@@ -98,6 +98,16 @@ class ProjectStore:
                              (*identity, project_id, kind)).fetchone()
             return json.loads(row[0]) if row else None
 
+    def update_integration(self, project_id, kind, data, revision, *, identity=("local", "local")):
+        with self.connect() as db:
+            changed = db.execute("UPDATE scoped_projects SET revision=revision+1 WHERE user=? AND tenant=? AND id=? AND revision=?",
+                                 (*identity, project_id, revision))
+            if changed.rowcount != 1:
+                raise RevisionConflict("project changed; reload before saving the render graph")
+            db.execute("INSERT OR REPLACE INTO project_integrations VALUES(?,?,?,?,?)",
+                       (*identity, project_id, kind, canonical_json(data)))
+        return self.get(project_id, identity=identity)
+
     def get(self, project_id: str, *, identity=("local", "local")):
         with self.connect() as db:
             return self._document(

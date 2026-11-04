@@ -225,3 +225,16 @@ class SQLiteJournal:
             return [
                 record for record in records if scope is None or record["scope"] == asdict(scope)
             ][:limit]
+
+    def summaries(self, scope, limit=100):
+        """List a project's productions without loading snapshots or event histories."""
+        with self._transaction(False) as db:
+            return [dict(zip(("run_id", "status", "created_at", "title"), row)) for row in db.execute(
+                "SELECT id, json_extract(body, '$.status'), json_extract(body, '$.created_at'), "
+                "COALESCE(json_extract(body, '$.checkpoint.output.plan.title'), "
+                "json_extract(body, '$.checkpoint.output.script_editor.title'), "
+                "json_extract(body, '$.input.upstream.script_editor.title'), "
+                "substr(json_extract(body, '$.input.source_text'), 1, 80), '') "
+                "FROM runtime_runs WHERE json_extract(body, '$.scope.project')=? "
+                "AND json_extract(body, '$.scope.user')=? AND json_extract(body, '$.scope.tenant')=? "
+                "ORDER BY rowid DESC LIMIT ?", (scope.project, scope.user, scope.tenant, limit))]

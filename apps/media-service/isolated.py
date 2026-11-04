@@ -44,7 +44,7 @@ class IsolatedMediaBackend(MediaBackend):
             raise RuntimeError("job canceled")
         if operation in {"compose", "stage-reference", "ingest-comfy", "inspect-video"}:
             return super().execute(operation, payload, name, canceled)
-        family = "video" if operation in {"video", "generate-video"} else "image"
+        family = payload["family"] if operation == "warmup" else "voice" if operation == "generate-voice" else "video" if operation in {"video", "generate-video"} else "image"
         if canceled():
             raise RuntimeError("job canceled")
         if self.child is None or self.child.poll() is not None or self.family != family:
@@ -66,6 +66,7 @@ class IsolatedMediaBackend(MediaBackend):
                 width=self.width,
                 height=self.height,
                 image_backend=self.image_backend,
+                voice_model=self.voice_model,
             )
             self.child.stdin.write(json.dumps({"config": config}) + "\n")
             self.family = family

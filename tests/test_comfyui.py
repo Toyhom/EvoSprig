@@ -440,3 +440,61 @@ async def test_studio_import_run_edit_export_and_scoped_bindings(ui, info, tmp_p
         assert exported["nodes"][1]["mode"] == 4
         assert exported["extra"] == ui["extra"]
         assert (await client.post("/api/projects/comfy-demo/export")).status_code == 200
+
+
+async def test_recipe_canvas_keeps_all_nodes_and_persists_valid_edits_per_project(tmp_path, ui, info):
+    import asyncio
+    import json
+
+    import httpx
+    import yaml
+
+    from evosprig.plugins.comfy_tools import ComfyRecipeConfig
+    from evosprig.sdk import Builder
+    from evosprig.server.app import create_app
+
+    config = ComfyRecipeConfig(name="film.recipe", workflow=ui, object_info=info, outputs=["6"],
+                              parameters={"steps": {"node_id": "5", "input_name": "steps"}})
+    profile = tmp_path / "profile.yaml"
+    profile.write_text(yaml.safe_dump({"models": {}, "tools": {
+        "film.recipe": config.model_dump(mode="json"),
+        "film.settings": {**config.model_dump(mode="json"), "name": "film.settings", "kind": "comfy_recipe_info"},
+    }}))
+    app = create_app(tmp_path / "workspace", profile=profile)
+    for name in ["first", "second"]:
+        b = Builder(name, {}, {}).tool("recipe", "film.recipe").tool("settings", "film.settings")
+        b.node("settings", "tool", tool="settings", inputs={}, output_schema={})
+        b.node("prepare", "tool", tool="recipe", inputs={"controls": {"value": {}}}, output_schema={})
+        b.edge("settings", "prepare").output(prompt={"ref": "nodes.prepare.output.prompt"}, defaults={"ref": "nodes.settings.output.defaults"})
+        app.state.projects.create(b.build_spec(), resources={})
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://localhost") as client:
+            assert (await client.get("/api/projects/first/recipes")).json() == [{"name": "film.recipe", "node_count": 7}]
+            before = (await client.get("/api/projects/first/recipes/film.recipe")).json()
+            assert len(before["nodes"]) == 7
+            patch = {"revision": 1, "workflow_hash": before["workflow_hash"], "changes": {"5": {"inputs": {"steps": 14}}, "2": {"enabled": True}}}
+            invalid = {**patch, "changes": {"5": {"inputs": {"steps": 500}}}}
+            assert (await client.post("/api/projects/first/recipes/film.recipe", json=invalid)).status_code == 422
+            saved = await client.post("/api/projects/first/recipes/film.recipe", json=patch)
+            assert saved.status_code == 200, saved.text
+            assert saved.json()["project"]["revision"] == 2
+            assert (await client.post("/api/projects/first/recipes/film.recipe", json=patch)).status_code == 409
+            after = (await client.get("/api/projects/first/recipes/film.recipe")).json()
+            assert after["workflow"]["extra"] == ui["extra"]
+            assert after["workflow"]["nodes"][-1] == ui["nodes"][-1]
+            assert after["nodes"][1]["mode"] == 0
+            assert (await client.get("/api/projects/second/recipes/film.recipe")).json()["workflow"] == ui
+            run = await client.post("/api/projects/first/runs", json={"input": {}, "revision": 2})
+            identifier = run.json()["run_id"]
+            for _ in range(200):
+                record = (await client.get("/api/runs/" + identifier)).json()
+                if record["status"] not in {"queued", "running", "waiting_external"}:
+                    break
+                await asyncio.sleep(.01)
+            assert record["status"] == "succeeded", record
+            assert record["output"]["prompt"]["5"]["inputs"]["steps"] == 14
+            assert record["output"]["defaults"]["steps"] == 14
+            cursor = record["events"][2]["sequence"]
+            incremental = (await client.get(f"/api/runs/{identifier}?after={cursor}")).json()
+            assert incremental["events"] == [e for e in record["events"] if e["sequence"] > cursor]
+            assert json.loads(json.dumps(ui)) == config.workflow

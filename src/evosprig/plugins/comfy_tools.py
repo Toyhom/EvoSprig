@@ -14,6 +14,7 @@ from evosprig.integrations.comfyui import (
     accepts_type,
     fields,
     input_schema,
+    is_link,
     is_widget,
 )
 
@@ -34,6 +35,7 @@ class ComfyNodeConfig(Contract):
     description: str = "Configure a ComfyUI node and connect its outputs."
     info: dict
     defaults: dict = Field(default_factory=dict)
+    compact_handles: bool = Field(default=False, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def valid(self):
@@ -43,6 +45,49 @@ class ComfyNodeConfig(Contract):
         if self.defaults.keys() - known:
             raise ValueError("node defaults contain unknown inputs")
         return self
+
+
+class ComfyCollectConfig(Contract):
+    kind: Literal["comfy_collect"] = "comfy_collect"
+    name: str
+    version: str = "1"
+    sinks: dict[str, str]
+
+
+def comfy_collect_tool(config: ComfyCollectConfig) -> Tool:
+    def collect(parts):
+        prompt = {}
+        for part in parts.values():
+            for key, node in part.items():
+                if key in prompt and prompt[key] != node:
+                    raise ToolFeedbackError("graph_conflict", f"conflicting definitions for node {key}")
+                prompt[key] = node
+        result = {}
+        for alias, sink in config.sinks.items():
+            selected, visiting = {}, set()
+
+            def visit(key):
+                if key in visiting:
+                    raise ToolFeedbackError("cycle", "the render graph contains a cycle")
+                if key in selected:
+                    return
+                if key not in prompt:
+                    raise ToolFeedbackError("missing_source", f"source node {key} is missing")
+                visiting.add(key)
+                node = prompt[key]
+                for value in node["inputs"].values():
+                    if is_link(value):
+                        visit(value[0])
+                visiting.remove(key)
+                selected[key] = node
+
+            visit(sink)
+            result[alias] = selected
+        return result
+
+    return Tool(config.name, "Assemble the configured render nodes.",
+                {"type": "object", "properties": {"parts": {"type": "object"}}, "required": ["parts"]},
+                {"type": "object"}, collect, version=config.version, pure=True)
 
 
 class ComfyParameter(Contract):
@@ -183,14 +228,18 @@ def comfy_recipe_tool(config: ComfyRecipeConfig) -> Tool:
 
 def comfy_node_tool(config: ComfyNodeConfig) -> Tool:
     properties, required = {}, []
+    handle_schema = deepcopy(HANDLE)
+    if config.compact_handles:
+        handle_schema["required"].remove("prompt")
+        handle_schema["properties"].pop("prompt")
     for name, descriptor, needed in fields(config.info):
         schema = input_schema(descriptor)
         options = descriptor[1] if len(descriptor) > 1 else {}
         # The execution graph stays in JSON; GPU tensors remain inside ComfyUI.
         if not is_widget(descriptor) or options.get("forceInput"):
-            schema = deepcopy(HANDLE)
+            schema = deepcopy(handle_schema)
         else:
-            schema = {"anyOf": [schema, deepcopy(HANDLE)]}
+            schema = {"anyOf": [schema, deepcopy(handle_schema)]}
         if name in properties:
             properties[name] = {"anyOf": [properties[name], schema]}
         else:
@@ -209,14 +258,16 @@ def comfy_node_tool(config: ComfyNodeConfig) -> Tool:
                     raise ToolFeedbackError("missing_input", f"{name} is required for the selected mode")
                 values[name] = deepcopy(options["default"])
         for name, value in list(values.items()):
-            if isinstance(value, dict) and set(value) == {"node_id", "slot", "type", "prompt"}:
+            if isinstance(value, dict) and set(value) == set(handle_schema["properties"]):
                 expected = declared[name][0][0]
                 if not accepts_type(expected, value["type"]):
                     raise ToolFeedbackError("port_type", f"{name} requires {expected}, got {value['type']}")
-                source = value["prompt"].get(value["node_id"])
-                if not source:
+                source = value.get("prompt", {}).get(value["node_id"])
+                if not source and not config.compact_handles:
                     raise ToolFeedbackError("missing_source", f"{name}: source node is missing")
-                for key, node in value["prompt"].items():
+                if value["node_id"] == config.node_id:
+                    raise ToolFeedbackError("cycle", "a node cannot depend on itself")
+                for key, node in value.get("prompt", {}).items():
                     if key in prompt and prompt[key] != node:
                         raise ToolFeedbackError("graph_conflict", f"conflicting definitions for node {key}")
                     prompt[key] = deepcopy(node)
@@ -229,15 +280,16 @@ def comfy_node_tool(config: ComfyNodeConfig) -> Tool:
             raise ToolFeedbackError("cycle", "a node cannot depend on itself")
         prompt[config.node_id] = {"class_type": config.class_type, "inputs": values}
         return {"prompt": prompt, **{
-            f"output_{slot}": {"node_id": config.node_id, "slot": slot, "type": kind, "prompt": prompt}
+            f"output_{slot}": {"node_id": config.node_id, "slot": slot, "type": kind,
+                               **({} if config.compact_handles else {"prompt": prompt})}
             for slot, kind in enumerate(config.info.get("output", []))
         }}
 
     return Tool(config.name, config.description,
                 {"type": "object", "properties": properties, "required": required, "additionalProperties": False},
                 {"type": "object", "properties": {"prompt": {"type": "object"}, **{
-                    f"output_{slot}": HANDLE for slot, _ in enumerate(config.info.get("output", []))}},
-                 "required": ["prompt"]}, configure, version=config.version)
+                    f"output_{slot}": handle_schema for slot, _ in enumerate(config.info.get("output", []))}},
+                 "required": ["prompt"]}, configure, version=config.version, pure=True)
 
 
 def import_comfy_spec(workflow: ComfyWorkflow, project_id: str = "comfy-workflow", *, server: str | None = None) -> dict:
@@ -257,6 +309,7 @@ def import_comfy_spec(workflow: ComfyWorkflow, project_id: str = "comfy-workflow
         defaults = {k: v for k, v in node["inputs"].items() if not is_link(v)}
         config = ComfyNodeConfig(name=f"comfy.node.{alias}", node_id=key, class_type=node["class_type"],
                                  info=workflow.object_info[node["class_type"]], defaults=defaults,
+                                 compact_handles=True,
                                  description=node.get("_meta", {}).get("title", node["class_type"]))
         tool = comfy_node_tool(config)
         bindings[config.name] = config.model_dump(mode="json")
@@ -278,23 +331,30 @@ def import_comfy_spec(workflow: ComfyWorkflow, project_id: str = "comfy-workflow
         if isinstance(position, dict):
             position = [position.get("0", 0), position.get("1", 0)]
         layout[alias] = {"x": float(position[0]), "y": float(position[1])}
-    sinks = {alias: {"ref": f"nodes.{alias}.output.prompt"} for alias in aliases.values()
-             if alias not in connected}
+    sinks = {alias: key for key, alias in aliases.items() if alias not in connected}
+    collector = ComfyCollectConfig(name="comfy.collect", sinks=sinks)
+    bindings[collector.name] = collector.model_dump(mode="json")
+    builder.tool("collect", collector.name)
+    # A transform assembles references without recursively copying upstream graphs.
+    builder.node("parts", "transform", inputs={alias: {"ref": f"nodes.{alias}.output.prompt"} for alias in aliases.values()}, output_schema={"type": "object"})
+    builder.node("collect", "tool", tool="collect", inputs={"parts": {"ref": "nodes.parts.output"}}, output_schema={"type": "object"})
+    for alias in aliases.values():
+        builder.edge(alias, "parts")
+    builder.edge("parts", "collect")
     if server:
         config = ComfyJobConfig(name="comfy.render", base_url=server)
         bindings[config.name] = config.model_dump(mode="json")
         builder.tool("render", config.name)
-        builder.node("collect", "transform", inputs=sinks, output_schema={"type": "object"})
-        for alias in sinks:
-            builder.edge(alias, "collect")
         builder.node("render", "tool", tool="render", inputs={"parts": {"ref": "nodes.collect.output"}},
                      output_schema={"type": "object"})
         builder.edge("collect", "render").output(outputs={"ref": "nodes.render.output"})
     else:
-        builder.output(**sinks)
-    builder.execution(max_steps=min(1000, 2 * len(prompt) + 8), max_model_calls=0)
+        builder.output(**{alias: {"ref": f"nodes.collect.output.{alias}"} for alias in sinks})
+    builder.execution(max_steps=min(10000, 2 * len(prompt) + 8), max_model_calls=0,
+                      timeout_seconds=max(60, min(3600, 4 * len(prompt))),
+                      max_parallel_nodes=8, max_parallel_tools=8, pure_checkpoint_interval=16)
     if server:
-        builder.execution(max_steps=min(1000, 2 * len(prompt) + 8), max_model_calls=0,
+        builder.execution(max_steps=min(10000, 2 * len(prompt) + 8), max_model_calls=0,
                           allow_side_effects=True, timeout_seconds=3600)
     return {"spec": builder.build_spec().model_dump(mode="json"), "resources": {}, "layout": layout,
             "bindings": {"models": {}, "tools": bindings}, "node_map": aliases,

@@ -1,6 +1,6 @@
 # ComfyUI tools
 
-Import a ComfyUI graph into Studio, edit its parameters and export it back. Each computation becomes a tool node. Models, adapters, conditioning, sampling and output nodes keep their individual connections.
+Import a ComfyUI workflow, connect its tools to agents, and export an editable workflow again. Models, adapters, conditioning, sampling and output nodes keep their individual connections. Episode Studio includes a [render recipe](../apps/episode-studio/render-recipe.json) to start from.
 
 ## Open a workflow
 
@@ -86,3 +86,13 @@ For audiovisual workflows, declare `audio_slots` and `video_slots` with each loa
 Expose the same configuration under `kind: comfy_recipe_info` with a separate tool name to let an agent read its controls and saved defaults. This read-only tool returns `controls` (JSON Schema), `defaults` and `reference_limits`. The [episode team](../examples/episode-studio/) uses these values to choose LoRA strengths, sampling and upscaling settings. Its output validator checks the proposed controls before submitting a render.
 
 For a dedicated ComfyUI process, set `dedicated: true` to allow interruption and model unloading. Shared instances support cancellation of queued jobs. A lost submission response is reconciled with the queue/history before another render is considered.
+
+## Edit the full render graph
+
+Applications with a recipe binding expose **Open render workflow** in Studio. The view includes loaders, references, sampling, adapters, routing, notes and bypassed nodes. Search for a node to focus it, edit its typed parameters, save, or export the complete ComfyUI document. Saved recipe changes belong to the selected project and apply to its next run. Running jobs retain their saved bindings. Workflows with an existing canvas keep their layout; API graphs are arranged by dependencies.
+
+## Large graphs
+
+Each graph supports up to 512 nodes. Imported compute nodes pass small connection handles and assemble the render graph once before submission. Their parameter calculations are deterministic, so an interrupted calculation can run again. Model requests and external render submissions retain individual durable operation records.
+
+`execution.pure_checkpoint_interval` controls how many pure computations can share a checkpoint. Its default is `1`; ComfyUI imports select `16`. The runtime also flushes these computations before an external operation, on suspension and when the run finishes. Imports scale their execution deadline with graph size; both settings remain editable in the specification.

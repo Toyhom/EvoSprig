@@ -53,8 +53,9 @@ export function cleanGroups(groups:Group[],nodeIds:string[]):Group[] {
   return next;
 }
 export function canvasView(nodes:FlowNode[],edges:Edge[],groups:Group[],lang:Lang,onToggle:(id:string)=>void,onOpen:(id:string,path:string[])=>void) {
+  const groupIndex=new Map(groups.map(g=>[g.id,g]));
   const parents=new Map(groups.flatMap(g=>g.members.map(id=>[id,g.id] as const)));
-  const representative=(id:string)=>{let visible=id;let parent=parents.get(id);while(parent){if(groups.find(g=>g.id===parent)?.collapsed)visible=parent;parent=parents.get(parent);}return visible;};
+  const representative=(id:string)=>{let visible=id;let parent=parents.get(id);while(parent){if(groupIndex.get(parent)?.collapsed)visible=parent;parent=parents.get(parent);}return visible;};
   const boxes=new Map<string,{x:number;y:number;width:number;height:number}>();
   for(const node of nodes)boxes.set(node.id,{...node.position,...nodeSize(node.data.config)});
   const box=(id:string):{x:number;y:number;width:number;height:number}=>{
@@ -65,8 +66,8 @@ export function canvasView(nodes:FlowNode[],edges:Edge[],groups:Group[],lang:Lan
     const result={x,y,width:group.collapsed?280:Math.max(280,width),height:group.collapsed?112:height};boxes.set(id,result);return result;
   };
   const groupNodes:Node[]=groups.filter(g=>representative(g.id)===g.id).map(g=>{
-    const b=box(g.id);return {id:g.id,type:'groupCard',position:{x:b.x,y:b.y},width:b.width,height:b.height,style:{width:b.width,height:b.height,pointerEvents:g.collapsed?'all':'none'},zIndex:g.collapsed?3:0,
-      data:{group:g,count:leaves(g.id,groups).length,lang,onToggle:()=>onToggle(g.id)},draggable:g.collapsed,selectable:true};
+    const b=box(g.id);return {id:g.id,type:'groupCard',position:{x:b.x,y:b.y},width:b.width,height:b.height,measured:{width:b.width,height:b.height},style:{width:b.width,height:b.height,pointerEvents:g.collapsed?'all':'none'},zIndex:g.collapsed?3:0,
+      data:{group:g,count:leaves(g.id,groups).length,lang,direction:groupIndex.get(parents.get(g.id)??'')?.direction??'RIGHT',onToggle:()=>onToggle(g.id)},draggable:g.collapsed,selectable:true};
   });
   const visibleNodes:Node[]=nodes.filter(n=>representative(n.id)===n.id).map(n=>({...n,zIndex:2,type:'workflow',data:{...n.data,lang,direction:groups.find(g=>g.id===parents.get(n.id))?.direction??(parents.has(n.id)?'DOWN':'RIGHT'),onOpen:(path:string[])=>onOpen(n.id,path)},...nodeSize(n.data.config)}));
   const visibleEdges:Edge[]=[];const links=new Set<string>();
@@ -76,11 +77,12 @@ export function canvasView(nodes:FlowNode[],edges:Edge[],groups:Group[],lang:Lan
     visibleEdges.push({...edge,source,target,sourceHandle:source===edge.source?edge.sourceHandle:undefined,deletable:!grouped,selectable:!grouped});
   }
   const visible=[...groupNodes,...visibleNodes];
+  const visibleIndex=new Map(visible.map(n=>[n.id,n]));
   const obstacles=visible.filter(n=>n.type!=='groupCard'||(n.data.group as Group).collapsed).map(n=>boxes.get(n.id)!);
   // Expanded group headers remain readable when edges cross their boundary.
   obstacles.push(...groupNodes.filter(n=>!(n.data.group as Group).collapsed).map(n=>{const b=boxes.get(n.id)!;return {...b,height:34};}));
   const routed=visibleEdges.map(edge=>{
-    const source=visible.find(n=>n.id===edge.source)!,target=visible.find(n=>n.id===edge.target)!;
+    const source=visibleIndex.get(edge.source)!,target=visibleIndex.get(edge.target)!;
     const s=boxes.get(source.id)!,t=boxes.get(target.id)!;
     const downS=source.data.direction==='DOWN',downT=target.data.direction==='DOWN';
     const ratio=edge.sourceHandle&&typeof edge.data?.when==='boolean'?(edge.data.when?0.35:0.75):0.5;

@@ -24,11 +24,11 @@ The default address is `http://127.0.0.1:18880`. A single worker serializes GPU 
 
 Defaults are seed 42, 4 image steps, 12 video steps, 848 × 480 image pixels and 24 video frames per second. Change the seed, steps and image dimensions with CLI flags. Hunyuan selects a video resolution bucket from the first frame and its checkpoint configuration and generates 1–15 seconds per shot. Set `preserve_audio: true` when composing clips with sound; subtitle input uses SRT. Clips with different sizes or frame rates are normalized to the first clip's canvas at 24 fps, with silence added where an audio track is missing.
 
-Use the model licenses supplied by [Black Forest Labs](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) and [Tencent Hunyuan](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5). Model weights are downloaded separately.
+Model sources and terms are listed in [Model sources](../../docs/model-sources.md).
 
 ### Qwen images and ComfyUI video
 
-Use Python 3.11+ and `requirements-qwen.txt` for Qwen-Image-2.1 generation and reference-guided editing. Its default is 40 steps. The [Qwen Research License](https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE) permits noncommercial research; commercial deployment requires separate authorization.
+Use Python 3.11+ and `requirements-qwen.txt` for Qwen-Image-2.1 generation and reference-guided editing. Its default is 40 steps.
 
 ```bash
 pip install -r apps/media-service/requirements-qwen.txt
@@ -42,6 +42,10 @@ The [episode team](../../examples/episode-studio/) stages generated references, 
 
 For dialogue checks, install `requirements-speech.txt` and pass `--speech-model /path/to/faster-whisper-model`. Inspection adds a local CPU transcript with timestamps and confidence values; the continuity editor compares it with the planned lines.
 
+### Character voices
+
+Pass `--voice-model /path/to/Qwen3-Omni-30B-A3B-Instruct` to enable `/generate-voice`. Supply `text`, `speaker` (`Chelsie`, `Ethan` or `Aiden`), acting `direction`, a stable `seed` and `max_seconds`. The tool returns a 24 kHz WAV asset that can be staged as a ComfyUI audio reference. The voice model stays loaded across consecutive requests; switching to image or video generation releases it. Set `--idle-unload-seconds 1800` for longer production sessions.
+
 ## Connect an agent
 
 Start Studio with `examples/video-studio/local-agent.yaml` and `deployment.local.yaml`. The profile uses `MOONSHOT_API_KEY` for Kimi K3.1 Pro and the local media endpoints below. Image inputs reach Kimi as base64 content parts. Visual checks use resized previews; generation uses the original assets.
@@ -54,6 +58,7 @@ Start Studio with `examples/video-studio/local-agent.yaml` and `deployment.local
 | `/compose` | Join selected clips and optionally burn SRT subtitles |
 | `/vision` | Read generated assets as bounded image inputs for a vision model |
 | `/generate-image`, `/generate-video` | Lower-level generation for other applications |
+| `/generate-voice` | Record a character or narrator voice reference with Qwen Omni |
 | `/upload` | Import an image into the service's asset store |
 | `/stage-reference` | Copy an image, video or audio asset to ComfyUI's input directory |
 | `/ingest-comfy` | Collect ComfyUI's saved media |

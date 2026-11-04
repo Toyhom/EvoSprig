@@ -10,7 +10,7 @@ from build_agent import ANY, ASSET, ASSETS, STRING, TEXT, obj
 from evosprig.plugins.comfy_tools import ComfyRecipeConfig, comfy_recipe_tool
 
 
-def profile(recipe, *, model_url, model_name, media_url, comfy_url):
+def profile(recipe, *, model_url, model_name, media_url, comfy_url, model_timeout_seconds=1200):
     config = ComfyRecipeConfig.model_validate(recipe)
     if config.name != "film.recipe":
         raise ValueError("the recipe binding must be named film.recipe")
@@ -24,7 +24,7 @@ def profile(recipe, *, model_url, model_name, media_url, comfy_url):
         raise ValueError("the episode recipe needs three audio reference slots and a video slot")
     model = {"base_url": model_url, "model": model_name, "api_key_env": "LOCAL_MODEL_API_KEY",
              "capabilities": ["text", "structured_output", "tool_calling", "vision"],
-             "timeout_seconds": 600, "json_mode": "without_tools",
+             "timeout_seconds": model_timeout_seconds, "json_mode": "without_tools",
              "options": {"chat_template_kwargs": {"enable_thinking": False}}}
     bindings = {"film.recipe": config.model_dump(mode="json"),
                 "film.settings": {**config.model_dump(mode="json"), "kind": "comfy_recipe_info", "name": "film.settings"},
@@ -32,6 +32,9 @@ def profile(recipe, *, model_url, model_name, media_url, comfy_url):
                                 "dedicated": True, "job_timeout_seconds": 14400}}
     contracts = {
         "generate_image": ("generate-image", obj(prompt=TEXT, references=ASSETS, options=ANY), ASSET),
+        "generate_voice": ("generate-voice", obj(text=TEXT, speaker={"enum": ["Chelsie", "Ethan", "Aiden"]},
+                            direction=TEXT, seed={"type": "integer", "minimum": 0, "maximum": 2147483647},
+                            max_seconds={"type": "number", "minimum": 1, "maximum": 30}), ASSET),
         "stage_reference": ("stage-reference", obj(asset=ASSET), obj(filename=TEXT, asset=ASSET)),
         "ingest_comfy": ("ingest-comfy", obj(outputs=ANY), obj(assets={"type": "array", "items": ANY})),
         "inspect_video": ("inspect-video", obj(asset=ASSET), ANY),
@@ -58,9 +61,10 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", default="Qwen3.8-Flash-Next")
     parser.add_argument("--media-url", default="http://127.0.0.1:18880")
     parser.add_argument("--comfy-url", default="http://127.0.0.1:18884")
+    parser.add_argument("--model-timeout-seconds", type=float, default=1200)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     result = profile(json.loads(args.recipe.read_text()), model_url=args.model_url, model_name=args.model_name,
-                     media_url=args.media_url, comfy_url=args.comfy_url)
+                     media_url=args.media_url, comfy_url=args.comfy_url, model_timeout_seconds=args.model_timeout_seconds)
     with args.out.open("x") as target:
         yaml.safe_dump(result, target, sort_keys=False)

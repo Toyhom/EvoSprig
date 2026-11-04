@@ -20,23 +20,56 @@ def asset(name, media_type="image/png"):
     return {"id": name, "uri": "https://media.example/" + name, "media_type": media_type}
 
 
+@pytest.mark.parametrize("idea", [False, True])
+async def test_creative_direction_accepts_text_only_and_preserves_optional_overrides(idea):
+    from evosprig.core.debug import plan_debug
+    from evosprig.core.version import compile_snapshot
+
+    root = Path(__file__).parents[1] / "examples/episode-studio"
+    full = compile_agent(load_spec(root / "agent.yaml"), root)
+    fragment = plan_debug(full.spec, ["creative_director", "production_brief"])
+    story = "A repair robot finds a greenhouse full of dry plants. Its pump fails. It collects rain in its own shell, waters a seed, and watches the first leaf open."
+    direction = {"mode": "idea" if idea else "story", "expanded_story": story if idea else "",
+                 "style": "Warm stop-motion animation with copper and green textures", "language": "en", "target_seconds": 45}
+    request = {"source_text": "A repair robot saves a greenhouse." if idea else story}
+    if idea:
+        request.update(style="Ink animation", language="zh-CN", target_seconds=60)
+    registry = ToolRegistry()
+    registry.register(python_tool())
+    provider = MockProvider([ModelResponse(text=json.dumps(direction))])
+    result = await Runtime({"main": provider}, registry).run(
+        compile_snapshot(fragment.spec, {key: full.resources[key] for key in fragment.spec.resources}),
+        {"project": request, "upstream": {}},
+    )
+    assert result.status == "succeeded", result.error
+    brief = result.output["production_brief"]
+    assert brief["source_text"] == story
+    assert brief["style"] == ("Ink animation" if idea else direction["style"])
+    assert brief["language"] == ("zh-CN" if idea else "en")
+    assert brief["target_seconds"] == (60 if idea else 45)
+
+
 class FilmModel(MockProvider):
     capabilities = frozenset({"text", "structured_output", "vision", "tool_calling"})
 
-    def __init__(self, director_cut=False):
+    def __init__(self, director_cut=False, reference_rejections=0):
         super().__init__()
         self.director_cut = director_cut
         self.reviews = 0
         self.frame_reviews = 0
         self.second_context = None
         self.engineer_calls = 0
+        self.reference_reviews = 0
+        self.reference_rejections = reference_rejections
 
     async def complete(self, request):
         self.requests.append(request)
         prompt = request.messages[0]["content"]
         content = request.messages[1]["content"]
         inputs = json.loads(content if isinstance(content, str) else next(p["text"] for p in content if p["type"] == "text"))
-        if "You are the source reader" in prompt:
+        if "You are the creative director" in prompt:
+            result = {"mode": "story", "expanded_story": "", "style": "2D animation", "language": "en", "target_seconds": 24}
+        elif "You are the source reader" in prompt:
             result = {"characters": [{"id": "visitor", "name": "Visitor", "description": "a visitor",
                                       "source_quote": "A visitor opens a door."}],
                       "dialogue": [], "ending": "A visitor opens a door."}
@@ -53,6 +86,13 @@ class FilmModel(MockProvider):
         elif "You are the art director" in prompt:
             result = {"style": "2D animation", "assets": [{"id": "visitor", "kind": "character", "prompt": "blue coat"},
                                                            {"id": "hall", "kind": "location", "prompt": "wooden door"}]}
+        elif "You are the voice director" in prompt:
+            result = {"voices": [{"id": "visitor", "speaker": "Aiden", "text": "Hello",
+                                   "direction": "Quiet, curious visitor", "seed": 42}]}
+        elif "You are the reference-library editor" in prompt:
+            self.reference_reviews += 1
+            accepted = self.reference_reviews > self.reference_rejections
+            result = {"accepted": accepted, "feedback": "" if accepted else "Remove the extra person and keep an empty room."}
         elif "You are the shot director" in prompt:
             if inputs["context"]["shot"]["id"] == "1":
                 self.second_context = inputs["context"]
@@ -112,6 +152,7 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
 
     for name, fn in {
         "media.generate_image": image,
+        "media.generate_voice": lambda **kw: asset("visitor-voice", "audio/wav"),
         "media.stage_reference": lambda asset, **kw: {"filename": asset["id"] + ".png"},
         "film.recipe": recipe,
         "film.settings": lambda: {"defaults": {"steps": 12}, "controls": {
@@ -133,7 +174,10 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
                                  {"source_text": "A visitor opens a door.", "style": "2D", "language": "en", "target_seconds": 24})
     assert result.status == "waiting_input", result.error
     assert len(renders) == 4 and len(images) == 5 and not compositions
-    assert all(image["prompt"].startswith("Visual style: 2D animation\n\n") for image in images)
+    assert all(image["prompt"].startswith("Visual style: 2D animation\n\n") for image in images[2:])
+    assert "plain background" in images[0]["prompt"]
+    assert "No people" in images[1]["prompt"]
+    assert model.reference_reviews == 2
     assert images[2]["options"]["seed"] != images[3]["options"]["seed"]
     assert model.frame_reviews == 3
     assert renders[0]["seed"] != renders[1]["seed"]
@@ -143,8 +187,9 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
     assert all('Visitor says "Hello".' in render["prompt"] for render in renders)
     assert model.second_context["previous"]["last_frame"]["id"] == "clip-2-tail"
     assert images[4]["references"][0]["id"] == ("image-1" if director_cut else "clip-2-tail")
-    assert recipes[0]["reference_audio"] == recipes[0]["reference_videos"] == []
-    assert recipes[2]["reference_audio"] == ["clip-2-voice.png"]
+    assert recipes[0]["reference_videos"] == []
+    assert recipes[0]["reference_audio"] == ["visitor-voice.png"]
+    assert recipes[2]["reference_audio"] == ["visitor-voice.png"]
     assert recipes[2]["reference_videos"] == ([] if director_cut else ["clip-2-tail-video.png"])
     assert "clip-1-voice.png" not in str(recipes)
     assert len(result.waiting) == 1
@@ -156,6 +201,46 @@ async def test_episode_retakes_carry_actual_tail_and_resume_without_repeating_re
     assert [a["id"] for a in compositions[0]] == ["clip-2", "clip-4"]
     assert (await runtime().resume(result.run_id)).status == "succeeded"
     assert len(compositions) == 1
+
+
+@pytest.mark.parametrize("rejections", [1, 2])
+async def test_reference_review_retries_locally_and_preserves_completed_assets(tmp_path, rejections):
+    from evosprig.core.debug import plan_debug
+    from evosprig.core.version import compile_snapshot
+
+    root = Path(__file__).parents[1] / "examples/episode-studio"
+    full = compile_agent(load_spec(root / "agent.yaml"), root)
+    fragment = plan_debug(full.spec, ["reference_library"])
+    version = compile_snapshot(fragment.spec, {key: full.resources[key] for key in fragment.spec.resources})
+    model = FilmModel(reference_rejections=rejections)
+    images = []
+
+    def generate(**kwargs):
+        images.append(kwargs)
+        return asset("reference-" + str(len(images)))
+
+    registry = ToolRegistry()
+    registry.register(python_tool())
+    registry.register(Tool("media.generate_image", "image", {}, {}, generate))
+    registry.register(Tool("media.vision", "preview", {}, {}, lambda **kw: {"images": [IMAGE]}))
+    journal = SQLiteJournal(tmp_path / "references.sqlite")
+    runtime = Runtime({"vision": model}, registry, journal=journal, allow_writes=True)
+    result = await runtime.run(version, {"project": {"source_text": "A quiet house."}, "upstream": {
+        "art_director": {"style": "A girl walks from a warm hill to a cold bedroom.", "assets": [
+            {"id": "house", "kind": "location", "prompt": "Cel-shaded empty room with a blue door on the right."}]}}})
+    assert len(images) == 2
+    assert "girl" not in images[0]["prompt"]
+    assert "No people" in images[0]["prompt"]
+    assert "Remove the extra person" in images[1]["prompt"]
+    assert images[0]["options"]["seed"] != images[1]["options"]["seed"]
+    if rejections == 2:
+        assert result.status == "waiting_input", result.error
+        waiting = result.waiting[0]
+        journal.respond(result.run_id, waiting["path"], {"frame": waiting["input"]["frame"]})
+        result = await runtime.resume(result.run_id)
+    assert result.status == "succeeded", result.error
+    assert result.output["reference_library"]["items"][0]["asset"]["id"] == "reference-2"
+    assert len(images) == 2
 
 
 def test_episode_deployment_loads_all_model_and_tool_bindings(tmp_path, monkeypatch):
@@ -297,3 +382,25 @@ def test_plan_feedback_includes_duration_speech_and_identity_in_one_pass():
     assert not result["valid"]
     for issue in ["requested total is 30", "too much dialogue", "undeclared character or location", "first shot must use cut"]:
         assert issue in result["feedback"]
+
+
+def test_duration_feedback_gives_a_feasible_edit_without_changing_the_plan():
+    import ast
+    from copy import deepcopy
+
+    from evosprig.core.json_program import execute
+
+    source = (Path(__file__).parents[1] / "examples/episode-studio/code/plan_valid.py").read_text()
+    plan = {"characters": [], "locations": [{"id": "hill"}], "shots": [
+        {"id": f"shot_{i}", "characters": [], "location": "hill", "dialogue": [],
+         "narration": "风" * (70 if i == 15 else 10), "transition": "cut", "duration_seconds": 5}
+        for i in range(16)]}
+    before = deepcopy(plan)
+    for target in (60, 180, 240):
+        result = execute(source, {"output": plan, "input": {"brief": {"language": "zh", "target_seconds": target}}})
+        assignment = result["feedback"].split("assignment is ", 1)[1].split(". These numbers", 1)[0]
+        durations = ast.literal_eval(assignment)
+        assert sum(durations.values()) == target
+        assert all(3 <= value <= 15 for value in durations.values())
+        assert durations["shot_15"] >= 14
+    assert plan == before

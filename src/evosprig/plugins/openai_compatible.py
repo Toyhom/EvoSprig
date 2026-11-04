@@ -21,7 +21,7 @@ class Connection(Contract):
     base_url: str
     model: str
     api_key_env: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
-    timeout_seconds: float = Field(default=45.0, gt=0, le=600)
+    timeout_seconds: float = Field(default=45.0, gt=0, le=3600)
     max_connections: int = Field(default=32, ge=1, le=1024)
     max_keepalive_connections: int = Field(default=8, ge=0, le=1024)
     token_limit_field: Literal["max_tokens", "max_completion_tokens"] = "max_tokens"

@@ -94,6 +94,13 @@
           "default": false,
           "title": "Allow Side Effects",
           "type": "boolean"
+        },
+        "pure_checkpoint_interval": {
+          "default": 1,
+          "minimum": 1,
+          "maximum": 128,
+          "title": "Pure Checkpoint Interval",
+          "type": "integer"
         }
       },
       "title": "Execution",
@@ -110,7 +117,7 @@
           "additionalProperties": {
             "$ref": "#/$defs/Node"
           },
-          "maxProperties": 128,
+          "maxProperties": 512,
           "minProperties": 1,
           "title": "Nodes",
           "type": "object"
@@ -119,7 +126,7 @@
           "items": {
             "$ref": "#/$defs/Edge"
           },
-          "maxItems": 1024,
+          "maxItems": 4096,
           "title": "Edges",
           "type": "array"
         },

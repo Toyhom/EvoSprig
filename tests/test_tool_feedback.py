@@ -95,6 +95,29 @@ async def test_write_failure_still_requires_reconciliation(tmp_path):
     assert not any(event["type"] == "tool.feedback" for event in result.events)
 
 
+@pytest.mark.parametrize("declared", [False, True])
+async def test_deterministic_nodes_show_declared_feedback_and_hide_unexpected_errors(declared):
+    def invoke():
+        if declared:
+            raise ToolFeedbackError("invalid_option", "Choose a sampler listed in the render profile.")
+        raise RuntimeError("private service credentials")
+
+    registry = ToolRegistry()
+    registry.register(Tool("example.options", "Options", {}, {}, invoke))
+    spec = (Builder("direct-feedback", {}, {}, spec_version="0.3")
+            .tool("options", "example.options")
+            .node("options", "tool", tool="options", output_schema={})
+            .build_spec())
+    result = await Runtime({}, registry).run(compile_agent(spec), {})
+    assert result.status == "failed"
+    assert result.error["node_id"] == "graph/options"
+    if declared:
+        assert result.error["code"] == "invalid_option"
+        assert result.error["message"] == "Choose a sampler listed in the render profile."
+    else:
+        assert "private service credentials" not in json.dumps(result.error)
+
+
 @pytest.mark.parametrize("external", [False, True])
 async def test_write_rejected_before_commit_can_be_corrected(tmp_path, external):
     from evosprig.core.protocols import ExternalStatus, ExternalTool, ToolRejectedError

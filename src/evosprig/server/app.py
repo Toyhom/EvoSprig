@@ -19,7 +19,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError as SchemaValidationError
 from pydantic import Field, ValidationError
 
-from evosprig.config import make_models, make_tools, restore_models
+from evosprig.config import make_models, make_tools, read_profile, restore_models
 from evosprig.core.journal import Scope
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import AgentSpec, Contract, canonical_json, digest
@@ -66,7 +66,7 @@ class InputBody(Contract):
 
 class DebugSelection(Contract):
     revision: int = Field(ge=1)
-    nodes: list[str] = Field(min_length=1, max_length=128)
+    nodes: list[str] = Field(min_length=1, max_length=512)
     path: list[str] = Field(default_factory=list, max_length=24)
     source_run_id: str | None = None
     source_prefix: str = Field(default="graph", max_length=2048)
@@ -100,11 +100,16 @@ def create_app(
 
     def tools_for(scope, bindings=None):
         if bindings is None:
-            import yaml
-
-            raw = yaml.safe_load(Path(profile).read_text()) if profile else {}
+            raw = read_profile(profile)
             integration = store.integration(scope.project, "comfy", identity=(scope.user, scope.tenant))
             bindings = {**(integration or {}).get("bindings", {}).get("tools", {}), **raw.get("tools", {})}
+            overrides = store.integration(scope.project, "comfy_recipes", identity=(scope.user, scope.tenant)) or {}
+            for name, workflow in overrides.items():
+                original = bindings.get(name)
+                if original and original.get("kind") == "comfy_recipe":
+                    for key, binding in list(bindings.items()):
+                        if binding.get("kind") in {"comfy_recipe", "comfy_recipe_info"} and binding.get("workflow") == original["workflow"]:
+                            bindings[key] = {**binding, "workflow": workflow}
         return make_tools(workspace, scope, profile=profile, bindings=bindings)
 
     def restore_runtime(record):
@@ -239,7 +244,7 @@ def create_app(
     )
     from .comfy_api import install_comfy_routes
 
-    install_comfy_routes(app, store)
+    install_comfy_routes(app, store, profile=profile)
 
     @app.get("/api/health")
     async def health():
@@ -328,7 +333,7 @@ def create_app(
             )
         }
 
-    def run_record(run_id: str):
+    def run_record(run_id: str, after: int = 0):
         try:
             record = journal.get(run_id)
         except KeyError:
@@ -379,7 +384,7 @@ def create_app(
             "usage": checkpoint["usage"],
             "waiting": checkpoint["waiting"],
             "duration_seconds": checkpoint["active_seconds"],
-            "events": journal.events(run_id),
+            "events": journal.events(run_id, after=max(0, after)),
             "cancel_requested": record["cancel_requested"],
         }
 
@@ -410,8 +415,10 @@ def create_app(
                 "path": debug.get("path", []) + path, "source_prefix": prefix}
 
     @app.get("/api/projects/{project_id}/runs")
-    async def project_runs(project_id: str):
+    async def project_runs(project_id: str, summary: bool = False):
         store.get(project_id, identity=current_principal.get().key)
+        if summary:
+            return journal.summaries(current_principal.get().scope(project_id))
         return [
             run_record(record["run_id"])
             for record in journal.list(current_principal.get().scope(project_id))
@@ -521,8 +528,8 @@ def create_app(
         return {"run_id": run_id, "status": "queued", "agent_version": version.version_id}
 
     @app.get("/api/runs/{run_id}")
-    async def run(run_id: str):
-        return run_record(run_id)
+    async def run(run_id: str, after: int = 0):
+        return run_record(run_id, after=after)
 
     @app.post("/api/runs/{run_id}/input", status_code=202)
     async def provide_input(run_id: str, body: InputBody):

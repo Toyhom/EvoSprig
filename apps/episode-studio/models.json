@@ -1,0 +1,137 @@
+{
+  "models": {
+    "director": {
+      "repo": "Qwen/Qwen3.8-Flash-Next-FP8",
+      "revision": "236dfdf285828023ca3bcd3f37366c58a3469b13"
+    },
+    "image": {
+      "repo": "Qwen/Qwen-Image-2.1",
+      "revision": "d26bb61231c349cf6b7896fa83353113880e1ba3"
+    },
+    "voice": {
+      "repo": "Qwen/Qwen3-Omni-30B-A3B-Instruct",
+      "revision": "26291f793822fb6be9555850f06dfe95f2d7e695"
+    },
+    "speech": {
+      "repo": "dropbox-dash/faster-whisper-large-v3-turbo",
+      "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf"
+    }
+  },
+  "render_weights": [
+    {
+      "repo": "smhfacct/Minimax-H3-fl2va-ref2va-hybrid-models",
+      "revision": "a36feb17fbd1f20ff4bdd509ccd07e2b7b585a38",
+      "file": "minimax_h3_hybrid_fl2va_ref2va_b25-49-int8.safetensors",
+      "category": "diffusion_models",
+      "size": 20970379632,
+      "sha256": "a629cfea8d89a071b140c6e1935dc9a23e72de6badc18975a2bb9e6d1423d76d"
+    },
+    {
+      "repo": "ethanfel/Qwen3-VL-32B-Ultra-Heretic-MiniMax-H3-ComfyUI-INT8-ConvRot",
+      "revision": "e8967f6a39ea5b4939a1aff81be3e8706490c0e8",
+      "file": "qwen3vl_32b_h3_ultra_uncensored_heretic_int8_convrot.safetensors",
+      "category": "text_encoders",
+      "size": 26363476151,
+      "sha256": "d84547412144b7c50a6ec77437a889b869d3ace88da77ef1775d3d2a4901c192"
+    },
+    {
+      "repo": "Kijai/MiniMax-H3-experimental",
+      "revision": "f5c3b1d5a63e008a691fca1b6096fd57a5307536",
+      "file": "minimax_h3_video_vae_int8_convrot.safetensors",
+      "category": "vae",
+      "size": 3171670912,
+      "sha256": "9bb2d96f218c76babd85e0611b85ca8fb330a90546c01a0005e8a58a59593410"
+    },
+    {
+      "repo": "Comfy-Org/MiniMax-H3",
+      "revision": "54472221d27c695fca9621b0c3ed52f06c4af707",
+      "file": "vae/minimax_h3_audio_vae_fp32.safetensors",
+      "category": "vae",
+      "size": 605254808,
+      "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+    },
+    {
+      "repo": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "file": "loras/minimax_h3_dmad_full_dareties_v4_step600_comfy_fro.safetensors",
+      "category": "loras",
+      "size": 956743688,
+      "sha256": "4d4ea608992d72303e4971f78728f587f43ecb72490f365a042ed82e37a907ce"
+    },
+    {
+      "repo": "Alissonerdx/Minimax-H3-ComfyUI",
+      "revision": "4bb14d4a611179d4cf633e74d3ae33e965ae2301",
+      "file": "latent_upscaler/h3_upscaler_lms_v0.1.safetensors",
+      "category": "latent_upscale_models",
+      "size": 690593048,
+      "sha256": "40d4228227146245ef2b65480b647c50222465ca125de5880f192e3259e40d59"
+    },
+    {
+      "repo": "Alissonerdx/Minimax-H3-ComfyUI",
+      "revision": "4bb14d4a611179d4cf633e74d3ae33e965ae2301",
+      "file": "vae_approx/taeh3.safetensors",
+      "category": "vae_approx",
+      "size": 22709752,
+      "sha256": "4fd022bfcab08772fe0536b17ea1a3bbb5625be11e397868d1c5d891863d4c13"
+    },
+    {
+      "repo": "RunningHubAI/rh-h3-speed-slider-1.1-lora",
+      "revision": "e1af402c4483fbf3c03894364a2403cbe316a584",
+      "file": "H3_speed_slider_1.1.safetensors",
+      "category": "loras",
+      "size": 10093356,
+      "sha256": "593b074e8eb17bf9f858c3586fc12f53038dbfdd9634e146fe34a17e2661ca40"
+    },
+    {
+      "repo": "JOKER141/MiniMax-H3-Combat-Base-V2",
+      "revision": "7b3c5b7157d66517f5bd8f5d3fa8fd2c66bc4d11",
+      "file": "H3_Combat_V2.safetensors",
+      "category": "loras",
+      "size": 155110280,
+      "sha256": "5b3edb09e9d6029439badf9bc9db4ba4a355ae679b0810888de82c4793c0bac8"
+    },
+    {
+      "repo": "JOKER141/MiniMax-H3-General-Motion-Continuity-Repair",
+      "revision": "1676b352bb9f62407f76aee2ad55db2f36d04471",
+      "file": "Motion_Repair_V2.safetensors",
+      "category": "loras",
+      "size": 155110272,
+      "sha256": "edfa0e2858caeba7be9108883f61da8525d3c58af998c94ac7a449d9603d7574"
+    },
+    {
+      "repo": "JOKER141/H3-Fight-Flow-Fight-Interaction-LoRA",
+      "revision": "587a2f0944f6a79794113741d244d0a148e94f11",
+      "file": "H3_Fight_Flow_V1.safetensors",
+      "category": "loras",
+      "size": 155110296,
+      "sha256": "579e8eca67b6d70f4db94b2db67cd938751d576ee3d72aba875dae3d911f7398"
+    }
+  ],
+  "runtimes": {
+    "comfy": {
+      "url": "https://github.com/Comfy-Org/ComfyUI.git",
+      "revision": "576b642e77b4c42f84afe583c8e8f0eef7637618",
+      "path": ""
+    },
+    "kj": {
+      "url": "https://github.com/kijai/ComfyUI-KJNodes.git",
+      "revision": "ab72eda7ffad6280422d71ab7d54d3fb87c0ba18",
+      "path": "custom_nodes/ComfyUI-KJNodes"
+    },
+    "vhs": {
+      "url": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+      "revision": "4d907bee61e92c2e65af3bd6383a4e4d356126d1",
+      "path": "custom_nodes/ComfyUI-VideoHelperSuite"
+    },
+    "selflift": {
+      "url": "https://github.com/facok/comfyui-SelfLift.git",
+      "revision": "835c3cf7919410f71f414688f049c6ca497789d0",
+      "path": "custom_nodes/comfyui-SelfLift"
+    },
+    "goohai": {
+      "url": "https://github.com/goohai/Goohaitools-comfyui.git",
+      "revision": "3beedd4d4bab28d941a1bdb0113d7800081455a8",
+      "path": "custom_nodes/Goohaitools-comfyui"
+    }
+  }
+}

@@ -1,178 +1,20 @@
 {
-  "canvas": {
-    "groups": {
-      "graph": [
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:story",
-          "label": "Story & visual direction",
-          "members": [
-            "source_reader",
-            "producer",
-            "script_editor",
-            "art_director"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:assets",
-          "label": "Shared reference library",
-          "members": [
-            "render_profile",
-            "reference_library"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:shots",
-          "label": "Direct \u00b7 render \u00b7 review",
-          "members": [
-            "shots"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:edit",
-          "label": "The finished episode",
-          "members": [
-            "timeline",
-            "assemble"
-          ]
-        }
-      ],
-      "graph/shots/body": [
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:direction",
-          "label": "Direct the shot",
-          "members": [
-            "shot_context",
-            "frame_takes",
-            "frame_accepted"
-          ]
-        },
-        {
-          "collapsed": true,
-          "direction": "DOWN",
-          "id": "group:frame-approval",
-          "label": "Choose the first frame",
-          "members": [
-            "approved_frame",
-            "frame_attention",
-            "frame_choice",
-            "first_frame"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:references",
-          "label": "Cast \u00b7 motion \u00b7 voices",
-          "members": [
-            "gather_references",
-            "stage_references",
-            "reference_names"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:takes",
-          "label": "Render & visual review",
-          "members": [
-            "takes",
-            "accepted"
-          ]
-        },
-        {
-          "collapsed": true,
-          "direction": "DOWN",
-          "id": "group:selection",
-          "label": "Select & carry forward",
-          "members": [
-            "approved",
-            "needs_review",
-            "gather_selected",
-            "selected_take"
-          ]
-        }
-      ],
-      "graph/shots/body/frame_takes/body": [
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:frame-direction",
-          "label": "Compose the first frame",
-          "members": [
-            "shot_director",
-            "settings",
-            "generate"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:frame-quality",
-          "label": "Check identity & staging",
-          "members": [
-            "review_inputs",
-            "preview",
-            "frame_review"
-          ]
-        }
-      ],
-      "graph/shots/body/takes/body": [
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:render-controls",
-          "label": "Direct & configure",
-          "members": [
-            "render_engineer",
-            "render_settings",
-            "configure_nodes"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:render-output",
-          "label": "Generate & inspect",
-          "members": [
-            "render",
-            "collect_media",
-            "select_clip",
-            "inspect_clip"
-          ]
-        },
-        {
-          "collapsed": false,
-          "direction": "DOWN",
-          "id": "group:render-review",
-          "label": "Continuity & next take",
-          "members": [
-            "review_images",
-            "preview",
-            "continuity_review",
-            "record_take"
-          ]
-        }
-      ]
-    }
-  },
   "layout": {
     "art_director": {
-      "x": 64,
-      "y": 936
+      "x": 494,
+      "y": 132
     },
     "assemble": {
-      "x": 1322,
-      "y": 689
+      "x": 1344,
+      "y": 547
+    },
+    "creative_director": {
+      "x": 64,
+      "y": 221
+    },
+    "draft_timing": {
+      "x": 1395,
+      "y": 759
     },
     "graph/shots/body/accepted": {
       "x": 1258,
@@ -283,32 +125,233 @@
       "y": 530
     },
     "producer": {
-      "x": 64,
-      "y": 400
+      "x": 99,
+      "y": 1009
+    },
+    "production_brief": {
+      "x": 75,
+      "y": 465
     },
     "reference_library": {
-      "x": 494,
-      "y": 639
+      "x": 505,
+      "y": 700
     },
     "render_profile": {
-      "x": 506,
-      "y": 477
+      "x": 517,
+      "y": 376
     },
     "script_editor": {
-      "x": 64,
-      "y": 668
+      "x": 99,
+      "y": 1277
     },
     "shots": {
-      "x": 902,
-      "y": 558
+      "x": 924,
+      "y": 416
     },
     "source_reader": {
-      "x": 64,
-      "y": 132
+      "x": 99,
+      "y": 741
     },
     "timeline": {
-      "x": 1310,
-      "y": 485
+      "x": 1332,
+      "y": 343
+    },
+    "voice_director": {
+      "x": 529,
+      "y": 610
+    },
+    "voice_library": {
+      "x": 859,
+      "y": 610
+    }
+  },
+  "canvas": {
+    "groups": {
+      "graph": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:story",
+          "label": "Story & direction",
+          "members": [
+            "creative_director",
+            "production_brief",
+            "group:writing"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:writing",
+          "label": "Writing room",
+          "members": [
+            "source_reader",
+            "producer",
+            "draft_timing",
+            "script_editor"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:assets",
+          "label": "Cast, places & voices",
+          "members": [
+            "art_director",
+            "render_profile",
+            "group:voices",
+            "reference_library"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:voices",
+          "label": "Voice casting & recording",
+          "members": [
+            "voice_director",
+            "voice_library"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:shots",
+          "label": "Direct · render · review",
+          "members": [
+            "shots"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:edit",
+          "label": "The finished episode",
+          "members": [
+            "timeline",
+            "assemble"
+          ]
+        }
+      ],
+      "graph/shots/body": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:direction",
+          "label": "Direct the shot",
+          "members": [
+            "shot_context",
+            "frame_takes",
+            "frame_accepted"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:frame-approval",
+          "label": "Choose the first frame",
+          "members": [
+            "approved_frame",
+            "frame_attention",
+            "frame_choice",
+            "first_frame"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:references",
+          "label": "Cast · motion · voices",
+          "members": [
+            "gather_references",
+            "stage_references",
+            "reference_names"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:takes",
+          "label": "Render & visual review",
+          "members": [
+            "takes",
+            "accepted"
+          ]
+        },
+        {
+          "collapsed": true,
+          "direction": "DOWN",
+          "id": "group:selection",
+          "label": "Select & carry forward",
+          "members": [
+            "approved",
+            "needs_review",
+            "gather_selected",
+            "selected_take"
+          ]
+        }
+      ],
+      "graph/shots/body/frame_takes/body": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:frame-direction",
+          "label": "Compose the first frame",
+          "members": [
+            "shot_director",
+            "settings",
+            "generate"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:frame-quality",
+          "label": "Check identity & staging",
+          "members": [
+            "review_inputs",
+            "preview",
+            "frame_review"
+          ]
+        }
+      ],
+      "graph/shots/body/takes/body": [
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:render-controls",
+          "label": "Direct & configure",
+          "members": [
+            "render_engineer",
+            "render_settings",
+            "configure_nodes"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:render-output",
+          "label": "Generate & inspect",
+          "members": [
+            "render",
+            "collect_media",
+            "select_clip",
+            "inspect_clip"
+          ]
+        },
+        {
+          "collapsed": false,
+          "direction": "DOWN",
+          "id": "group:render-review",
+          "label": "Continuity & next take",
+          "members": [
+            "review_images",
+            "preview",
+            "continuity_review",
+            "record_take"
+          ]
+        }
+      ]
     }
   }
 }

@@ -10,7 +10,7 @@ def run(inputs):
     image_references = references
     if shot["transition"] == "continue" and previous_frame:
         image_references = [previous_frame] + references
-    voice_references = previous.get("voice_references", {})
+    voice_references = dict(list(previous.get("voice_references", {}).items()) + [[entry["id"], entry["asset"]] for entry in context.get("voices", [])])
     speakers = list(dict([[d["speaker"], True] for d in shot["dialogue"]] + ([["narrator", True]] if shot["narration"] else [])).keys())
     audio_references = [{"speaker": speaker, "asset": voice_references[speaker]}
                         for speaker in speakers if speaker in voice_references][:3]

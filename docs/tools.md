@@ -6,6 +6,14 @@ function runs in a thread; an asynchronous function runs on the event loop.
 `ExternalTool` defines idempotent `submit`, `poll` and optional `cancel` callbacks for
 jobs hosted by an external executor. The journal persists the external job ID.
 
+## Scheduled steps and agent-selected calls
+
+Use a `tool` node for a required step, such as OCR, parsing an invoice or submitting a video render. Its inputs come from the graph and the runtime invokes it directly. Attach the same tool to an `agent` node when the model should decide whether to call it. The tool contract stays the same in both cases.
+
+A local calculation whose result depends only on its arguments can declare `Tool(..., pure=True)`. The runtime can repeat that calculation after interruption and batch its checkpoints with `execution.pure_checkpoint_interval`. ComfyUI preparation nodes use this for graph connections and parameter calculations; model calls, file access and external services use the regular operation journal. See [large ComfyUI graphs](comfyui.md#large-graphs).
+
+## Deployment bindings
+
 HTTP and MCP tools are administrator-configured deployment bindings. Specs refer to
 the logical plugin name and version. Profiles may contain `models` and `tools`:
 

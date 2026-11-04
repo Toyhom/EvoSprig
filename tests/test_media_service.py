@@ -54,6 +54,40 @@ def service(tmp_path, monkeypatch):
     return store, backend, app_module.create_app(store, backend, start_worker=False)
 
 
+async def test_preload_readiness_waits_for_weights_and_shutdown_closes_worker(tmp_path, monkeypatch):
+    import asyncio
+    import threading
+
+    monkeypatch.syspath_prepend(str(SERVICE))
+    started, release, closed = threading.Event(), threading.Event(), threading.Event()
+    backend = MediaBackend(tmp_path / "assets", "unused", None, "http://localhost")
+    def execute(operation, payload, name, canceled):
+        assert operation == "warmup" and payload == {"family": "voice"}
+        started.set()
+        assert release.wait(5)
+        backend.loaded = "voice"
+        return {"loaded": "voice"}
+    backend.execute = execute
+    backend.close = closed.set
+    app = load("app").create_app(JobStore(tmp_path / "jobs.sqlite"), backend, preload="voice")
+    async with app.router.lifespan_context(app):
+        try:
+            assert await asyncio.to_thread(started.wait, 5)
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://localhost") as client:
+                response = await client.get("/health")
+                assert response.status_code == 503 and response.json()["status"] == "loading"
+                release.set()
+                for _ in range(50):
+                    response = await client.get("/health")
+                    if response.status_code == 200:
+                        break
+                    await asyncio.sleep(.02)
+                assert response.json()["loaded"] == "voice"
+        finally:
+            release.set()
+    assert closed.is_set()
+
+
 async def test_idempotency_and_restart_do_not_render_twice(service):
     store, backend, app = service
     calls = []

@@ -175,7 +175,7 @@ def compatibility_report(
         if binding.plugin in tool_bindings:
             config = tool_bindings[binding.plugin]
             if (
-                config.get("kind") in {"http", "mcp", "external_http", "sqlite", "repository", "comfy_node", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
+                config.get("kind") in {"http", "mcp", "external_http", "sqlite", "repository", "comfy_node", "comfy_collect", "comfy_job", "comfy_recipe", "comfy_recipe_info"}
                 and config.get("version", "1") == binding.version
             ):
                 continue
@@ -230,6 +230,10 @@ def export_python(
                 from evosprig.plugins.sqlite_tools import SQLiteToolConfig
 
                 config = SQLiteToolConfig.model_validate(raw)
+            elif raw.get("kind") == "comfy_collect":
+                from evosprig.plugins.comfy_tools import ComfyCollectConfig
+
+                config = ComfyCollectConfig.model_validate(raw)
             elif raw.get("kind") == "comfy_node":
                 from evosprig.plugins.comfy_tools import ComfyNodeConfig
 

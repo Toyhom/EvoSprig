@@ -105,6 +105,7 @@ class Tool:
     timeout_seconds: float = 10.0
     idempotent: bool = False
     recover: Callable | None = None
+    pure: bool = False
 
     def __post_init__(self):
         check_schema(self.input_schema)
@@ -113,6 +114,8 @@ class Tool:
             raise ValueError("tool timeout must be positive")
         if self.side_effect not in {"read_only", "write"}:
             raise ValueError("tool side_effect must be read_only or write")
+        if self.pure and (self.side_effect != "read_only" or self.idempotent or self.recover):
+            raise ValueError("pure tools must be deterministic local computations without external operations")
 
     def descriptor(self, alias: str) -> dict:
         return {

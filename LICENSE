@@ -1,4 +1,8 @@
 
+EvoSprig source code is covered by the Apache License below. Third-party model
+weights, external runtimes and supplied assets retain their own licenses.
+Model download references and applicable terms are listed in docs/model-sources.md.
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/

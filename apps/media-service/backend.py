@@ -17,7 +17,7 @@ from PIL import Image
 class MediaBackend:
     def __init__(self, root, image_model, video_model, base_url, seed=42, image_steps=4,
                  video_steps=12, width=848, height=480, image_backend="flux-klein",
-                 comfy_input=None, comfy_output=None, speech_model=None):
+                 comfy_input=None, comfy_output=None, speech_model=None, voice_model=None):
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.image_model = str(image_model)
@@ -32,6 +32,8 @@ class MediaBackend:
         self.comfy_output = Path(comfy_output).resolve() if comfy_output else None
         self.speech_model = str(Path(speech_model).resolve()) if speech_model else None
         self.transcriber = None
+        self.voice_model = str(voice_model) if voice_model else None
+        self.voice_generator = None
         self.pipeline = None
         self.loaded = None
 
@@ -97,7 +99,24 @@ class MediaBackend:
             else:
                 from diffusers import Flux2KleinPipeline
                 pipeline_class = Flux2KleinPipeline
-            pipeline = pipeline_class.from_pretrained(self.image_model, torch_dtype=torch.bfloat16, local_files_only=True)
+            components = {}
+            if self.image_backend == "qwen-image-2.1":
+                import os
+                strategy = os.environ.get("EVOSPRIG_IMAGE_LOAD_STRATEGY", "auto")
+                if strategy not in {"auto", "eager"}:
+                    raise ValueError("image loading strategy must be auto or eager")
+                if strategy == "eager":
+                    from diffusers import AutoencoderKLQwenImage21, QwenImage21Transformer2DModel
+                    from transformers import Qwen3VLForConditionalGeneration
+
+                    base = Path(self.image_model)
+                    components["text_encoder"] = Qwen3VLForConditionalGeneration.from_pretrained(
+                        base / "text_encoder", dtype=torch.bfloat16, disable_mmap=True, local_files_only=True)
+                    for name, cls in (("transformer", QwenImage21Transformer2DModel), ("vae", AutoencoderKLQwenImage21)):
+                        components[name] = cls.from_pretrained(base / name, torch_dtype=torch.bfloat16,
+                                                              disable_mmap=True, local_files_only=True)
+            pipeline = pipeline_class.from_pretrained(self.image_model, torch_dtype=torch.bfloat16,
+                                                      local_files_only=True, **components)
         else:
             if self.video_model is None:
                 raise ValueError("configure --video-model to use the local video generator")
@@ -405,6 +424,32 @@ class MediaBackend:
                 "language_probability": float(info.language_probability), "segments": rows}
 
     def execute(self, operation, payload, name, canceled):
+        if operation == "warmup":
+            family = payload.get("family")
+            if family == "voice":
+                if not self.voice_model:
+                    raise ValueError("configure a Qwen Omni Instruct voice model")
+                from voice import OmniVoice
+                if self.voice_generator is None:
+                    self.voice_generator = OmniVoice(self.voice_model)
+                self.voice_generator.load()
+                self.loaded = "voice"
+            elif family in {"image", "video"}:
+                self.load(family)
+            else:
+                raise ValueError("choose image, video or voice for preloading")
+            return {"loaded": family}
+        if operation == "generate-voice":
+            if not self.voice_model:
+                raise ValueError("configure a Qwen Omni Instruct voice model")
+            if self.voice_generator is None:
+                from voice import OmniVoice
+                self.voice_generator = OmniVoice(self.voice_model)
+            path = self.root / (name + ".wav")
+            metadata = self.voice_generator.generate(payload, path, canceled)
+            self.record(name, metadata)
+            self.loaded = "voice"
+            return self.asset(path)
         if operation == "assets":
             characters = payload["characters"]
             if not 1 <= len(characters) <= 8:

@@ -22,6 +22,7 @@ from .protocols import (
     ExternalTool,
     ModelRequest,
     ProviderError,
+    Tool,
     ToolFeedbackError,
     ToolRejectedError,
 )
@@ -137,17 +138,26 @@ class Engine:
 
         async def watch():
             nonlocal lost
+            next_heartbeat = time.monotonic() + self.lease_seconds / 3
             while True:
                 await asyncio.sleep(min(self.lease_seconds / 3, 0.5))
                 try:
-                    self.journal.heartbeat(lease, self.lease_seconds)
+                    if time.monotonic() >= next_heartbeat:
+                        self.journal.heartbeat(lease, self.lease_seconds)
+                        next_heartbeat = time.monotonic() + self.lease_seconds / 3
+                    session.check(force=True)
                     if (
                         (shutdown and shutdown.is_set())
                         or (cancel and cancel.is_set())
-                        or self.journal.get(run_id)["cancel_requested"]
                     ):
                         parent.cancel()
                         return
+                except asyncio.CancelledError:
+                    # A persisted cancellation is raised by session.check().
+                    # Canceling this watcher during cleanup must not cancel the parent.
+                    if not asyncio.current_task().cancelling():
+                        parent.cancel()
+                    return
                 except LeaseLost as exc:
                     lost = exc
                     parent.cancel()
@@ -215,14 +225,15 @@ class Engine:
                     "validation_error" if isinstance(exc, ValueError) else "execution_error",
                 ),
                 "message": str(exc)
-                if isinstance(exc, BudgetExceeded)
-                and str(exc)
-                in {
+                if isinstance(exc, ToolFeedbackError) or (
+                    isinstance(exc, BudgetExceeded)
+                    and str(exc) in {
                     "step budget exhausted",
                     "model call budget exhausted",
                     "token budget cannot reserve another request",
                     "provider usage exceeded reserved budget",
-                }
+                    }
+                )
                 else f"{type(exc).__name__}: execution failed; inspect node events and configuration",
             }
             session.finish("failed")
@@ -248,11 +259,25 @@ class ExecutionSession:
         self.failed_node = None
         self.tool_slots = asyncio.Semaphore(self.spec.execution.max_parallel_tools)
         self.model_slots = asyncio.Semaphore(self.spec.execution.max_parallel_nodes)
+        self.pending_events = []
+        self.pure_completed = 0
+        self.last_saved = time.monotonic()
+        self.control = None
+        self.control_checked_at = 0.0
 
-    def save(self, kind=None, path=None, *, status="running", release=False, delay=0, **data):
+    def save(self, kind=None, path=None, *, status="running", release=False, delay=0, defer=False, **data):
         self.cp["active_seconds"] = self.previous_active + time.monotonic() - self.started
-        events = [{"type": kind, "node_id": path, "data": data}] if kind else []
+        events = self.pending_events + ([{"type": kind, "node_id": path, "data": data}] if kind else [])
+        if defer:
+            self.pure_completed += int(kind == "node.completed")
+            if (self.pure_completed < self.spec.execution.pure_checkpoint_interval
+                    and time.monotonic() - self.last_saved < 1):
+                self.pending_events = events
+                return
         added = self.journal.save(self.lease, self.cp, status, events, release=release, delay=delay)
+        self.pending_events = []
+        self.pure_completed = 0
+        self.last_saved = time.monotonic()
         if self.on_event:
             for event in added:
                 self.on_event(event)
@@ -269,12 +294,20 @@ class ExecutionSession:
             usage=self.cp["usage"],
         )
 
-    def check(self, step=False):
+    def check(self, step=False, *, force=False):
         if self.halted:
             raise self.halted
-        record = self.journal.get(self.lease.run_id)
-        check_lease(record, self.lease)
-        if (self.cancel and self.cancel.is_set()) or record["cancel_requested"]:
+        if self.cancel and self.cancel.is_set():
+            raise asyncio.CancelledError
+        now = time.monotonic()
+        if force or self.control is None or now - self.control_checked_at >= 0.25:
+            record = self.journal.get(self.lease.run_id)
+            self.control = {key: record[key] for key in (
+                "owner", "generation", "lease_until", "cancel_requested",
+            )}
+            self.control_checked_at = now
+        check_lease(self.control, self.lease)
+        if self.control["cancel_requested"]:
             raise asyncio.CancelledError
         if step:
             if self.cp["usage"]["steps"] >= self.spec.execution.max_steps:
@@ -334,6 +367,9 @@ class ExecutionSession:
     async def graph(self, graph, inputs, prefix):
         attempted = set()
         order = self.spec.topology(graph)[0]
+        incoming_edges = {name: [] for name in order}
+        for edge in graph.edges:
+            incoming_edges[edge.target].append(edge)
         while True:
             self.check()
             pending = [
@@ -349,7 +385,7 @@ class ExecutionSession:
                 path = prefix + "/" + name
                 if path in attempted:
                     continue
-                incoming = [edge for edge in graph.edges if edge.target == name]
+                incoming = incoming_edges[name]
                 parents = [
                     self.cp["nodes"].get(prefix + "/" + edge.source, {}) for edge in incoming
                 ]
@@ -399,6 +435,8 @@ class ExecutionSession:
 
     async def node(self, name, node, inputs, prefix, graph):
         node = node.effective()
+        bound = self.bound_tools.get(node.tool) if node.type == "tool" else None
+        defer = isinstance(bound, Tool) and bound.pure and self.spec.execution.pure_checkpoint_interval > 1
         path = prefix + "/" + name
         slot = self.cp["nodes"].setdefault(path, {"status": "new"})
         try:
@@ -406,7 +444,7 @@ class ExecutionSession:
             if slot["status"] == "new":
                 self.check(step=True)
                 slot["status"] = "running"
-                self.save("node.started", path)
+                self.save("node.started", path, defer=defer)
             else:
                 slot["status"] = "running"
             context = self.context(graph, inputs, prefix)
@@ -487,7 +525,7 @@ class ExecutionSession:
                 output = await self.model(node, arguments, path, slot)
             Draft202012Validator(node.output_schema).validate(output)
             slot.update(status="succeeded", output=output)
-            self.save("node.completed", path)
+            self.save("node.completed", path, defer=defer)
             return output
         except Suspended as exc:
             slot["status"] = exc.status
@@ -619,7 +657,7 @@ class ExecutionSession:
                         )
                     slot["model_turn"] = slot.get("model_turn", 0) + 1
                 async with self.model_slots:
-                    self.check(step=True)
+                    self.check(step=True, force=True)
                     usage, budget = self.cp["usage"], self.spec.execution
                     if usage["model_calls"] >= budget.max_model_calls:
                         raise BudgetExceeded("model call budget exhausted")
@@ -882,6 +920,23 @@ class ExecutionSession:
         self.check()
         tool = self.bound_tools[alias]
         Draft202012Validator(tool.input_schema).validate(arguments)
+        if isinstance(tool, Tool) and tool.pure:
+            # The node checkpoint owns deterministic computations. A restart
+            # may recompute unfinished work without repeating an external effect.
+            self.check(step=True)
+            self.pending_events.append({"type": "tool.request", "node_id": path,
+                                        "data": {"tool": alias, "call_id": call_id, "pure": True}})
+            try:
+                async with self.tool_slots:
+                    self.check()
+                    output = await tool.invoke(arguments)
+            except ToolFeedbackError as exc:
+                self.pending_events.append({"type": "tool.rejected", "node_id": path,
+                                            "data": {"tool": alias, "feedback": exc.observation(), "pure": True}})
+                raise
+            self.pending_events.append({"type": "tool.result", "node_id": path,
+                                        "data": {"tool": alias, "call_id": call_id, "pure": True}})
+            return output
         operation_id = digest([self.lease.run_id, path, operation_key or call_id])
         operation = self.journal.operation(self.lease, operation_id)
         fresh = operation is None
@@ -927,7 +982,7 @@ class ExecutionSession:
                     self.save("external.submit_retry", path, operation_id=operation_id)
                 try:
                     async with self.tool_slots, asyncio.timeout(tool.timeout_seconds):
-                        self.check()
+                        self.check(force=True)
                         job_id = await invoke(
                             tool.submit, **arguments, idempotency_key=operation_id
                         )
@@ -961,7 +1016,7 @@ class ExecutionSession:
                 )
             try:
                 async with self.tool_slots, asyncio.timeout(tool.timeout_seconds):
-                    self.check()
+                    self.check(force=True)
                     remote = await invoke(tool.poll, operation["job_id"])
             except (TimeoutError, OSError):
                 self.suspend(
@@ -1013,7 +1068,7 @@ class ExecutionSession:
             else:
                 try:
                     async with self.tool_slots:
-                        self.check()
+                        self.check(force=True)
                         output = await tool.invoke(arguments, operation_id=operation_id)
                 except asyncio.CancelledError:
                     if tool.side_effect != "read_only":

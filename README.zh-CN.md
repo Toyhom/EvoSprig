@@ -28,7 +28,7 @@
 
 [![Episode Studio：带对白的动画片段](examples/episode-studio/assets/hillside.jpg)](examples/episode-studio/)
 
-八个角色协作完成读原文、改剧本、分镜与制作，跨镜头复用角色、声音和连续性信息。智能体控制渲染工具，检查画面与对白，并自动重做。**[观看片段，开发自己的动画智能体](examples/episode-studio/)**。
+输入一段小说或一句想法，制作团队自动选风格、写剧本、设计角色与声音，再逐镜头导演、生成和检查。**[观看片段，制作自己的动画](examples/episode-studio/README.zh-CN.md)**。
 
 <table>
 <tr>

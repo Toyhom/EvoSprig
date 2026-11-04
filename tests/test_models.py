@@ -72,6 +72,20 @@ async def test_json_and_tool_call_contract(connection):
     assert result.tool_calls[0].arguments == {"a": 1, "b": 2}
 
 
+async def test_long_local_generations_use_the_configured_timeout(connection):
+    config = Connection(**{**connection.model_dump(), "timeout_seconds": 1200})
+
+    def handle(request):
+        assert request.extensions["timeout"]["read"] == 1200
+        return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}],
+                                        "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+
+    response = await OpenAICompatibleProvider(config, transport=httpx.MockTransport(handle)).complete(ModelRequest([]))
+    assert response.text == "done"
+    with pytest.raises(ValueError):
+        Connection(**{**connection.model_dump(), "timeout_seconds": 0})
+
+
 @pytest.mark.parametrize(
     "status,code",
     [

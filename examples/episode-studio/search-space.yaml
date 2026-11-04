@@ -1,4 +1,8 @@
 fields:
+  /graph/nodes/reference_library/body/nodes/takes/max_iterations:
+    kind: integer
+    minimum: 1
+    maximum: 3
   /graph/nodes/source_reader/harness/max_output_tokens:
     kind: integer
     minimum: 3000
@@ -17,6 +21,7 @@ fields:
     maximum: 3
 modules:
   story:
+    - resource:creative_director
     - resource:source_reader
     - resource:producer
     - resource:script_editor
@@ -24,8 +29,12 @@ modules:
     - /graph/nodes/script_editor/harness/max_output_retries
   visual_direction:
     - resource:art_director
+    - resource:reference_review
+    - /graph/nodes/reference_library/body/nodes/takes/max_iterations
     - resource:shot_director
     - resource:cinematography
+  voice_direction:
+    - resource:voice_director
   first_frame:
     - resource:frame_review
     - /graph/nodes/shots/body/nodes/frame_takes/max_iterations

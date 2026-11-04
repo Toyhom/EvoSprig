@@ -3,8 +3,9 @@ import { AgentSettings } from './agent-settings';
 import { DebugPanel } from './debug-panel';
 import type {DebugTarget} from './run-steps';
 import { ComfyImport } from './comfy-import';
+import { RenderGraph } from './render-graph';
 import { edgeTypes } from './workflow-edge';
-import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
+import { StrictMode, useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ReactFlow, Background, Controls, MiniMap, Position, addEdge, applyEdgeChanges, applyNodeChanges,
   type Edge, type Connection, type NodeChange, type EdgeChange } from '@xyflow/react';
@@ -77,10 +78,11 @@ function App() {
   const [debugOpen,setDebugOpen]=useState(false);
   const [debugSource,setDebugSource]=useState<DebugTarget>();
   const [comfyOpen,setComfyOpen]=useState(false);
-  const groups=cleanGroups(canvas.groups[pathKey(graphPath)]??[],nodes.map(n=>n.id));
+  const [renderGraphOpen,setRenderGraphOpen]=useState(false);
+  const groups=useMemo(()=>cleanGroups(canvas.groups[pathKey(graphPath)]??[],nodes.map(n=>n.id)),[canvas,graphPath,nodes]);
   const debugNodes=Array.from(new Set([...nodes.filter(n=>n.selected).map(n=>n.id),...groupSelection.flatMap(id=>leaves(id,groups)),...(selected?[selected]:[])]));
   const setGroups=(next:typeof groups)=>{setCanvas(state=>({...state,groups:{...state.groups,[pathKey(graphPath)]:next}}));setDirty(true);};
-  const view=canvasView(nodes,edges,groups,lang,id=>setGroups(groups.map(g=>g.id===id?{...g,collapsed:!g.collapsed}:g)),(id,path)=>navigate([...graphPath,id,...path]));
+  const view=useMemo(()=>canvasView(nodes,edges,groups,lang,id=>setGroups(groups.map(g=>g.id===id?{...g,collapsed:!g.collapsed}:g)),(id,path)=>navigate([...graphPath,id,...path])),[nodes,edges,groups,lang,graphPath,doc,busy]);
   const displayNodes=view.nodes.map(n=>{
     const config=n.type==='workflow'?n.data.config as NodeSpec:undefined;
     const promptPreview=typeof config?.instructions==='object'?doc?.resources?.[config.instructions.resource]:undefined;
@@ -289,9 +291,11 @@ function App() {
     const request = ++runWatch.current;
     if(poll.current) clearTimeout(poll.current);
     setRunId(id);
-    const tick=async()=>{try{const next:Run=await(await api(`/runs/${id}`)).json();
+    let after=0;let collected:Run['events']=[];
+    const tick=async()=>{try{const next:Run=await(await api(`/runs/${id}?after=${after}`)).json();
       if(request!==runWatch.current)return;
-      setResult(next);
+      collected=[...collected,...next.events];after=Number(collected.at(-1)?.sequence??0);
+      setResult({...next,events:collected});
       if(['queued','running','waiting_external'].includes(next.status)) poll.current=setTimeout(tick,600);
       else {setRunId(null);setStatus(next.status);}
     }catch(e){if(request===runWatch.current){setRunId(null);error(e);}}};
@@ -354,6 +358,8 @@ function App() {
     <main inert={sidebarOpen}><header className="app-header"><div className="project-heading"><button ref={menuRef} className="mobile-menu icon-button" aria-controls="project-navigation" aria-expanded={sidebarOpen} aria-label={lang==='zh'?'打开项目导航':'Open project navigation'} onClick={()=>setSidebarOpen(true)}><Icon name="menu"/></button><span className="breadcrumb">{lang==='zh'?'项目':'Projects'}<Icon name="arrow" size={12}/></span><h1 title={doc?.id}>{doc?.id ?? 'EvoSprig'}</h1>{doc&&<span className={`save-state${dirty || nodeDraftDirty?' is-dirty':''}`}>{dirty || nodeDraftDirty?(lang==='zh'?'未保存':'Unsaved'):(lang==='zh'?'已保存':'Saved')}</span>}</div>
       <div className="actions"><button className="reload-button icon-button" aria-label={t.reload} title={t.reload} onClick={() => replaceProject(async () => { if (doc) await api(`/projects/${doc.id}`).then(r => r.json()).then(load).catch(error); })} disabled={!doc || !!runId || busy}><Icon name="refresh"/></button>
         <button onClick={save} disabled={!doc || busy || !!runId}>{t.save}</button><span className="action-separator"/><select aria-label="Export target" value={exportTarget} onChange={e=>setExportTarget(e.target.value)}><option value="python">Python</option><option value="http">HTTP service</option><option value="container">Container</option>{doc&&Object.values(doc.spec.tools).some(tool=>tool.plugin.startsWith('comfy.node.'))&&<option value="comfy">ComfyUI JSON</option>}</select><button className="export-button" aria-label={(exportTarget==='python'?t.export:(lang==='zh'?'导出 ':'Export ')+exportTarget)+' ↗'} onClick={()=>exportProject()} disabled={!doc || dirty || nodeDraftDirty || busy}><Icon name="download"/>{lang==='zh'?'导出':'Export'}</button></div></header>
+      {doc&&Object.values(doc.spec.tools).some(tool=>tool.plugin==='film.recipe'||tool.plugin.endsWith('.recipe'))&&<button className="render-graph-launch" disabled={dirty||nodeDraftDirty||!!runId} onClick={()=>setRenderGraphOpen(true)}>{lang==='zh'?'展开渲染工作流':'Open render workflow'}</button>}
+      {renderGraphOpen&&doc&&<RenderGraph key={doc.id} api={api} projectId={doc.id} lang={lang} onSaved={next=>{load(next);refresh();}} onClose={()=>setRenderGraphOpen(false)}/>}
       {comfyOpen&&<ComfyImport api={api} lang={lang} onCreated={next=>replaceProject(async()=>{load(next);await refresh();setComfyOpen(false);})} onClose={()=>setComfyOpen(false)}/>}
       {imported&&<section className="panel"><h2>{lang==='zh'?'检查导入工程':'Review imported project'}</h2><p>{lang==='zh'?'已校验规格、资源和文件哈希。外部服务需要在部署配置中绑定。':'Spec, resources and file hashes verified. Bind external services in your deployment profile.'}</p><label>Project ID<input aria-label="Imported project ID" value={importId} onChange={e=>setImportId(e.target.value)}/></label><pre className="json-block">{JSON.stringify(imported.report,null,2)}</pre><button disabled={busy || !!runId} onClick={()=>replaceProject(async()=>{try{const created=await(await api('/projects',{method:'POST',body:JSON.stringify({spec:{...imported.spec,id:importId},resources:imported.resources})})).json();load(created);await refresh();setImported(null);}catch(e){error(e);}})}>{lang==='zh'?'创建导入项目':'Create imported project'}</button><button onClick={()=>setImported(null)}>{lang==='zh'?'关闭':'Close'}</button></section>}
       {!doc ? <div className="empty"><div className="empty-symbol"><Icon name="grid" size={25}/></div><h2>{lang==='zh'?'开始构建你的智能体':'Build your first agent'}</h2><p>{t.empty}</p></div> : <>
@@ -367,7 +373,7 @@ function App() {
         :<div className="editor">
           <section className="workspace">
             {tab === 'canvas' ? <><div className="canvas-tools"><div className="canvas-breadcrumb"><button disabled={busy} onClick={()=>navigate([])}>{lang==='zh'?'工作流':'Workflow'}</button>{graphPath.map((part,i)=>part==='body'||part==='branches'||graphPath[i+1]==='branches'?null:<button key={i} disabled={busy} onClick={()=>navigate(graphPath.slice(0,i+(graphPath[i+1]==='body'?2:1)))}><Icon name="arrow" size={12}/>{part}</button>)}</div><div className="canvas-actions"><select aria-label="New node type" value={nodeKind} onChange={e=>setNodeKind(e.target.value as NodeKind)}>{(['model','agent','tool','transform','condition','join','loop','parallel','map','human','code'] as const).map(kind=><option key={kind}>{kind}</option>)}</select><button onClick={addNode}><Icon name="plus"/>{nodeKind==='model'?t.add:(lang==='zh'?'添加节点':'Add node')}</button><button disabled={busy||!!runId||dirty||nodeDraftDirty||!debugNodes.length} onClick={()=>{setCanvasFocus(false);setDebugOpen(true);}}><Icon name="play"/>{lang==='zh'?'调试所选':'Debug selection'}</button><button onClick={groupSelected} disabled={!nodes.some(n=>n.selected)&&!groupSelection.length}><Icon name="layers"/>{lang==='zh'?'分组':'Group'}</button><button disabled={busy} onClick={async()=>{setBusy(true);try{const layout=await arrange(nodes,edges,groups);setNodes(items=>items.map(item=>({...item,position:layout.find(n=>n.id===item.id)?.position??item.position})));setCanvasFit(n=>n+1);mutate();}catch(e){error(e);}finally{setBusy(false);}}}><Icon name="grid"/>{t.layout}</button><button aria-pressed={canvasFocus} onClick={()=>setCanvasFocus(value=>!value)}><Icon name={canvasFocus?"collapse":"expand"}/>{lang==='zh'?(canvasFocus?'退出专注':'专注画布'):(canvasFocus?'Exit focus':'Focus canvas')}</button></div></div>
-              <ReactFlow key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}`} nodes={displayNodes} nodeTypes={nodeTypes} edgeTypes={edgeTypes} elevateNodesOnSelect={false} multiSelectionKeyCode="Shift" edges={view.edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => {if(node.type==='groupCard'){if(commitNodeDraft())setSelected(null);}else {const actual=nodes.find(n=>n.id===node.id);if(actual)select(actual);}}} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.08} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView revision={String(canvasFit)+String(canvasFocus)+groups.map(g=>g.id+g.collapsed).join()}/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
+              <ReactFlow onlyRenderVisibleElements key={`${doc.id}:${doc.revision}:${pathKey(graphPath)}`} nodes={displayNodes} nodeTypes={nodeTypes} edgeTypes={edgeTypes} elevateNodesOnSelect={false} multiSelectionKeyCode="Shift" edges={view.edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, node) => {if(node.type==='groupCard'){if(commitNodeDraft())setSelected(null);}else {const actual=nodes.find(n=>n.id===node.id);if(actual)select(actual);}}} onEdgeClick={(_,edge)=>{if (!commitNodeDraft()) return; setSelectedEdge(edge.id);setSelected(null);}} fitView fitViewOptions={{ padding: 0.22, maxZoom: 1 }} minZoom={0.08} maxZoom={2} deleteKeyCode="Delete"><FitWorkflowView revision={String(canvasFit)+String(canvasFocus)+groups.map(g=>g.id+g.collapsed).join()}/><Background color="#d4d4d8" gap={20} size={1}/><Controls showInteractive={false}/><MiniMap style={{width:112,height:68}} nodeColor="#d4d4d8" maskColor="rgba(250,250,250,.65)"/></ReactFlow><div className="canvas-summary">{nodes.length} {lang==='zh'?'个节点':'nodes'}<span>·</span>{edges.length} {lang==='zh'?'条连接':'connections'}</div></>
               : tab === 'spec' ? <textarea className="source-editor" aria-label="AgentSpec JSON" value={specText} onChange={e => { setSpecText(e.target.value); mutate(); }} spellCheck={false}/>
                 : <pre className="source-editor code-view">{dirty ? `${t.runHint}\n\n` : ''}{code}</pre>}
           </section>

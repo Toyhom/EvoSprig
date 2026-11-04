@@ -32,6 +32,13 @@ SOURCE = obj(
     ending=TEXT,
 )
 ART = obj(style=TEXT, assets={"type": "array", "items": obj(id=TEXT, kind={"enum": ["character", "location"]}, prompt=TEXT), "minItems": 1, "maxItems": 8})
+VOICES = obj(voices={"type": "array", "maxItems": 5, "items": obj(
+    id=TEXT, speaker={"enum": ["Chelsie", "Ethan", "Aiden"]}, text=TEXT, direction=TEXT,
+    seed={"type": "integer", "minimum": 0, "maximum": 2147483647})})
+BRIEF = obj(source_text=TEXT, style=TEXT, language=TEXT,
+            target_seconds={"type": "integer", "minimum": 12, "maximum": 300})
+DIRECTION = obj(mode={"enum": ["story", "idea"]}, expanded_story=STRING, style=TEXT, language=TEXT,
+                target_seconds={"type": "integer", "minimum": 12, "maximum": 300})
 VERDICT = obj(accepted={"type": "boolean"}, issues={"type": "array", "items": TEXT}, feedback=STRING,
               continuity=obj(character_positions=STRING, lighting=STRING, props=STRING, end_action=STRING))
 CONTROLS = obj(prompt=TEXT, action={"type": "boolean"})
@@ -213,42 +220,90 @@ def shot_graph(max_takes, max_frame_takes):
                          "shot_id": ref("input.item.id"), "take": ref("nodes.selected_take.output")}, edges)
 
 
-def build(max_takes=2, max_frame_takes=2):
-    if not 1 <= max_takes <= 3 or not 1 <= max_frame_takes <= 3:
+def reference_graph(max_takes):
+    attempt = graph({
+        "prepare": code("reference_prompt", {"item": ref("input.item"), "index": ref("input.index"),
+                                              "attempt": ref("input.attempt"), "feedback": ref("input.feedback")}),
+        "generate": tool("image", {"prompt": ref("nodes.prepare.output.prompt"), "references": val([]),
+                                    "options": ref("nodes.prepare.output.options")}, ASSET),
+        "review_inputs": code("reference_review_inputs", {"asset": ref("nodes.generate.output")}),
+        "preview": tool("vision_preview", {"assets": ref("nodes.review_inputs.output.assets")}),
+        "review": model("reference_review", {"images": ref("nodes.preview.output.images"),
+                                              "asset": ref("input.item")},
+                        obj(accepted={"type": "boolean"}, feedback=STRING), vision=True, tokens=1536),
+    }, {"item": ref("input.item"), "index": ref("input.index"), "attempt": ref("nodes.prepare.output.attempt"),
+        "asset": ref("nodes.generate.output"), "accepted": ref("nodes.review.output.accepted"),
+        "feedback": ref("nodes.review.output.feedback")})
+    nodes = {
+        "takes": {"type": "loop", "inputs": {"item": ref("input.item"), "index": ref("input.index"),
+                    "attempt": val(0), "feedback": val("")}, "body": attempt, "max_iterations": max_takes,
+                    "until": {"left": ref("input.accepted"), "op": "truthy"}, "output_schema": ANY},
+        "accepted": {"type": "condition", "condition": {"left": ref("nodes.takes.output.accepted"), "op": "truthy"},
+                     "output_schema": obj(value={"type": "boolean"})},
+        "approved": {"type": "transform", "inputs": {"frame": ref("nodes.takes.output.asset")}, "output_schema": obj(frame=ASSET)},
+        "needs_review": {"type": "human", "inputs": {"frame": ref("nodes.takes.output.asset"),
+                            "feedback": ref("nodes.takes.output.feedback")}, "output_schema": obj(frame=ASSET)},
+        "choice": {"type": "join", "join": "selected", "output_schema": ANY,
+                   "inputs": {"approved": ref("nodes.approved.output", optional=True, default=None),
+                              "reviewed": ref("nodes.needs_review.output", optional=True, default=None)}},
+        "selected_reference": code("selected_frame", {"approved": ref("nodes.choice.output.approved"),
+                                                        "reviewed": ref("nodes.choice.output.reviewed")}, ASSET),
+    }
+    edges = [{"source": "takes", "target": "accepted"},
+             {"source": "accepted", "target": "approved", "when": True},
+             {"source": "accepted", "target": "needs_review", "when": False},
+             {"source": "approved", "target": "choice"}, {"source": "needs_review", "target": "choice"},
+             {"source": "choice", "target": "selected_reference"}]
+    return graph(nodes, {"id": ref("input.item.id"), "kind": ref("input.item.kind"),
+                         "asset": ref("nodes.selected_reference.output")}, edges)
+
+
+def build(max_takes=2, max_frame_takes=2, *, enable_voice=True, max_reference_takes=2):
+    if any(not 1 <= limit <= 3 for limit in (max_takes, max_frame_takes, max_reference_takes)):
         raise ValueError("take limits must be between one and three")
-    b = Builder("episode-studio", obj(source_text=TEXT, style=TEXT, language=TEXT,
-                                      target_seconds={"type": "integer", "minimum": 12, "maximum": 300}),
+    request = {**BRIEF, "required": ["source_text"]}
+    b = Builder("episode-studio", request,
                 obj(film=ASSET, plan=PLAN, shots=ANY), spec_version="0.3")
     b.model("main", "main", ["text", "structured_output"])
     b.model("vision", "vision", ["text", "structured_output", "vision"])
-    for name in ["source_reader", "producer", "script_editor", "art_director", "shot_director", "frame_review", "render_engineer", "continuity_review"]:
+    for name in ["creative_director", "source_reader", "producer", "script_editor", "art_director", "reference_review", "shot_director", "frame_review", "render_engineer", "continuity_review"]:
         b.resource(name, f"prompts/{name}.md")
+    if enable_voice:
+        b.resource("voice_director", "prompts/voice_director.md")
+        b.resource("voice_valid", "code/voice_valid.py", role="code")
+        b.tool("voice", "media.generate_voice")
     for name in ["continuity", "cinematography"]:
         b.skill(name, f"skills/{name}.md")
     for name in ["shot_context", "gather_references", "reference_names", "render_settings", "select_clip",
                  "review_images", "record_take", "selected_take", "timeline", "plan_valid", "art_valid",
-                 "frame_settings", "frame_review_inputs", "selected_frame", "render_valid", "source_valid", "reference_prompt"]:
+                 "frame_settings", "frame_review_inputs", "selected_frame", "render_valid", "source_valid", "reference_prompt",
+                 "production_brief", "direction_valid", "reference_review_inputs"]:
         b.resource(name, f"code/{name}.py", role="code")
     for name, plugin in {"python": "code.python", "image": "media.generate_image", "stage": "media.stage_reference",
                          "recipe": "film.recipe", "render_profile": "film.settings", "render": "film.render", "ingest": "media.ingest_comfy",
                          "inspect": "media.inspect_video", "vision_preview": "media.vision", "compose": "media.compose"}.items():
         b.tool(name, plugin)
-    assets = graph({"prepare": code("reference_prompt", {"asset": ref("input.item"), "style": ref("input.context.style")}),
-                    "generate": tool("image", {"prompt": ref("nodes.prepare.output.prompt"), "references": val([]),
-                                                "options": val({"width": 1344, "height": 768, "steps": 40})}, ASSET)},
-                   {"id": ref("input.item.id"), "kind": ref("input.item.kind"), "asset": ref("nodes.generate.output")})
+    assets = reference_graph(max_reference_takes)
     nodes = {
-        "source_reader": model("source_reader", {"source_text": ref("input.source_text")},
+        "creative_director": model("creative_director", {"request": ref("input")}, DIRECTION,
+                                    tokens=6000, validator="direction_valid"),
+        "production_brief": code("production_brief", {"request": ref("input"),
+                                                        "direction": ref("nodes.creative_director.output")}, BRIEF),
+        "source_reader": model("source_reader", {"source_text": ref("nodes.production_brief.output.source_text")},
                                SOURCE, tokens=6000, validator="source_valid"),
-        "producer": model("producer", {"brief": ref("input"), "source": ref("nodes.source_reader.output")},
+        "producer": model("producer", {"brief": ref("nodes.production_brief.output"), "source": ref("nodes.source_reader.output")},
                           PLAN, tokens=12000, validator="plan_valid"),
-        "script_editor": model("script_editor", {"brief": ref("input"), "draft": ref("nodes.producer.output"),
+        "draft_timing": code("plan_valid", {"output": ref("nodes.producer.output"),
+                                            "brief": ref("nodes.production_brief.output"),
+                                            "source": ref("nodes.source_reader.output")}),
+        "script_editor": model("script_editor", {"brief": ref("nodes.production_brief.output"), "draft": ref("nodes.producer.output"),
+                                                   "timing": ref("nodes.draft_timing.output"),
                                                    "source": ref("nodes.source_reader.output")},
                                PLAN, tokens=12000, validator="plan_valid"),
-        "art_director": model("art_director", {"plan": ref("nodes.script_editor.output"), "style": ref("input.style")}, ART, tokens=6000, validator="art_valid"),
+        "art_director": model("art_director", {"plan": ref("nodes.script_editor.output"), "style": ref("nodes.production_brief.output.style")}, ART, tokens=6000, validator="art_valid"),
         "render_profile": tool("render_profile", {}),
         "reference_library": {"type": "map", "items": ref("nodes.art_director.output.assets"),
-                              "inputs": {"style": ref("nodes.art_director.output.style")},
+                              "inputs": {},
                               "body": assets, "max_items": 8, "output_schema": ANY},
         "shots": {"type": "map", "items": ref("nodes.script_editor.output.shots"),
                   "inputs": {"plan": ref("nodes.script_editor.output"), "art": ref("nodes.art_director.output"),
@@ -259,6 +314,21 @@ def build(max_takes=2, max_frame_takes=2):
         "timeline": code("timeline", {"shots": ref("nodes.shots.output.items")}),
         "assemble": tool("compose", {"clips": ref("nodes.timeline.output.clips"), "preserve_audio": val(True)}, ASSET),
     }
+    if enable_voice:
+        voice_nodes = {
+            "voice_director": model("voice_director", {"plan": ref("nodes.script_editor.output"),
+                "language": ref("nodes.production_brief.output.language")}, VOICES, validator="voice_valid"),
+            "voice_library": {"type": "map", "items": ref("nodes.voice_director.output.voices"),
+                "inputs": {}, "max_items": 5, "output_schema": ANY,
+                "body": graph({"record": tool("voice", {"text": ref("input.item.text"),
+                    "speaker": ref("input.item.speaker"), "direction": ref("input.item.direction"),
+                    "seed": ref("input.item.seed"), "max_seconds": val(5)}, ASSET)},
+                    {"id": ref("input.item.id"), "asset": ref("nodes.record.output")})},
+        }
+        # Finish the voice library before images to avoid alternating model loads.
+        position = list(nodes).index("reference_library")
+        nodes = dict(list(nodes.items())[:position] + list(voice_nodes.items()) + list(nodes.items())[position:])
+        nodes["shots"]["inputs"]["voices"] = ref("nodes.voice_library.output.items")
     b.data["graph"] = graph(nodes, {"film": ref("nodes.assemble.output"), "plan": ref("nodes.script_editor.output"),
                                     "shots": ref("nodes.shots.output")})
     return b.execution(max_steps=5000, max_model_calls=240, max_total_tokens=1000000,

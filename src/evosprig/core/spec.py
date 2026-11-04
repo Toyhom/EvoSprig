@@ -275,8 +275,8 @@ class Edge(Contract):
 
 class Graph(Contract):
     entry: str
-    nodes: dict[str, Node] = Field(min_length=1, max_length=128)
-    edges: list[Edge] = Field(default_factory=list, max_length=1024)
+    nodes: dict[str, Node] = Field(min_length=1, max_length=512)
+    edges: list[Edge] = Field(default_factory=list, max_length=4096)
     output: dict[str, Ref | Value]
 
 
@@ -290,6 +290,7 @@ class Execution(Contract):
     max_parallel_nodes: int = Field(default=1, ge=1, le=32)
     max_parallel_tools: int = Field(default=1, ge=1, le=16)
     allow_side_effects: bool = False
+    pure_checkpoint_interval: int = Field(default=1, ge=1, le=128)
 
 
 class AgentSpec(Contract):
@@ -477,6 +478,8 @@ class AgentSpec(Contract):
 
     def canonical(self) -> str:
         data = self.model_dump(mode="json")
+        if data["execution"]["pure_checkpoint_interval"] == 1:
+            data["execution"].pop("pure_checkpoint_interval")
         if data["execution"]["image_token_reserve"] == 4096:
             data["execution"].pop("image_token_reserve")
 

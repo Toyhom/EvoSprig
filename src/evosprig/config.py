@@ -1,12 +1,24 @@
 """Deployment bindings are separate from behavior versions."""
 
 import os
+from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
 from evosprig.core.spec import AgentSpec
 from evosprig.plugins.mock import MockProvider
+
+
+@lru_cache(maxsize=8)
+def _parse_profile(content):
+    return yaml.safe_load(content)
+
+
+def read_profile(path):
+    """Reuse YAML parsing while observing file changes and isolating callers."""
+    return deepcopy(_parse_profile(Path(path).read_text())) if path else {}
 
 
 def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool = False) -> dict:
@@ -18,7 +30,7 @@ def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool =
     from evosprig.plugins.openai_compatible import Connection, OpenAICompatibleProvider
 
     if profile:
-        raw = yaml.safe_load(Path(profile).read_text())
+        raw = read_profile(profile)
         if (
             not isinstance(raw, dict)
             or set(raw) - {"models", "tools", "evaluation"}
@@ -80,7 +92,7 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
 
     register_message_tools(registry, MessageStore(Path(workspace) / "messages.sqlite"), scope)
     if bindings is None:
-        raw = yaml.safe_load(Path(profile).read_text()) if profile else {}
+        raw = read_profile(profile)
         bindings = raw.get("tools", {})
     for name, raw in bindings.items():
         if raw.get("kind") == "http":
@@ -108,6 +120,11 @@ def make_tools(workspace, scope, *, profile=None, bindings=None):
 
             config = SQLiteToolConfig.model_validate(raw)
             tool = sqlite_tool(config)
+        elif raw.get("kind") == "comfy_collect":
+            from evosprig.plugins.comfy_tools import ComfyCollectConfig, comfy_collect_tool
+
+            config = ComfyCollectConfig.model_validate(raw)
+            tool = comfy_collect_tool(config)
         elif raw.get("kind") == "comfy_node":
             from evosprig.plugins.comfy_tools import ComfyNodeConfig, comfy_node_tool
 

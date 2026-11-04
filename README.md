@@ -28,7 +28,7 @@ Build agents with Python or a visual canvas, then improve their behavior automat
 
 [![Episode Studio: an animated scene with dialogue](examples/episode-studio/assets/hillside.jpg)](examples/episode-studio/)
 
-Eight roles turn a story into shots with shared characters, voices and continuity. Agents direct the scenes, adjust render tools and review each take. **[Watch the scene and build your own](examples/episode-studio/)**.
+A production team turns a novel or one sentence into an animated film. Agents choose the style, write the script, create the cast and voices, and direct and review each shot. **[Watch the scene and make your own](examples/episode-studio/)**.
 
 <table>
 <tr>

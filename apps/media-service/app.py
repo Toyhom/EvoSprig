@@ -16,14 +16,19 @@ from isolated import IsolatedMediaBackend
 from store import JobStore
 
 OPERATIONS = {"assets", "image", "video", "compose", "generate-image", "generate-video",
-              "stage-reference", "ingest-comfy", "inspect-video"}
+              "stage-reference", "ingest-comfy", "inspect-video", "generate-voice"}
 
 
-def create_app(store, backend, *, token=None, start_worker=True, idle_unload_seconds=120):
+def create_app(store, backend, *, token=None, start_worker=True, idle_unload_seconds=120, preload=None):
     stop = threading.Event()
+    readiness = {"ready": preload is None, "error": None}
     def work():
         last_work = time.monotonic()
         try:
+            if preload:
+                backend.execute("warmup", {"family": preload}, "warmup", stop.is_set)
+                readiness["ready"] = True
+                last_work = time.monotonic()
             while not stop.is_set():
                 if store.run_once(backend):
                     last_work = time.monotonic()
@@ -32,6 +37,9 @@ def create_app(store, backend, *, token=None, start_worker=True, idle_unload_sec
                         backend.close()
                         last_work = time.monotonic()
                     stop.wait(0.5)
+        except Exception as exc:
+            readiness.update(ready=False, error=type(exc).__name__)
+            raise
         finally:
             if hasattr(backend, "close"):
                 backend.close()
@@ -77,6 +85,10 @@ def create_app(store, backend, *, token=None, start_worker=True, idle_unload_sec
 
     @app.get("/health")
     async def health():
+        if not readiness["ready"]:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"status": "failed" if readiness["error"] else "loading",
+                                 "family": preload, "error": readiness["error"]}, status_code=503)
         return {"status": "ok", "loaded": backend.loaded, "seed": backend.seed,
                 "image_steps": backend.image_steps, "video_steps": backend.video_steps,
                 "width": backend.width, "height": backend.height}
@@ -162,7 +174,9 @@ def main():
     parser.add_argument("--comfy-input", type=Path)
     parser.add_argument("--comfy-output", type=Path)
     parser.add_argument("--speech-model", type=Path, help="Local Faster Whisper model for dialogue checks")
+    parser.add_argument("--voice-model", type=Path, help="Qwen Omni Instruct checkpoint with speech output")
     parser.add_argument("--idle-unload-seconds", type=float, default=120)
+    parser.add_argument("--preload", choices=["image", "video", "voice"], help="Load this model before the service becomes ready")
     parser.add_argument("--video-model", type=Path)
     parser.add_argument("--outputs", required=True, type=Path)
     parser.add_argument("--database", required=True, type=Path)
@@ -181,9 +195,10 @@ def main():
     backend = IsolatedMediaBackend(args.outputs, args.image_model, args.video_model, args.public_url,
                            seed=args.seed, image_steps=args.image_steps or (40 if args.image_backend == "qwen-image-2.1" else 4), video_steps=args.video_steps,
                            width=args.width, height=args.height, image_backend=args.image_backend,
-                           comfy_input=args.comfy_input, comfy_output=args.comfy_output, speech_model=args.speech_model)
+                           comfy_input=args.comfy_input, comfy_output=args.comfy_output, speech_model=args.speech_model,
+                           voice_model=args.voice_model)
     import uvicorn
-    uvicorn.run(create_app(JobStore(args.database), backend, token=token, idle_unload_seconds=args.idle_unload_seconds), host=args.host, port=args.port,
+    uvicorn.run(create_app(JobStore(args.database), backend, token=token, idle_unload_seconds=args.idle_unload_seconds, preload=args.preload), host=args.host, port=args.port,
                 access_log=False)
 
 
