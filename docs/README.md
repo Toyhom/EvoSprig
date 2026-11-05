@@ -10,8 +10,9 @@ Follow the [learning path](tutorials/README.md) to build, run and improve an app
 
 1. [Your first agent](tutorials/first-agent.md) — install, run and edit instructions.
 2. [Ten minutes to a comic agent](tutorials/comic-studio.md) — design on the canvas, debug a panel and open Python.
-3. [Move from canvas to Python](tutorials/canvas-to-python.md) — export, run independently and keep developing.
-4. [Improve an agent on your tasks](tutorials/improve-an-agent.md) — evaluate, search and compare versions.
+3. [Ten minutes to a writing agent](tutorials/xiaohongshu-studio.md) — create a writing team, review drafts and deploy it.
+4. [Move from canvas to Python](tutorials/canvas-to-python.md) — export, run independently and keep developing.
+5. [Improve an agent on your tasks](tutorials/improve-an-agent.md) — evaluate, search and compare versions.
 
 ## Reference
 

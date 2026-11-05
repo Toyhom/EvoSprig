@@ -10,8 +10,9 @@
 
 1. [第一个智能体](tutorials/first-agent.md)：安装、运行、修改指令。
 2. [十分钟开发漫画智能体](tutorials/comic-studio.md)：在画布上设计，调试单个分格，切换 Python。
-3. [从画布到 Python](tutorials/canvas-to-python.md)：导出、独立运行、继续开发。
-4. [用自己的任务改进智能体](tutorials/improve-an-agent.md)：评估、搜索、比较版本。
+3. [十分钟开发文案智能体](tutorials/xiaohongshu-studio.md)：从空画布搭建写作团队，审核改稿，导出部署。
+4. [从画布到 Python](tutorials/canvas-to-python.md)：导出、独立运行、继续开发。
+5. [用自己的任务改进智能体](tutorials/improve-an-agent.md)：评估、搜索、比较版本。
 
 ## 参考文档
 

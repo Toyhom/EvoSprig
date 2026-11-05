@@ -29,9 +29,9 @@ https://github.com/user-attachments/assets/7d70ff67-afae-4112-a85b-22d6d7a18f36
 
 ### Episode Studio — a story, a cast, a film
 
-[![Episode Studio: an animated scene with dialogue](examples/episode-studio/assets/chapter-one.jpg)](examples/episode-studio/)
+[![Episode Studio: an animated scene with dialogue](examples/episode-studio/assets/chapter-two.jpg)](examples/episode-studio/)
 
-A production team turns a novel or one sentence into an animated film. Agents choose the style, write the script, create the cast and voices, and direct and review each shot. **[Watch the scene and make your own](examples/episode-studio/)**.
+A production team turns a novel or one sentence into an animated film. Agents choose the style, write the script, create the cast and voices, and direct and review each shot. **[Watch Volume II · 3 minutes, 24 shots](examples/episode-studio/)**. [Volume I](examples/episode-studio/#veras-melancholy--volume-i) is also available.
 
 <table>
 <tr>

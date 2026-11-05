@@ -12,6 +12,16 @@
 
 ## 作品展示
 
+### 《少女薇拉的忧郁》· 第二卷
+
+[![播放《少女薇拉的忧郁》第二卷](assets/chapter-two.webp)](assets/chapter-two.mp4)
+
+**神秘的访客，不可思议的故事，薇拉的新冒险。**
+
+183.5 秒 · 24 个镜头 · 中文对白与旁白 · **[有声播放](assets/chapter-two.mp4)**
+
+改编自《原神》中的书籍[《少女薇拉的忧郁》第二卷](https://wiki.biligame.com/ys/少女薇拉的忧郁)。
+
 ### 《少女薇拉的忧郁》· 第一卷
 
 [![播放《少女薇拉的忧郁》第一卷](assets/chapter-one.webp)](assets/chapter-one.mp4)

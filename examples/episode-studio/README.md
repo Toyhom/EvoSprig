@@ -12,6 +12,16 @@ Give Episode Studio a story. Its agents develop the script, cast and locations, 
 
 ## Showcase
 
+### Vera’s Melancholy · Volume II
+
+[![Watch Vera’s Melancholy, Volume II](assets/chapter-two.webp)](assets/chapter-two.mp4)
+
+**A strange visitor. An impossible story. A new adventure for Vera.**
+
+183.5 seconds · 24 shots · Chinese dialogue and narration · **[Watch with sound](assets/chapter-two.mp4)**
+
+From [Vera’s Melancholy, Volume II](https://wiki.biligame.com/ys/少女薇拉的忧郁), an in-game book in *Genshin Impact*.
+
 ### Vera’s Melancholy · Volume I
 
 [![Watch Vera’s Melancholy, Volume I](assets/chapter-one.webp)](assets/chapter-one.mp4)
