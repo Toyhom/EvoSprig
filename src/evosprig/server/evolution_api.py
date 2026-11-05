@@ -95,15 +95,10 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             raise HTTPException(409, "save or reload the project before improving")
         suite = store.get_suite(selected_scope, body.suite_id)
         base = compile_document(project)
-        if set(body.config.allowed_resources) - set(base.resources):
-            raise HTTPException(422, "editable resources are absent from this version")
-        if set(body.config.allowed_resources) - base.spec.used_resources():
-            raise HTTPException(422, "attach editable resources to a node before improvement")
-        if body.config.search_space:
-            try:
-                body.config.search_space.validate_base(base, body.config.allowed_resources)
-            except (ValueError, KeyError, IndexError, TypeError) as exc:
-                raise HTTPException(422, "search space does not match the application") from exc
+        try:
+            body.config.prepare(base)
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            raise HTTPException(422, "evolution target or search space does not match the application") from exc
         if body.config.budget.max_evaluations <= 2 * (len(suite.release) + len(suite.test)):
             raise HTTPException(422, "budget must cover search plus paired validation")
         evaluation_config = (
@@ -117,7 +112,7 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
             if body.mock:
                 proposer = MockProvider()
             else:
-                name = body.proposer_binding or next(iter(models), None)
+                name = body.proposer_binding or ("main" if "main" in models else next(iter(models), None))
                 if name not in models:
                     raise ValueError("proposer binding is missing")
                 proposer = models[name]
@@ -185,14 +180,12 @@ def install_evolution_routes(app, store, worker, projects, compile_document, too
         )
         before = store.get(selected_scope, result["baseline_version"])
         after = store.get(selected_scope, result["evolved_version"])
+        prepared, _, _, _ = StudyConfig.model_validate(study["config"]).prepare(before)
         result["resource_changes"] = {
-            name: {
-                "role": after.spec.resources[name].role,
-                "before": before.resources[name],
-                "after": content,
-            }
+            name: {"role": after.spec.resources[name].role,
+                   "before": prepared.resources.get(name, ""), "after": content}
             for name, content in after.resources.items()
-            if before.resources[name] != content
+            if prepared.resources.get(name) != content
         }
         result["spec_diff"] = store.diff(before, after).get("agent.json")
         return result

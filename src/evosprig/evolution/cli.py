@@ -64,6 +64,10 @@ def add_commands(commands):
                 required=True,
             )
             parser.add_argument("--resource", action="append", default=[])
+            parser.add_argument("--target-node", help="Node id or nested graph JSON pointer")
+            parser.add_argument("--target-module", action="append", choices=["prompt", "skill", "code", "harness", "memory", "model"])
+            parser.add_argument("--target-score", type=float)
+            parser.add_argument("--patience", type=int, help="Stop after this many distinct unimproved candidates")
             parser.add_argument(
                 "--search-space", type=Path, help="YAML/JSON structured search space"
             )
@@ -236,6 +240,9 @@ def run_command(args):
         config = StudyConfig(
             method=args.method,
             allowed_resources=args.resource,
+            target={"node": args.target_node if args.target_node.startswith("/") else "/graph/nodes/" + args.target_node,
+                    "modules": args.target_module or ["prompt"]} if args.target_node else None,
+            goal={"score": args.target_score, "patience": args.patience},
             search_space=yaml.safe_load(args.search_space.read_text())
             if args.search_space
             else None,
@@ -251,12 +258,15 @@ def run_command(args):
             seed=args.seed,
             gate=ReleaseGate(min_gain=args.min_gain, min_samples=args.min_samples),
         )
+        if args.target_module and not args.target_node:
+            raise ValueError("--target-module requires --target-node")
+        config.prepare(base)
         proposer = (
             MockProvider()
             if args.mock
             else models.get(args.proposer_binding)
             if args.proposer_binding
-            else next(iter(models.values()), None)
+            else models.get("main") or next(iter(models.values()), None)
         )
         if proposer is None:
             raise ValueError("improvement needs a model binding for its proposer")

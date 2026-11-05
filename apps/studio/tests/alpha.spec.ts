@@ -54,11 +54,11 @@ test('resources, scoped documents, improvement, candidate diff and export',async
   await page.getByLabel('Document title').fill('Checkpoint guide');await page.getByLabel('Document text').fill('Durable checkpoints preserve completed node results after a restart.');await page.getByRole('button',{name:'保存文档',exact:true}).click();
   await expect(page.locator('.record').filter({hasText:'Checkpoint guide'})).toBeVisible();
   await page.getByLabel('Document query').fill('checkpoints');await page.getByRole('button',{name:'检索',exact:true}).click();await expect(page.locator('blockquote')).toContainText('Durable checkpoints');
-  await page.getByRole('button',{name:'改进',exact:true}).click();
+  await page.getByRole('button',{name:'自进化',exact:true}).click();
   const sample=(id:string)=>({id,input:{question:id},expected:'Mock: '+JSON.stringify({question:id})});
   const suite={id:'browser-suite',metric:{kind:'exact',output_path:'answer'},search:[sample('search')],selection:[sample('selection')],release:[sample('release-a'),sample('release-b')],test:[sample('sealed')]};
   await page.getByText('导入 EvalSuite JSON',{exact:true}).click();await page.getByLabel('Evaluation suite JSON').fill(JSON.stringify(suite));await page.getByRole('button',{name:'保存任务集',exact:true}).click();
-  await expect(page.getByLabel('Evaluation suite',{exact:true})).not.toHaveValue('');await page.getByRole('button',{name:'开始改进',exact:true}).click();
+  await expect(page.getByLabel('Evaluation suite',{exact:true})).not.toHaveValue('');await page.getByRole('button',{name:'开始自进化',exact:true}).click();
   await expect(page.locator('.history-list')).toContainText('completed',{timeout:30000});
   const studies=await(await request.get('/api/projects/'+id+'/studies')).json();expect(studies[0].result.candidates.length).toBe(1);expect(studies[0].result.gate.passed).toBe(true);
   await page.getByRole('button',{name:'版本',exact:true}).click();await page.getByRole('button',{name:'启用当前版本作为基线'}).click();

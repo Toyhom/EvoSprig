@@ -13,8 +13,10 @@ from evosprig.evaluation.runner import Evaluator
 
 from .context import EvolutionContext
 from .gate import ReleaseGate
+from .goal import EvolutionGoal, GoalReached
 from .registry import custom_method, require_method
 from .space import SearchSpace
+from .target import EvolutionTarget
 
 
 class StudyConfig(Contract):
@@ -27,6 +29,8 @@ class StudyConfig(Contract):
         return require_method(value)
 
     allowed_resources: list[str] = Field(default_factory=list, max_length=32)
+    target: EvolutionTarget | None = None
+    goal: EvolutionGoal | None = None
     search_space: SearchSpace | None = None
     budget: ExperimentBudget = Field(default_factory=ExperimentBudget)
     gate: ReleaseGate = Field(default_factory=ReleaseGate)
@@ -97,7 +101,7 @@ class StudyConfig(Contract):
                     )
                 if self.method == "modular_rsi" and policy.repetitions < 2:
                     raise ValueError("ModularRSI requires repeated contrasts")
-        if not self.allowed_resources and not (self.search_space and self.search_space.fields):
+        if not self.target and not self.allowed_resources and not (self.search_space and self.search_space.fields):
             raise ValueError("choose editable resources or structured fields")
         if (
             self.search_space
@@ -120,6 +124,15 @@ class StudyConfig(Contract):
         if len(self.allowed_resources) != len(set(self.allowed_resources)):
             raise ValueError("editable resource names must be unique")
         return self
+
+    def prepare(self, base):
+        if self.target:
+            return self.target.prepare(base, self.allowed_resources, self.search_space)
+        if set(self.allowed_resources) - base.spec.used_resources():
+            raise ValueError("attach editable resources to a node before evolution")
+        if self.search_space:
+            self.search_space.validate_base(base, self.allowed_resources)
+        return base, self.allowed_resources, self.search_space, {}
 
 
 def combine_usage(search, validation):
@@ -191,9 +204,11 @@ async def execute_study(
         tenant=scope.tenant,
         **dependencies,
     )
+    prepared, allowed, search_space, resource_mapping = config.prepare(base)
     context = EvolutionContext(
-        base=base,
-        allowed=config.allowed_resources,
+        base=prepared,
+        source_base=base,
+        allowed=allowed,
         view=suite.optimization_view(),
         metric=suite.metric,
         evaluator=evaluator,
@@ -203,85 +218,96 @@ async def execute_study(
         scope=scope,
         job_id=job_id,
         method=config.method,
-        search_space=config.search_space,
+        search_space=search_space,
+        goal=config.goal,
         on_event=on_event,
     )
     watcher = asyncio.create_task(monitor_cancel())
     try:
-        plugin = custom_method(config.method)
-        if plugin:
-            method_result = await plugin.optimize(context, config=config)
-        elif config.method in {"skillopt", "evo_harness"}:
-            from . import skill_search
+        try:
+            plugin = custom_method(config.method)
+            if plugin:
+                method_result = await plugin.optimize(context, config=config)
+            elif config.method in {"skillopt", "evo_harness"}:
+                from . import skill_search
 
-            method_result = await getattr(skill_search, config.method)(context, config=config)
-        elif config.method in {"ahe", "meta_harness", "rrsi", "adas", "modular_rsi"}:
-            from . import harness_search
+                method_result = await getattr(skill_search, config.method)(context, config=config)
+            elif config.method in {"ahe", "meta_harness", "rrsi", "adas", "modular_rsi"}:
+                from . import harness_search
 
-            method_result = await getattr(harness_search, config.method)(context, config=config)
-        elif config.method in {"darwinx", "arbor"}:
-            from . import branch_search
+                method_result = await getattr(harness_search, config.method)(context, config=config)
+            elif config.method in {"darwinx", "arbor"}:
+                from . import branch_search
 
-            method_result = await getattr(branch_search, config.method)(context, config=config)
-        elif config.method == "opro":
-            from .opro import optimize
+                method_result = await getattr(branch_search, config.method)(context, config=config)
+            elif config.method == "opro":
+                from .opro import optimize
 
-            method_result = await optimize(context, rounds=config.rounds)
-        elif config.method == "gepa":
-            from .gepa import optimize
+                method_result = await optimize(context, rounds=config.rounds)
+            elif config.method == "gepa":
+                from .gepa import optimize
 
-            method_result = await optimize(
-                context, max_metric_calls=config.max_metric_calls, seed=config.seed
-            )
-        elif config.method == "mipro":
-            from .mipro import optimize
-
-            method_result = await optimize(
-                context,
-                rounds=config.rounds,
-                seed=config.seed,
-                instruction_candidates=config.instruction_candidates,
-                demo_candidates=config.demo_candidates,
-                max_demos=config.max_demos,
-                demo_threshold=config.demo_threshold,
-            )
-        elif config.method.startswith("evoprompt_"):
-            from .search import evoprompt
-
-            method_result = await evoprompt(
-                context,
-                variant=config.method.rsplit("_", 1)[1],
-                rounds=config.rounds,
-                population_size=config.population_size,
-                seed=config.seed,
-            )
-        elif config.method in {"ace", "self_refine"}:
-            from .search import ace, self_refine
-
-            method_result = await {"ace": ace, "self_refine": self_refine}[config.method](
-                context, rounds=config.rounds
-            )
-        else:
-            from . import extended
-
-            if config.method in {"bootstrap_fewshot", "fewshot_search"}:
-                method_result = await extended.bootstrap(
-                    context,
-                    rounds=config.rounds,
-                    seed=config.seed,
-                    random_search=config.method == "fewshot_search",
+                method_result = await optimize(
+                    context, max_metric_calls=config.max_metric_calls, seed=config.seed, rounds=config.rounds
                 )
-            elif config.method == "promptbreeder":
-                method_result = await extended.promptbreeder(
+            elif config.method == "mipro":
+                from .mipro import optimize
+
+                method_result = await optimize(
                     context,
                     rounds=config.rounds,
                     seed=config.seed,
+                    instruction_candidates=config.instruction_candidates,
+                    demo_candidates=config.demo_candidates,
+                    max_demos=config.max_demos,
+                    demo_threshold=config.demo_threshold,
+                )
+            elif config.method.startswith("evoprompt_"):
+                from .search import evoprompt
+
+                method_result = await evoprompt(
+                    context,
+                    variant=config.method.rsplit("_", 1)[1],
+                    rounds=config.rounds,
                     population_size=config.population_size,
+                    seed=config.seed,
+                )
+            elif config.method in {"ace", "self_refine"}:
+                from .search import ace, self_refine
+
+                method_result = await {"ace": ace, "self_refine": self_refine}[config.method](
+                    context, rounds=config.rounds
                 )
             else:
-                method_result = await getattr(extended, config.method)(
-                    context, rounds=config.rounds, seed=config.seed
-                )
+                from . import extended
+
+                if config.method in {"bootstrap_fewshot", "fewshot_search"}:
+                    method_result = await extended.bootstrap(
+                        context,
+                        rounds=config.rounds,
+                        seed=config.seed,
+                        random_search=config.method == "fewshot_search",
+                    )
+                elif config.method == "promptbreeder":
+                    method_result = await extended.promptbreeder(
+                        context,
+                        rounds=config.rounds,
+                        seed=config.seed,
+                        population_size=config.population_size,
+                    )
+                else:
+                    method_result = await getattr(extended, config.method)(
+                        context, rounds=config.rounds, seed=config.seed
+                    )
+        except GoalReached as stop:
+            method_result = {
+                "method": config.method,
+                "implementation": "native-study-goal",
+                "status": "goal_reached",
+                "stop_reason": stop.reason,
+                "selected": stop.selected,
+                "selected_score": stop.score,
+            }
         selected = context.version(method_result["selected"])
         store.put(scope, selected)
         search_usage = search_meter.snapshot()
@@ -375,6 +401,8 @@ async def execute_study(
             "gate": gate,
             "usage": usage,
             "release_changed": False,
+            "target": config.target.model_dump() if config.target else None,
+            "resource_mapping": resource_mapping,
         }
     finally:
         watcher.cancel()

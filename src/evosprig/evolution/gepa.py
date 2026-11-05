@@ -61,7 +61,7 @@ class EventLogger:
         self.context.emit("method.progress", method="gepa", message=str(message)[:1000])
 
 
-async def optimize(context, *, max_metric_calls=30, seed=0):
+async def optimize(context, *, max_metric_calls=30, seed=0, rounds=None):
     try:
         import gepa
     except ImportError:
@@ -73,6 +73,8 @@ async def optimize(context, *, max_metric_calls=30, seed=0):
         return context.sync(context.propose(messages))
 
     def stop(state):
+        if rounds is not None and state.i + 1 >= rounds:
+            return True
         try:
             context.meter.check()
         except BudgetExceeded:
@@ -118,10 +120,7 @@ async def optimize(context, *, max_metric_calls=30, seed=0):
         selected = (
             context.seed
             if best is None
-            else {
-                name: context.store.get(context.scope, best["version_id"]).resources[name]
-                for name in context.allowed
-            }
+            else context.candidate_texts[best["version_id"]]
         )
         return {
             "method": "gepa",

@@ -91,3 +91,20 @@ agent = (
 ### 长工具结果
 
 设置 `harness.max_tool_result_chars`（例如 `8000`）以限制发送给该智能体的每个工具观察结果。较长的结果会变成带有原始长度和哈希的标记预览。完整结果仍保留在运行日志中。对于下一次模型调用需要完整结构化输出的工具，请勿设置该限制。Studio 在 Harness 下提供该设置。
+
+### 多轮工具调用的上下文
+
+节点设置分为三组：**设计**管理提示词、技能和图片输入；**工具与知识**管理可调用工具和检索；**运行**管理 harness 与模型参数。
+
+长任务可以启用 **运行 → 上下文管理 → 限制工具历史长度**：
+
+```yaml
+harness:
+  tool_history:
+    max_chars: 16000
+    keep_recent_rounds: 2
+```
+
+每次请求模型之前，平台缩短较早的工具结果，保留最近两轮的完整结果（包括同一轮的并行调用）。系统指令、用户消息及工具调用/结果的配对 ID 均保留。最近轮次本身较大时可以超过目标预算。完整输出仍在运行日志中，`context.pruned` 事件记录缩减量。该策略随应用导出，也能通过有界 harness 字段参与自进化。
+
+运行记录与模型上下文分开管理的做法，也见于 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction)。

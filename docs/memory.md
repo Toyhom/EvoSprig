@@ -34,6 +34,19 @@ Default document search uses BM25, including Chinese characters. Wrap the store 
 `HybridMemory` to add semantic ranking. Documents use the `documents` namespace.
 A citation can be verified by slicing the original text at `[start:end]`.
 
+## Build a document assistant
+
+Declare `documents.search` for a single query, or `documents.retrieve` for up to eight queries with rank fusion and diverse results. Both can be explicit tool nodes in a required pipeline or tools an agent calls as needed. Results include source, title, excerpt and citation offsets.
+
+```bash
+evosprig data add-documents ./knowledge --project document-chat --workspace .evosprig/docs
+evosprig serve --project examples/document-chat/agent.yaml \
+  --workspace .evosprig/docs --profile deployment.yaml --studio-dir apps/studio/dist
+```
+
+Use the same workspace and project ID for ingestion and execution. Each import accepts up to 128 Markdown/TXT files of at most 1 MB each; repeat imports for separate batches. Extract PDF, Word or scanned content to text first. The default store ranks chunks with BM25. `HybridMemory` adds embedding-based ranking through the SDK; external vector databases can be bound through a custom retrieval tool. See [Document Chat](../examples/document-chat/) for complete setup.
+
+
 ## Deletion and restore
 
 `memory.sqlite` contains records. `memory.deletions.sqlite` is an independent,

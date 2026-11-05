@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 
 from evosprig.core.protocols import ModelRequest
@@ -29,6 +30,8 @@ class EvolutionContext:
         method,
         search_space=None,
         on_event=None,
+        source_base=None,
+        goal=None,
     ):
         if (
             (not allowed and not (search_space and search_space.fields))
@@ -41,6 +44,13 @@ class EvolutionContext:
                 "attach editable resources to a model or agent node before improvement"
             )
         self.base, self.allowed, self.view, self.metric = base, tuple(allowed), view, metric
+        self.source_base = source_base or base
+        self.goal = goal
+        self.best_selection = None
+        self.goal_best = None
+        self.stale_selections = 0
+        self.goal_seen = set()
+        self.candidate_texts = {}
         self.search_space = search_space
         if search_space:
             search_space.validate_base(base, allowed)
@@ -50,7 +60,7 @@ class EvolutionContext:
         self.on_event = on_event
         self.candidates = {}
         self.reports = []
-        store.put(scope, base)
+        store.put(scope, self.source_base)
         self.loop = asyncio.get_running_loop()
 
     @property
@@ -64,6 +74,8 @@ class EvolutionContext:
             self.on_event({"type": event, "data": data})
 
     def version(self, texts):
+        if texts == self.seed:
+            return self.source_base
         if self.search_space:
             return self.search_space.compile(self.base, self.allowed, texts)
         if set(texts) != set(self.allowed):
@@ -72,11 +84,12 @@ class EvolutionContext:
 
     def archive(self, texts):
         version = self.version(texts)
-        if version.version_id != self.base.version_id and version.version_id not in self.candidates:
+        self.candidate_texts[version.version_id] = copy.deepcopy(texts)
+        if version.version_id != self.source_base.version_id and version.version_id not in self.candidates:
             self.meter.consume("candidates")
             candidate = self.store.snapshot_candidate(
                 self.scope,
-                self.base,
+                self.source_base,
                 version,
                 method=self.method,
                 job_id=self.job_id,
@@ -112,6 +125,28 @@ class EvolutionContext:
             score=report["score"],
             count=report["count"],
         )
+        if (self.goal and split == "selection" and eligible
+                and len(selected) == len(eligible)
+                and {sample["id"] for sample in selected} == set(eligible)
+                and version.version_id not in self.goal_seen):
+            from .goal import GoalReached
+
+            self.goal_seen.add(version.version_id)
+            score = report["score"]
+            if self.best_selection is None or score > self.best_selection[0]:
+                self.best_selection = (score, copy.deepcopy(texts))
+            if self.goal_best is None or score > self.goal_best + self.goal.min_delta:
+                self.goal_best, self.stale_selections = score, 0
+            else:
+                self.stale_selections += 1
+            reason = None
+            if self.goal.score is not None and score >= self.goal.score:
+                reason = "target_score"
+            elif self.goal.patience and self.stale_selections >= self.goal.patience:
+                reason = "no_improvement"
+            if reason:
+                self.emit("search.goal_reached", reason=reason, score=self.best_selection[0])
+                raise GoalReached(reason, self.best_selection[1], self.best_selection[0])
         return report
 
     async def propose(self, messages, *, json_output=False):

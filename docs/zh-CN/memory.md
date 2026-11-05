@@ -24,6 +24,19 @@ memory.delete(scope, record["id"])
 
 <a id="deletion-and-restore"></a>
 
+## 构建文档问答应用
+
+单次检索使用 `documents.search`；多查询使用 `documents.retrieve`，最多合并八条查询并做排序融合和结果去重。它们都可以放成必经的工具节点，也可以交给智能体按需调用。返回结果包含来源、标题、片段及引用位置。
+
+```bash
+evosprig data add-documents ./knowledge --project document-chat --workspace .evosprig/docs
+evosprig serve --project examples/document-chat/agent.yaml \
+  --workspace .evosprig/docs --profile deployment.yaml --studio-dir apps/studio/dist
+```
+
+导入和运行使用相同的 workspace 与项目 ID。每批支持最多 128 个 Markdown/TXT 文件，每个不超过 1 MB；更多文档分批导入。PDF、Word 和扫描件先抽取为文字。默认使用 BM25，SDK 的 `HybridMemory` 可加入向量语义检索；已有向量数据库也可以封装成自定义检索工具。完整配置见[文档问答样例](../../examples/document-chat/)。
+
+
 ## 删除与恢复
 
 `memory.sqlite` 包含记录。`memory.deletions.sqlite` 是一个独立的单调删除账本，包含 ID、作用域和删除时间，但不包含被删除的内容。Delete 会删除活动行，并在一个附加的 SQLite 事务中记录墓碑。命名空间重置还会为较旧的备份记录截止点。每次读取、搜索、导出和恢复都会检查当前账本。

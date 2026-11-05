@@ -4,7 +4,7 @@
 
 # 自进化 agent 与受控 RSI
 
-自动改进 agent 使用的提示词和技能。选择可编辑资源，带上你的任务和评估器，设置预算，然后在发布前检查生成的版本。
+用自己的任务进化智能体的提示词、技能、代码和运行配置。选择一个节点或应用资源，配置评估方法与搜索上限，再比较各个版本。
 
 自改进循环会修订应用资源，重新运行相同任务，并利用反馈生成更多候选。你控制哪些资源可以更改、预算和版本采纳。
 
@@ -63,6 +63,41 @@ EvoSprig 将应用评估转换为标量分数、书面反馈和执行观察。�
 在 Studio 中，配置任务集，选择资源和可选结构化字段，并选择算法。EvoSprig 会自动提出编辑并评估运行中的应用。结果视图将资源变更和配对输出一起显示。在 **Versions** 中审查并启用该版本。
 
 使用 `Builder.skill(...)` 和 `node(..., skills=[...])` 附加可复用技能。完整设置见 [agent 配置](agent-resources.md)。
+
+## 只进化一个节点或模块
+
+在 **自进化工作台（Improve）** 中选择节点和模块，再配置任务集、算法、提出改动的模型与最大轮次。Prompt、skill 和代码资源可以单独选择；harness 和记忆参数直接填写搜索上下限；模型路由在应用声明的模型别名中搜索。多个字段一起搜索时，可展开高级搜索空间。
+
+如果其他节点也使用同一份资源，平台会为选中节点创建独立副本；节点内的普通提示词会自动变成可进化资源。选择“整个应用”的资源模式时，修改会作用于所有引用该资源的节点。
+
+```bash
+evosprig improve my-agent/agent.yaml --suite my-agent/tasks.yaml \
+  --method opro --target-node writer --target-module prompt \
+  --rounds 8 --target-score 0.9 --patience 3 \
+  --proposer-binding optimizer --profile my-agent/deployment.yaml
+```
+
+`--proposer-binding` 使用应用声明并在部署中配置的模型别名，省略时使用应用默认模型。CLI 可以重复传入 `--target-module` 选择多个模块。嵌套节点使用完整路径，例如 `/graph/nodes/team/branches/writing/nodes/writer`。
+
+SDK 和 HTTP API 使用同一配置：
+
+```python
+from evosprig.evolution.study import StudyConfig
+
+config = StudyConfig(
+    method="opro",
+    target={"node": "/graph/nodes/writer", "modules": ["prompt"]},
+    rounds=8,
+    goal={"score": 0.9, "patience": 3, "min_delta": 0.001},
+    budget={"max_evaluations": 100, "max_model_calls": 200,
+            "max_total_tokens": 200000, "max_seconds": 900},
+    gate={"min_gain": 0.02, "min_samples": 2},
+)
+```
+
+将 `config` 传给 `execute_study`，或将其 JSON 放在 API 请求的 `config` 中；API 的 `proposer_binding` 与 `config` 并列。目标分数按完整的 `selection` 任务集计算，小批量结果不会触发停止。`patience` 统计连续多少个不同候选没有超过 `min_delta` 的提升。停止搜索后继续执行独立的 release/test 验证，再由用户决定是否采纳。GEPA 的 `rounds` 同样限制变异迭代次数。
+
+画布操作见[只进化团队中的一个智能体](tutorials/scoped-evolution.md)。
 
 <a id="run-an-improvement"></a>
 

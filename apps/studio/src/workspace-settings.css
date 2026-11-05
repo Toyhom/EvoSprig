@@ -1,0 +1,71 @@
+/* Forms share a clear reading rhythm; the canvas keeps its own compact scale. */
+.panel, .inspector-design { font-family: "Manrope", "Noto Sans SC", sans-serif; }
+.panel h2, .panel h3, .inspector h3, .setting-section h4 {
+  font-family: "Plus Jakarta Sans", "Noto Sans SC", sans-serif;
+  letter-spacing: -.025em;
+}
+.panel { line-height: 1.65; }
+.panel h2 { font-size: 25px; font-weight: 650; margin: 6px 0 10px; }
+.panel label, .setting-section label { font-size: 13px; font-weight: 500; }
+.panel input, .panel select, .setting-section input, .setting-section select {
+  min-height: 39px; border-radius: 8px; border-color: #dde1e6;
+}
+.panel input[type=checkbox], .setting-section input[type=checkbox] { min-height: 0; }
+.panel textarea, .setting-section textarea { border-radius: 9px; }
+.panel summary { font-size: 13px; font-weight: 550; padding: 9px 0; }
+.panel .hint, .setting-section .hint { line-height: 1.75; color: #737982; font-weight: 400; }
+.panel select, .setting-section select { padding-right: 24px; }
+.settings-sections {
+  position: sticky; top: 0; z-index: 2; display: flex; gap: 3px;
+  padding: 5px; margin: 16px -2px 4px; background: #f1f3f5; border: 1px solid #e8ebef;
+  border-radius: 10px;
+}
+.settings-sections button {
+  flex: 1; min-width: 0; min-height: 36px; padding: 6px; border: 1px solid transparent;
+  border-radius: 7px; font-size: 12px; background: transparent; color: #717680;
+}
+.settings-sections button[aria-pressed=true] {
+  color: #202b3b; background: #fff; border-color: #e0e5eb;
+  box-shadow: 0 1px 3px #26324b0a; font-weight: 650;
+}
+.agent-settings [hidden] { display: none !important; }
+.agent-settings .setting-section { border-bottom-color: #edf0f3; padding: 22px 0; }
+.agent-settings .setting-section h4 { font-size: 14px; margin-bottom: 14px; }
+.agent-settings .prompt-input { font-size: 13px; line-height: 1.85; min-height: 220px; }
+.agent-settings .setting-option { padding: 9px; border: 1px solid #e7ebef; border-radius: 8px; }
+.agent-settings .setting-option:has(input:checked) { border-color: #b9c9df; background: #f6f9fd; }
+.setting-section .inline-form { flex-wrap: wrap; }
+.setting-section .inline-form input { flex: 1 1 150px; }
+.evolution-panel { max-width: 1260px; width: 100%; margin: 0 auto; padding: 32px; }
+.evolution-heading .eyebrow { font-size: 10px; letter-spacing: .14em; color: #778293; font-weight: 700; }
+.evolution-panel > .muted { max-width: 760px; margin-bottom: 24px; }
+.evolution-panel .card { border: 1px solid #e2e7ed; border-radius: 13px; padding: 24px; box-shadow: 0 2px 4px #26324b03; }
+.evolution-panel h3 { display: flex; align-items: center; gap: 10px; font-size: 16px; margin-bottom: 18px; }
+.step-number { display: inline-grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px; background: #f0f3f7; color: #65728a; font: 12px "IBM Plex Mono", monospace; }
+.evolution-fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 16px; }
+.evolution-fields > label { display:flex; flex-direction:column; justify-content:flex-end; margin: 8px 0; min-width: 0; }
+.evolution-columns { align-items: start; gap: 20px; }
+.evolution-columns > .card { min-width: 0; }
+.evolution-panel .metrics { flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.evolution-panel .metrics span { background: #f3f5f7; border-radius: 6px; padding: 3px 8px; font-size: 11px; }
+.resource-choices { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.resource-choices .check { margin: 0; padding: 9px 12px; border: 1px solid #e1e6ed; border-radius: 8px; gap: 9px; background: #fff; }
+.resource-choices .check:has(input:checked) { background: #f4f7fc; border-color: #c0cde0; }
+.resource-choices small { display: block; font-size: 10px; color: #808897; font-weight: 400; }
+.scope-note { border-left: 2px solid #b7c7dc; color: #52627a; padding: 4px 12px; font-size: 12px; margin: 16px 0 8px; }
+.evolution-panel details { border-top: 1px solid #edf0f4; margin-top: 16px; padding-top: 6px; }
+.evolution-panel details > textarea { width: 100%; }
+.evolution-panel .budget-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.evolution-panel .evolution-launch { margin-top: 20px; background: #fafbfc; }
+.evolution-launch > details { margin: 0; padding: 0; border-top: 0; }
+.evolution-launch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 18px; padding-top: 18px; border-top: 1px solid #e4e9f0; }
+.evolution-launch-row > span:first-child { flex: 1 1 220px; color: #66748a; font-size: 12px; }
+.evolution-launch-row .primary { min-height: 42px; padding: 10px 23px; border-radius: 9px; }
+@media(max-width:1100px) { .evolution-panel { padding: 24px; } .evolution-columns { grid-template-columns: 1fr; } }
+@media(max-width:600px) {
+  .evolution-panel { padding: 20px 14px; }
+  .evolution-panel .card { padding: 18px; }
+  .evolution-panel .budget-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .evolution-fields { grid-template-columns: 1fr; gap: 4px; }
+  .evolution-launch-row .primary { width: 100%; }
+}

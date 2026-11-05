@@ -14,6 +14,7 @@ import { ReactFlow, Background, Controls, MiniMap, Position, addEdge, applyEdgeC
   type Edge, type Connection, type NodeChange, type EdgeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './style.css';
+import './workspace-settings.css';
 import { orderedNodes, starter, nodeTemplate, initialInput, type Document, type NodeSpec, type NodeKind, type Spec, type Run } from './types';
 import { arrange, canvasView, childGraphs, cleanGroups, graphAt, graphEdges, layoutKey, leaves, pathKey, withGraph, type CanvasState, type FlowNode } from './canvas';
 import { useDraftGuard } from './draft-guard';
@@ -33,7 +34,7 @@ const words = {
     empty: '创建项目，从一个可运行的智能体开始。', subtitle: '搭建 · 运行 · 带走',
     saved: '已保存', conflict: '版本冲突：本地修改已保留。请复制规格，再重新加载比较。',
     ready: '准备就绪', runHint: '运行和导出使用已保存版本；先保存当前修改。',
-    settings: '连接', token: 'API 访问令牌（可选）', pending: '构建 · 评测 · 持续改进', resources:'资源', runs:'历史', memory:'记忆与资料', improve:'改进', versions:'版本',
+    settings: '连接', token: 'API 访问令牌（可选）', pending: '构建 · 评测 · 自进化', resources:'资源', runs:'历史', memory:'记忆与资料', improve:'自进化', versions:'版本',
   },
   en: { projects: 'WORKSPACE', create: 'New project', canvas: 'Canvas', spec: 'Spec', code: 'Python',
     save: 'Save', reload: 'Reload', run: 'Run', cancel: 'Cancel run', export: 'Export Python',
@@ -161,7 +162,7 @@ function App() {
     return response;
   }, [lang, token]);
   const error = (e: unknown) => setStatus(e instanceof Error ? e.message : String(e));
-  const load = (next: Document, path:string[] = []) => {
+  const load = (next: Document, path:string[] = [], preserveNode:string|null = null) => {
     projectLoaded.current = true;
     runWatch.current++;
     if (poll.current) clearTimeout(poll.current);
@@ -169,6 +170,8 @@ function App() {
     setSidebarOpen(false); setDoc(next);setCanvas({groups:next.canvas?.groups??{}});
     try{graphAt(next.spec,path);}catch{path=[];}
     loadGraph(next.spec,path,next.layout);
+    const savedNode=preserveNode?graphAt(next.spec,path).nodes[preserveNode]:undefined;
+    if(savedNode){setSelected(preserveNode);setNodeText(JSON.stringify(savedNode,null,2));}
     if(next.id!==doc?.id) setInput(JSON.stringify(initialInput(next.spec.input_schema),null,2));
     setSpecText(JSON.stringify(next.spec, null, 2));setDirty(false);setResult(null);
   };
@@ -258,7 +261,7 @@ function App() {
       const spec = tab === 'spec' ? JSON.parse(specText) : currentSpec();
       const next = await (await api(`/projects/${doc.id}`, { method: 'PUT', body: JSON.stringify({ spec,
         revision: doc.revision, resources:doc.resources, layout: currentLayout(), canvas: tidyCanvas(spec) }) })).json();
-      load(next,graphPath); await refresh(); setStatus(`${t.saved} · r${next.revision}`); return true;
+      load(next,graphPath,selected); await refresh(); setStatus(`${t.saved} · r${next.revision}`); return true;
     } catch (e) { error(e); return false; } finally { setBusy(false); }
   };
   const { guard, prompt } = useDraftGuard(dirty || nodeDraftDirty, save, status, lang);

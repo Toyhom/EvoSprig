@@ -77,3 +77,20 @@ Choose text resources or a structured search space for per-agent harness setting
 ### Long tool results
 
 Set `harness.max_tool_result_chars` (for example, `8000`) to bound each tool observation sent to that agent. Longer results become a marked preview with their original length and hash. The full result remains in the run journal. Keep the limit unset for tools whose complete structured output is required in the next model call. Studio exposes the setting under Harness.
+
+### Tool history across rounds
+
+In the node inspector, **Design** contains prompts, skills and visual inputs; **Tools & knowledge** contains callable tools and retrieval; **Runtime** contains harness and model controls.
+
+For long tool-driven tasks, enable **Runtime → Context management → Limit tool history**:
+
+```yaml
+harness:
+  tool_history:
+    max_chars: 16000
+    keep_recent_rounds: 2
+```
+
+Before each model request, older tool observations are shortened to fit the character target. The last two tool rounds remain complete, including parallel calls. System instructions, user messages and call/result IDs remain intact. Protected rounds can exceed the target. Full outputs stay in the journal, and `context.pruned` events report the reduction. The policy travels with exported applications and can be searched through bounded harness fields.
+
+This separates recorded history from model context, a pattern also used by [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction).

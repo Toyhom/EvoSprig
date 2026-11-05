@@ -716,8 +716,15 @@ class ExecutionSession:
                             slot["tool_round_limit_noted"] = True
                     slot["exposed_tools"] = aliases
                     descriptors = [self.bound_tools[alias].descriptor(alias) for alias in aliases]
+                    from .context_window import project_tool_history
+
+                    request_messages, context_usage = project_tool_history(
+                        slot["messages"], node.harness.tool_history if node.harness else None
+                    )
+                    if context_usage and context_usage["pruned_results"]:
+                        self.save("context.pruned", path, **context_usage)
                     estimate = input_reservation(
-                        slot["messages"], descriptors, budget.image_token_reserve
+                        request_messages, descriptors, budget.image_token_reserve
                     )
                     remaining = (
                         budget.max_total_tokens
@@ -748,7 +755,7 @@ class ExecutionSession:
                     try:
                         response = await provider.complete(
                             ModelRequest(
-                                copy.deepcopy(slot["messages"]),
+                                copy.deepcopy(request_messages),
                                 descriptors,
                                 node.response_format == "json",
                                 allowance,

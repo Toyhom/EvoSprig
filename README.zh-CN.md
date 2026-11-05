@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/7d70ff67-afae-4112-a85b-22d6d7a18f36
 
 [![Episode Studio：带对白的动画片段](examples/episode-studio/assets/chapter-two.jpg)](examples/episode-studio/)
 
-**[Episode Studio](examples/episode-studio/README.zh-CN.md)**：使用 EvoSprig 开发的漫剧生成智能体。
+输入一段小说或一句想法，制作团队自动选风格、写剧本、设计角色与声音，再逐镜头导演、生成和检查。
 
 <table>
 <tr>

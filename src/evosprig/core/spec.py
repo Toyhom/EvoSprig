@@ -110,6 +110,11 @@ class MemoryPolicy(Contract):
     max_chars: int = Field(default=4000, ge=128, le=16000)
 
 
+class ToolHistoryPolicy(Contract):
+    max_chars: int = Field(default=16000, ge=512, le=1000000)
+    keep_recent_rounds: int = Field(default=2, ge=0, le=32)
+
+
 class Harness(Contract):
     """Optional per-agent overrides; omitted values retain the node's settings."""
 
@@ -122,6 +127,7 @@ class Harness(Contract):
     max_output_retries: int | None = Field(default=None, ge=0, le=3)
     max_output_tokens: int | None = Field(default=None, ge=1, le=32768)
     max_tool_result_chars: int | None = Field(default=None, ge=512, le=1000000)
+    tool_history: ToolHistoryPolicy | None = None
     memory: MemoryPolicy | None = None
 
 
@@ -267,7 +273,7 @@ class Node(Contract):
         if self.harness is None:
             return self
         return self.model_copy(
-            update=self.harness.model_dump(exclude_none=True, exclude={"memory", "max_tool_result_chars"})
+            update=self.harness.model_dump(exclude_none=True, exclude={"memory", "max_tool_result_chars", "tool_history"})
         )
 
 
@@ -513,6 +519,8 @@ class AgentSpec(Contract):
                         node.pop(key)
                 if node.get("harness") and node["harness"].get("max_tool_result_chars") is None:
                     node["harness"].pop("max_tool_result_chars", None)
+                if node.get("harness") and node["harness"].get("tool_history") is None:
+                    node["harness"].pop("tool_history", None)
                 if self.spec_version != "0.3":
                     for key in ("items", "max_items", "tool_errors"):
                         node.pop(key)

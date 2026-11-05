@@ -2,7 +2,7 @@
 
 [English](evolution.md) · [简体中文](zh-CN/evolution.md) · [Documentation](README.md)
 
-Automatically improve the prompts and skills your agent uses. Choose editable resources, bring your tasks and evaluator, set a budget, then inspect the resulting versions before release.
+Evolve an agent's prompts, skills, code and runtime settings on your tasks. Choose a node or application resources, set an evaluator and search limits, then compare versions.
 
 The self-improvement loop revises application resources, reruns the same tasks and uses feedback for further candidates. You control which resources can change, the budget and version adoption.
 
@@ -55,6 +55,41 @@ Demonstration methods need at least one successful search execution. A judge can
 In Studio, configure a task set, select resources and optional structured fields, and choose an algorithm. EvoSprig proposes edits and evaluates the running application automatically. The result view shows resource changes and paired outputs together. Review and enable the version in **Versions**.
 
 Attach reusable skills with `Builder.skill(...)` and `node(..., skills=[...])`. See [agent configuration](agent-resources.md) for the full setup.
+
+## Evolve one node or module
+
+In **Improve**, choose an **Agent node** and a **Module to evolve**. Select the method, task suite, evolution model and maximum rounds. Prompt, skill and code resources can be selected individually. Harness and memory fields have numeric bounds; model routing searches the application's declared model aliases. Use the advanced search space for several bounded fields together.
+
+Shared resources are isolated for the selected node. Inline prompts become versioned resources automatically. Other nodes keep their existing behavior. With **Application resources**, an edit applies to every node referencing the selected resource.
+
+```bash
+evosprig improve my-agent/agent.yaml --suite my-agent/tasks.yaml \
+  --method opro --target-node writer --target-module prompt \
+  --rounds 8 --target-score 0.9 --patience 3 \
+  --proposer-binding optimizer --profile my-agent/deployment.yaml
+```
+
+`--proposer-binding` names a model alias declared in the application and configured in the deployment. Omit it to use the application default. Repeat `--target-module` to select several modules in the CLI. Nested nodes use their full pointer, such as `/graph/nodes/team/branches/writing/nodes/writer`.
+
+The same configuration is available in the SDK and study API:
+
+```python
+from evosprig.evolution.study import StudyConfig
+
+config = StudyConfig(
+    method="opro",
+    target={"node": "/graph/nodes/writer", "modules": ["prompt"]},
+    rounds=8,
+    goal={"score": 0.9, "patience": 3, "min_delta": 0.001},
+    budget={"max_evaluations": 100, "max_model_calls": 200,
+            "max_total_tokens": 200000, "max_seconds": 900},
+    gate={"min_gain": 0.02, "min_samples": 2},
+)
+```
+
+Pass `config` to `execute_study`, or its JSON representation as the API's `config`. The API accepts `proposer_binding` alongside it. `goal.score` uses the **complete selection split**, including at least one task; minibatch scores do not trigger it. `patience` counts distinct fully evaluated candidates without a gain above `min_delta`. Search stops at the first goal or budget limit, then performs paired release/test validation. The release gate and manual adoption remain separate. GEPA also respects `rounds` as a mutation-iteration cap.
+
+Follow [Evolve one agent in a team](tutorials/scoped-evolution.md) for a canvas walkthrough.
 
 ## Run an improvement
 
