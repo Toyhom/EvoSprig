@@ -57,7 +57,7 @@ test('project search, long names and keyboard navigation work across screen size
   await noOverflow(page);
   await page.setViewportSize({ width: 320, height: 740 });
   await noOverflow(page);
-  await page.getByRole('button', { name: '改进', exact: true }).click();
+  await page.getByRole('button', { name: '自进化', exact: true }).click();
   await noOverflow(page);
   await page.getByRole('button', { name: '画布', exact: true }).click();
   await noOverflow(page);
