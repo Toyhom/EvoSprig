@@ -4,7 +4,7 @@
 
 [![Build a reusable writing application from an empty canvas](assets/xhs-02.jpg)](assets/xhs-02.mp4)
 
-**[Watch lesson 2](assets/xhs-02.mp4)** · Chinese subtitles · [Classroom materials](assets/xhs-materials.zip) · [Completed application](assets/xhs-project.zip)
+**[Watch lesson 2](assets/xhs-02.mp4)** · Chinese narration · [Subtitles](assets/xhs-02.zh-CN.srt) · [Classroom materials](assets/xhs-materials.zip) · [Completed application](assets/xhs-project.zip)
 
 Build a Xiaohongshu writing desk that turns source notes into a brief, drafts a post, checks it and revises it. Create all eight nodes on the canvas, inspect the Python version, then export and run the application independently. The same deployed application writes a tutorial introduction and a bookshop announcement.
 
@@ -157,3 +157,5 @@ evosprig serve --project .evosprig/imported-xhs/agent.yaml \
 ```
 
 **Try next:** add one of your own writing examples, change a review criterion, or [configure self-evolution on a set of writing tasks](improve-an-agent.md). Reference: [agent resources](../agent-resources.md), [model connections](../model-connections.md), [export and deployment](../deployment.md).
+
+Narration: [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS). Music: [Inspired](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600022) and [On My Way](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600062) — Kevin MacLeod, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); edited and mixed for this lesson.

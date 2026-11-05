@@ -4,7 +4,7 @@
 
 [![从空画布搭建可重复使用的文案智能体](../../tutorials/assets/xhs-02.jpg)](../../tutorials/assets/xhs-02.mp4)
 
-**[观看第二期](../../tutorials/assets/xhs-02.mp4)** · 中文字幕 · [课堂素材](../../tutorials/assets/xhs-materials.zip) · [完成版应用](../../tutorials/assets/xhs-project.zip)
+**[观看第二期](../../tutorials/assets/xhs-02.mp4)** · 中文配音 · [中文字幕](../../tutorials/assets/xhs-02.zh-CN.srt) · [课堂素材](../../tutorials/assets/xhs-materials.zip) · [完成版应用](../../tutorials/assets/xhs-project.zip)
 
 这期做一个小红书文案应用：整理素材、确定切口、起草、检查、按意见修改。我们从空画布逐个创建八个节点，切换 Python 查看代码，然后导出并独立部署。最后，用同一个应用分别写漫画教程介绍和书店活动通知。
 
@@ -157,3 +157,5 @@ evosprig serve --project .evosprig/imported-xhs/agent.yaml \
 ```
 
 **接着试试：**补充一篇喜欢的范例，修改一个审核标准，或[用一组写作任务配置自进化](improve-an-agent.md)。参考文档：[智能体资源](../agent-resources.md)、[模型连接](../model-connections.md)、[导出与部署](../deployment.md)。
+
+配音：[Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)。音乐：[Inspired](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600022)、[On My Way](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600062) — Kevin MacLeod，[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)，经剪接与混音。
