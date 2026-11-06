@@ -19,6 +19,10 @@ test('configure a memory bank, attach automatic recall, run and reimport its set
  await expect(page.getByLabel('Harness memory tool')).toHaveValue('memory_writer_search');
  const screenshots=process.env.EVOSPRIG_SCREENSHOT_DIR;if(screenshots)await page.screenshot({path:path.join(screenshots,'node-memory-bank.png')});
  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.locator('.save-state')).toContainText('Saved');
+ await page.reload();await page.locator(`.project[title="${id}"]`).click();await page.locator('.react-flow__node[data-id="assistant"]').click();await page.locator('.settings-sections').getByRole('button',{name:'Memory',exact:true}).click();
+ await expect(page.getByLabel('Agent memory bank')).toHaveValue('writer');await expect(page.getByLabel('Automatically recall selected bank')).toBeChecked();
+ await page.getByLabel('Automatically recall selected bank').uncheck();await page.getByRole('button',{name:'Connect memory bank',exact:true}).click();await expect(page.getByLabel('Harness memory tool')).toHaveValue('');
+ await page.getByLabel('Automatically recall selected bank').check();await page.getByRole('button',{name:'Connect memory bank',exact:true}).click();await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.locator('.save-state')).toContainText('Saved');
  await page.getByLabel('Run input',{exact:true}).fill('{"query":"concise"}');await page.getByRole('button',{name:'▷ Run',exact:true}).click();await expect(page.locator('footer[role=status]')).toContainText('succeeded');await expect(page.locator('.run-output')).toContainText('Prefer concise replies with a diagram.');
  const archive=await request.post('/api/projects/'+id+'/export?target=http');expect(archive.status()).toBe(200);
  await page.getByLabel('Import project ZIP').setInputFiles({name:'memory.zip',mimeType:'application/zip',buffer:await archive.body()});await page.getByRole('button',{name:'Create imported project',exact:true}).click();await expect(page.locator('h1')).toHaveText(id+'-import');
@@ -37,4 +41,15 @@ test('vector memory configuration survives reload and is independent of knowledg
  await page.reload();await page.locator(`.project[title="${id}"]`).click();await page.locator('.tabs').getByRole('button',{name:'Memory',exact:true}).click();await page.getByRole('button',{name:'Retrieval & writes',exact:true}).click();await expect(page.getByLabel('Memory embedding model')).toHaveValue('bge-m3');await expect(page.getByLabel('Memory retrieval mode')).toHaveValue('hybrid');
  const screenshots=process.env.EVOSPRIG_SCREENSHOT_DIR;if(screenshots)await page.screenshot({path:path.join(screenshots,'memory-retrieval-settings.png')});
  const knowledge=await(await request.get('/api/projects/'+id+'/documents/settings')).json();expect(knowledge.retrieval).toBe('lexical');
+});
+
+test('disconnecting the last memory write tool permits a read-only run',async({page,request})=>{
+ const id='readonly-memory-'+Date.now();
+ const spec={id,spec_version:'0.3',input_schema:{type:'object'},output_schema:{type:'object'},models:{main:{binding:'main',requires:['text','tool_calling']}},tools:{write:{plugin:'memory.write',version:'1'}},resources:{},graph:{entry:'assistant',nodes:{assistant:{type:'agent',model:'main',instructions:'Help.',inputs:{query:{value:'preferences'}},output_schema:{type:'object'},tools:['write']}},edges:[],output:{answer:{ref:'nodes.assistant.output.text'}}}};
+ expect((await request.post('/api/projects',{data:{spec}})).status()).toBe(201);
+ await page.goto('/');await page.locator(`.project[title="${id}"]`).click();await page.locator('.react-flow__node[data-id="assistant"]').click();await page.locator('.settings-sections').getByRole('button',{name:'Memory',exact:true}).click();
+ await expect(page.getByLabel('Attach memory write tool')).toBeChecked();await page.getByLabel('Attach memory write tool').uncheck();await page.getByRole('button',{name:'Connect memory bank',exact:true}).click();
+ await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.locator('.save-state')).toContainText('Saved');
+ const saved=await(await request.get('/api/projects/'+id)).json();expect(saved.spec.tools.write).toBeUndefined();expect(saved.spec.graph.nodes.assistant.tools).toEqual(['memory_search']);
+ await page.getByRole('button',{name:'▷ Run',exact:true}).click();await expect(page.locator('footer[role=status]')).toContainText('succeeded');
 });
