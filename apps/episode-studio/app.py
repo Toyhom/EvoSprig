@@ -64,6 +64,28 @@ def application(workspace, profile, *, media_root=None, token=None):
             statuses = await asyncio.gather(*(check(name, address) for name, address in addresses.items()))
         return {"ready": all(item["ready"] for item in statuses), "services": statuses}
 
+    import importlib.util
+
+    from pydantic import BaseModel, Field
+    module_spec = importlib.util.spec_from_file_location("episode_revisions", Path(__file__).with_name("revisions.py"))
+    revisions = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(revisions)
+    plan_retake, production_manifest = revisions.plan_retake, revisions.production_manifest
+
+    class RevisionRequest(BaseModel):
+        before: dict
+        after: dict
+        selected_shots: list[str] | None = Field(default=None, max_length=10000)
+
+    @app.post("/api/episode/revisions/plan")
+    async def revision_plan(body: RevisionRequest):
+        try:
+            before = production_manifest(**body.before)
+            after = production_manifest(**body.after)
+            return plan_retake(before, after, selected_shots=body.selected_shots)
+        except (KeyError, TypeError, ValueError):
+            raise HTTPException(422, "provide before/after production inputs with unique shot IDs") from None
+
     @app.get("/episode-media/{name}")
     async def media(name: str):
         if not media_root or not re.fullmatch(r"[a-f0-9]{32,64}(?:_[0-9]+)?\.(mp4|wav|png|jpg)", name):

@@ -24,7 +24,7 @@ Use these guides to look up configuration, behavior and interfaces.
 | Canvas and node design | [Studio](studio.md) · [Prompts, skills and harness](agent-resources.md) |
 | Models | [Default model and node overrides](model-connections.md) · [Vision and provider options](vision.md) · [Preload and GPU placement](local-models.md) · [Model sources](model-sources.md) |
 | Tools and integrations | [Tools and MCP](tools.md) · [Repository tools](repository-tools.md) · [ComfyUI import/export](comfyui.md) |
-| Memory and collaboration | [Memory](memory.md) · [Shared documents and messages](shared-workspaces.md) |
+| Memory and collaboration | [Knowledge libraries and RAG](rag.md) · [Memory](memory.md) · [Shared documents and messages](shared-workspaces.md) |
 | Evaluation | [Tasks, metrics and judges](evaluation.md) · [Industry environments](industry-environments.md) |
 | Self-evolution / RSI | [Evolution](evolution.md) · [Editable components](evolution-components.md) · [Harness and code search](harness-search.md) · [Method requirements](method-requirements.md) |
 | Deployment | [Export and deployment](deployment.md) · [Durable runtime and recovery](durable-runtime.md) · [Event triggers](triggers.md) · [Episode performance](episode-performance.md) |

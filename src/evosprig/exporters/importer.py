@@ -108,6 +108,9 @@ def inspect_archive(data: bytes):
         report = compatibility_report(version, tool_bindings=bindings)
         if not report["compatible"]:
             raise ValueError("archive contains unsupported plugins")
-        return version, report | {"tool_bindings": bindings, "files": len(files)}
+        from evosprig.plugins.document_library import DocumentConfig
+        profile = yaml.safe_load(files.get("deployment.example.yaml", b"{}")) or {}
+        documents = DocumentConfig.model_validate(profile.get("documents", {})).model_dump()
+        return version, report | {"tool_bindings": bindings, "documents": documents, "files": len(files)}
     except (KeyError, UnicodeError, TypeError, AttributeError, yaml.YAMLError):
         raise ValueError("archive is missing valid declarative export data") from None

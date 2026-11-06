@@ -5,7 +5,7 @@ class ProductionPreview {
   }
   reset() {
     this.generation++;
-    this.pending.clear(); this.loaded.clear();
+    this.pending.clear(); this.loaded.clear(); this.selected = new Map(); this.planned = 0;
     this.urls.forEach(url => URL.revokeObjectURL(url)); this.urls = [];
     for (const id of ['storyboard', 'cast-assets', 'shot-assets']) document.getElementById(id).replaceChildren();
     document.getElementById('production-assets').hidden = true;
@@ -51,11 +51,12 @@ class ProductionPreview {
           this.say('Preview reconnecting…', '正在重新连接预览……');
       }
     }
-    if (!this.pending.size) document.getElementById('preview-state').textContent = '';
+    if (!this.pending.size) { const count=this.selected?.size||0, seconds=[...(this.selected?.values()||[])].reduce((a,b)=>a+b,0); document.getElementById('preview-state').textContent = this.planned ? this.say(`${count} / ${this.planned} shots selected · ${seconds.toFixed(1)}s`, `已选用 ${count} / ${this.planned} 个镜头 · ${seconds.toFixed(1)} 秒`) : ''; }
   }
   async add(path, output, generation) {
     const element = (tag, text) => { const node = document.createElement(tag); if (text) node.textContent = text; return node; };
     if (path.endsWith('/script_editor')) {
+      this.planned = (output.shots || []).length;
       const panel = document.getElementById('storyboard');
       const details = element('details'), summary = element('summary', output.title), list = element('ol');
       for (const shot of output.shots || []) {
@@ -65,6 +66,7 @@ class ProductionPreview {
     }
     const shot = /\/shots\/item-(\d+)\//.exec(path);
     const take = path.endsWith('/selected_take');
+    if(take) { this.selected ||= new Map(); this.selected.set(shot[1],output.duration_seconds || output.shot.duration_seconds || 0); }
     const asset = take ? output.clip : output;
     if (!asset?.uri) return;
     const card = element('figure');

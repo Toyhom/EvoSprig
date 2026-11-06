@@ -184,11 +184,19 @@ def setup(args):
             config["model_connections"] = json.loads(args.model_config.read_text())
             (args.state / "refresh-model-connections").touch()
         config["memory_profile"] = args.memory_profile or config.get("memory_profile", "balanced")
+        config["video_decoder"] = args.video_decoder or config.get("video_decoder", "standard")
+        if config["video_decoder"] == "streaming":
+            if not args.skip_install:
+                command([python(args.env_root, "episode-comfy"), "-m", "pip", "install", "--no-deps",
+                         "git+https://github.com/SolarX-Team/H3-Streaming-VAE-Decoder.git@a7c61a6e02bef8539178a17b6e150a775b3a0ebb"])
+            addon = comfy / "custom_nodes" / "evosprig_h3_stream"
+            addon.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(APP / "comfy-nodes/evosprig_h3_stream/__init__.py", addon / "__init__.py")
         write(config_path, config)
         print("Ready. Start with: python apps/episode-studio/launch.py start --state", args.state)
 
 
-def memory_recipe(recipe, mode):
+def memory_recipe(recipe, mode, video_decoder="standard"):
     """Keep the original recipe and create an explicit lower-memory deployment copy."""
     recipe = json.loads(json.dumps(recipe))
     if mode == "low-vram":
@@ -201,6 +209,23 @@ def memory_recipe(recipe, mode):
                 node["widgets_values"][1] = 0.5
     elif mode != "balanced":
         raise ValueError("memory profile must be balanced or low-vram")
+    if video_decoder == "streaming":
+        for node in recipe["workflow"]["nodes"]:
+            if node["type"] == "VAEDecode":
+                node["type"] = "EvoSprigH3StreamingDecode"
+                node["title"] = "H3 streaming decode"
+                node["widgets_values"] = [True, 4096]
+                node["properties"]["Node name for S&R"] = "EvoSprigH3StreamingDecode"
+        recipe["object_info"]["EvoSprigH3StreamingDecode"] = {
+            "input": {"required": {"samples": ["LATENT"], "vae": ["VAE"],
+                                    "compensate": ["BOOLEAN", {"default": True}],
+                                    "token_budget": ["INT", {"default": 4096, "min": 256, "max": 65536}]}},
+            "output": ["IMAGE"], "output_name": ["IMAGE"], "output_is_list": [False],
+            "output_node": False, "name": "EvoSprigH3StreamingDecode",
+            "category": "EvoSprig/video",
+        }
+    elif video_decoder != "standard":
+        raise ValueError("video_decoder must be standard or streaming")
     return recipe
 
 
@@ -283,7 +308,7 @@ def run_services(args):
     profile = state / "deployment.yaml"
     memory_mode = config.get("memory_profile", "balanced")
     recipe_path = state / "active-recipe.json"
-    write(recipe_path, memory_recipe(json.loads(Path(config["recipe"]).read_text()), memory_mode))
+    write(recipe_path, memory_recipe(json.loads(Path(config["recipe"]).read_text()), memory_mode, config.get("video_decoder", "standard")))
     with tempfile.NamedTemporaryFile(dir=state, prefix="deployment-", suffix=".yaml") as temporary:
         pending = Path(temporary.name)
     try:
@@ -394,6 +419,7 @@ def main():
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--director", choices=["local", "api"], default=None)
     parser.add_argument("--memory-profile", choices=["balanced", "low-vram"], default=None)
+    parser.add_argument("--video-decoder", choices=["standard", "streaming"], default=None)
     parser.add_argument("--model-config", type=Path, help="JSON model connections for API deployment")
     parser.add_argument("--with-voice", action="store_true", help="Also download the optional Omni voice tool")
     args = parser.parse_args()

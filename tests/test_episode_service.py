@@ -263,3 +263,23 @@ def test_episode_restart_keeps_canvas_model_connections(tmp_path, monkeypatch):
     assert result['models']['reviewer'] == connection
     assert result['services'] == services
     assert 'film.render' in result['tools'] and 'media.generate_image' in result['tools']
+
+
+def test_streaming_decode_preserves_recipe_inputs_and_other_nodes():
+    recipe = json.loads((ROOT/'apps/episode-studio/render-recipe.json').read_text())
+    changed = module('launch').memory_recipe(recipe, 'balanced', 'streaming')
+    originals = {node['id']: node for node in recipe['workflow']['nodes']}
+    replaced = []
+    for node in changed['workflow']['nodes']:
+        before = originals[node['id']]
+        if before['type'] == 'VAEDecode':
+            assert node['type'] == 'EvoSprigH3StreamingDecode'
+            assert node['inputs'] == before['inputs']
+            assert node['outputs'] == before['outputs']
+            replaced.append(node)
+        else:
+            assert node == before
+    assert replaced
+    assert changed['workflow']['links'] == recipe['workflow']['links']
+    assert {k:v for k,v in changed.items() if k not in {'workflow','object_info'}} == {k:v for k,v in recipe.items() if k not in {'workflow','object_info'}}
+    assert module('launch').memory_recipe(recipe, 'balanced') == recipe

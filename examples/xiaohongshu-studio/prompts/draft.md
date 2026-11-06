@@ -12,4 +12,6 @@ For technical products, write around what a reader can actually inspect or do. A
 
 Do not include editorial notes, a score, markdown headings, a report about your work or unsupported first-person experience in the post. Return only the requested JSON object.
 
+Describe a supplied demonstration as what happens in that demonstration. “视频里更新保修通知后，回答从一年变成三年” is already specific; do not append “单次演示，不代表普遍效果”. If a tutorial only shows self-evolution setup, describe choosing a node, task set and algorithm. Omit scoring claims and internal notes about which claims were not advertised.
+
 When a personal source is short, keep the post short. Add a takeaway or future plan only if the source supplies one. A final supplied fact can be the ending.

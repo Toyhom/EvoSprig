@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import math
+import sqlite3
+import time
 from typing import Protocol
 
 from evosprig.core.spec import digest
@@ -40,11 +43,16 @@ class HybridMemory:
     deletion checks are re-read on every query, including after a restore.
     """
 
-    def __init__(self, memory, embedder: Embeddings, *, cache_size=4096, batch_size=64):
+    def __init__(self, memory, embedder: Embeddings, *, cache_size=4096, batch_size=64,
+                 cache_path=None, persistent_cache_size=100000):
         if cache_size < 1 or not 1 <= batch_size <= 256:
             raise ValueError("invalid embedding cache/batch size")
         self.memory, self.embedder = memory, embedder
         self.cache_size, self.batch_size, self.cache = cache_size, batch_size, {}
+        self.cache_path, self.persistent_cache_size = cache_path, persistent_cache_size
+        if cache_path:
+            with sqlite3.connect(cache_path, timeout=10) as db:
+                db.execute("CREATE TABLE IF NOT EXISTS embedding_cache(key TEXT PRIMARY KEY, vector TEXT, used REAL)")
 
     def __getattr__(self, name):
         return getattr(self.memory, name)
@@ -64,17 +72,29 @@ class HybridMemory:
             return []
         # Include scope in cache keys; embeddings never grant access to source text.
         keys = [digest([scope.key, self.embedder.model_id, r["content"]]) for r in records]
+        cached = dict(self.cache)
+        if self.cache_path:
+            with sqlite3.connect(self.cache_path, timeout=10) as db:
+                for start in range(0, len(keys), 500):
+                    batch = keys[start:start + 500]
+                    cached.update((key, json.loads(vector)) for key, vector in db.execute(
+                        "SELECT key,vector FROM embedding_cache WHERE key IN (" + ",".join("?" for _ in batch) + ")", batch))
         embeddings = {}
         missing = [
             (key, r["content"])
             for key, r in zip(keys, records, strict=True)
-            if key not in self.cache
+            if key not in cached
         ]
         for start in range(0, len(missing), self.batch_size):
             batch = missing[start : start + self.batch_size]
             output = vectors(self.embedder.embed([text for _, text in batch]), len(batch))
             embeddings.update(zip([key for key, _ in batch], output, strict=True))
-        embeddings.update({key: self.cache[key] for key in keys if key in self.cache})
+        if self.cache_path and embeddings:
+            with sqlite3.connect(self.cache_path, timeout=10) as db:
+                db.executemany("INSERT OR REPLACE INTO embedding_cache VALUES(?,?,?)",
+                               [(key, json.dumps(vector), time.time()) for key, vector in embeddings.items()])
+                db.execute("DELETE FROM embedding_cache WHERE key IN (SELECT key FROM embedding_cache ORDER BY used DESC LIMIT -1 OFFSET ?)", (self.persistent_cache_size,))
+        embeddings.update({key: cached[key] for key in keys if key in cached})
         q = vectors(self.embedder.embed([query]), 1)[0]
         if any(len(embeddings[key]) != len(q) for key in keys):
             raise ValueError("query and document embedding dimensions differ")

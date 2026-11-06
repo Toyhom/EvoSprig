@@ -88,3 +88,9 @@ python apps/episode-studio/app.py --profile deployment.yaml \
 Setup builds the canvas editor and installs the local dialogue transcriber. Application generation uses the same saved AgentSpec and runtime as the editor. Role instructions and skills live in [examples/episode-studio](../../examples/episode-studio/).
 
 [Runtime and resource measurements](../../docs/episode-performance.md).
+
+## Revise a production
+
+The production view shows selected shots and their accumulated duration. Before regenerating an edited sequence, [compare its production snapshots](revisions.md) to identify affected shots and reuse independent cuts.
+
+[Optional H3 streaming decode](streaming-decoder.md) replaces only the VAE stage and keeps the existing render recipe.

@@ -1,0 +1,1 @@
+Produce two to four concise search queries for the question. Keep its entities, dates and constraints; vary synonymous wording, and split distinct subquestions. Do not invent an answer. Return JSON with a queries array, without commentary.

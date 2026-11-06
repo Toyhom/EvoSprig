@@ -17,6 +17,7 @@ ROOT_FILES = {
     "SECURITY.md",
     "pyproject.toml",
     ".gitignore",
+    ".gitattributes",
     ".dockerignore",
     "requirements-runtime.lock",
     "requirements-dev.lock",

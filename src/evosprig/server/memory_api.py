@@ -5,7 +5,6 @@ from pydantic import Field
 
 from evosprig.core.memory import MemoryConflict, MemoryScope
 from evosprig.core.spec import Contract
-from evosprig.plugins.documents import DocumentRetriever
 from evosprig.plugins.structured_memory import StructuredMemory
 
 from .auth import current_principal
@@ -19,12 +18,6 @@ class MemoryBody(Contract):
 class MemoryUpdate(Contract):
     content: str = Field(min_length=1, max_length=100000)
     revision: int = Field(ge=1)
-
-
-class DocumentBody(Contract):
-    title: str = Field(min_length=1, max_length=500)
-    text: str = Field(min_length=1, max_length=1000000)
-    source: str = Field(min_length=1, max_length=2048)
 
 
 class ContextBody(MemoryBody):
@@ -110,47 +103,3 @@ def install_memory_routes(app, memory, projects):
     async def delete_memory(project_id: str, record_id: str):
         memory.delete(scope(project_id), record_id)
         return {"deleted": record_id}
-
-    @app.get("/api/projects/{project_id}/documents")
-    async def documents(project_id: str):
-        grouped = {}
-        for record in memory.export(scope(project_id, "documents")):
-            metadata = record["metadata"]
-            identifier = metadata["document_id"]
-            grouped.setdefault(
-                identifier,
-                {
-                    "id": identifier,
-                    "title": metadata["title"],
-                    "source": record["source"],
-                    "chunks": 0,
-                },
-            )["chunks"] += 1
-        return list(grouped.values())
-
-    @app.post("/api/projects/{project_id}/documents", status_code=201)
-    async def ingest_document(project_id: str, body: DocumentBody):
-        try:
-            return DocumentRetriever(memory).ingest(
-                scope(project_id, "documents"), **body.model_dump()
-            )
-        except ValueError:
-            raise HTTPException(422, "invalid document") from None
-
-    @app.get("/api/projects/{project_id}/documents/search")
-    async def search_documents(project_id: str, query: str, limit: int = Query(5, ge=1, le=20)):
-        return DocumentRetriever(memory).search(scope(project_id, "documents"), query, limit=limit)
-
-    @app.delete("/api/projects/{project_id}/documents/{document_id}")
-    async def delete_document(project_id: str, document_id: str):
-        selected = scope(project_id, "documents")
-        ids = [
-            record["id"]
-            for record in memory.export(selected)
-            if record["metadata"].get("document_id") == document_id
-        ]
-        if not ids:
-            raise KeyError("document not found")
-        for identifier in ids:
-            memory.delete(selected, identifier)
-        return {"deleted": document_id, "chunks": len(ids)}

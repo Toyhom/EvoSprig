@@ -14,7 +14,7 @@ test('node resources, skills, shared memory and sampling survive save and run',a
  await page.getByRole('button',{name:'+ Facts',exact:true}).click();
  await page.getByRole('button',{name:'Runtime',exact:true}).click();
  await page.getByLabel('Temperature',{exact:true}).fill('0.4');await page.getByLabel('Top P',{exact:true}).fill('0.85');
- await page.getByRole('button',{name:'Tools & knowledge',exact:true}).click();
+ await page.getByRole('button',{name:'Runtime',exact:true}).click();
  await page.getByLabel('Tool selection',{exact:true}).selectOption('relevant');
  await page.getByLabel('Parallel read tools').check();await page.getByLabel('Tool rounds',{exact:true}).fill('3');
  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('status')).toContainText('Saved');
@@ -59,7 +59,7 @@ test('per-agent harness and structured search are editable through Studio',async
  await page.locator('.react-flow__node[data-id="assistant"]').click();
  await page.getByRole('button',{name:'Runtime',exact:true}).click();
  await page.getByLabel('Structured harness',{exact:true}).check();
- await page.getByRole('button',{name:'Tools & knowledge',exact:true}).click();
+ await page.getByRole('button',{name:'Runtime',exact:true}).click();
  await page.getByLabel('Tool rounds',{exact:true}).fill('4');
  await page.getByRole('button',{name:'Runtime',exact:true}).click();
  await page.getByLabel('Harness memory tool',{exact:true}).selectOption('recall');

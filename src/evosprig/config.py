@@ -33,10 +33,10 @@ def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool =
         raw = read_profile(profile)
         if (
             not isinstance(raw, dict)
-            or set(raw) - {"models", "tools", "evaluation", "services"}
+            or set(raw) - {"models", "tools", "evaluation", "services", "documents"}
             or "models" not in raw
         ):
-            raise ValueError("deployment profile needs models and optional tools, evaluation or services")
+            raise ValueError("deployment profile needs models and optional tools, evaluation, services or documents")
         profiles = raw["models"]
         for name in bindings & profiles.keys():
             service = profiles[name].get("local_service")
@@ -80,12 +80,13 @@ def restore_models(metadata: dict) -> dict:
 
 def make_tools(workspace, scope, *, profile=None, bindings=None):
     from evosprig.plugins.builtin_tools import builtin_registry
+    from evosprig.plugins.document_library import DocumentLibrary
     from evosprig.plugins.memory_tools import register_memory_tools
     from evosprig.plugins.sqlite_memory import SQLiteMemory
 
-    registry = register_memory_tools(
-        builtin_registry(), SQLiteMemory(Path(workspace) / "memory.sqlite"), scope
-    )
+    memory = SQLiteMemory(Path(workspace) / "memory.sqlite")
+    library = DocumentLibrary(memory, read_profile(profile).get("documents", {}))
+    registry = register_memory_tools(builtin_registry(), memory, scope, documents_library=library)
     from evosprig.plugins.workspace_tools import WorkspaceStore, register_workspace_tools
 
     register_workspace_tools(registry, WorkspaceStore(Path(workspace) / "documents.sqlite"), scope)

@@ -49,10 +49,13 @@ test('resources, scoped documents, improvement, candidate diff and export',async
   await page.getByRole('button',{name:'资源',exact:true}).click();await page.getByRole('button',{name:'将指令保存为资源'}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
   await page.getByRole('button',{name:'记忆与资料',exact:true}).click();
+  await page.getByText('事实记忆与共享上下文',{exact:true}).click();
   await page.getByLabel('Memory content').fill('Use concise explanations.');await page.getByRole('button',{name:'保存记忆',exact:true}).click();
   await expect(page.locator('.record')).toContainText('Use concise explanations.');
+  await page.getByText('直接粘贴文字',{exact:true}).click();
   await page.getByLabel('Document title').fill('Checkpoint guide');await page.getByLabel('Document text').fill('Durable checkpoints preserve completed node results after a restart.');await page.getByRole('button',{name:'保存文档',exact:true}).click();
-  await expect(page.locator('.record').filter({hasText:'Checkpoint guide'})).toBeVisible();
+  await expect(page.locator('.knowledge-sources article').filter({hasText:'Checkpoint guide'})).toBeVisible();
+  await page.getByRole('button',{name:'检索测试',exact:true}).click();
   await page.getByLabel('Document query').fill('checkpoints');await page.getByRole('button',{name:'检索',exact:true}).click();await expect(page.locator('blockquote')).toContainText('Durable checkpoints');
   await page.getByRole('button',{name:'自进化',exact:true}).click();
   const sample=(id:string)=>({id,input:{question:id},expected:'Mock: '+JSON.stringify({question:id})});

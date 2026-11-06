@@ -65,6 +65,7 @@ MODULES = (
     "plugins/message_tools.py",
     "plugins/python_tool.py",
     "plugins/documents.py",
+    "plugins/document_library.py",
     "plugins/retrieval.py",
     "plugins/http_tools.py",
     "plugins/external_http.py",
@@ -111,7 +112,7 @@ if args.documents:
     if args.input or args.input_file or args.resume or args.path or args.response:
         parser.error("load documents separately from running or resuming the agent")
     from evosprig.data_cli import add_documents
-    print(json.dumps(add_documents(args.documents, workspace, spec.id), indent=2))
+    print(json.dumps(add_documents(args.documents, workspace, spec.id, profile=args.profile), indent=2))
     raise SystemExit(0)
 journal = SQLiteJournal(workspace / "runs.sqlite")
 if args.profile and not args.mock:
@@ -125,7 +126,7 @@ if args.resume:
         parser.error("--path and --response must be supplied together")
     if args.response:
         journal.respond(args.resume, args.path, json.loads(args.response))
-    runtime = Runtime(restore_models(record["metadata"]["models"]), make_tools(workspace, Scope(spec.id), bindings=record["metadata"].get("tools", {})), journal=journal,
+    runtime = Runtime(restore_models(record["metadata"]["models"]), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=record["metadata"].get("tools", {})), journal=journal,
                       allow_writes=record["metadata"]["allow_writes"])
     result = asyncio.run(runtime.resume(args.resume))
 else:
@@ -213,8 +214,11 @@ def compatibility_report(
 
 
 def export_python(
-    version: AgentVersion, destination: str | Path, *, target: str = "python", tool_bindings=None
+    version: AgentVersion, destination: str | Path, *, target: str = "python", tool_bindings=None, document_config=None
 ) -> dict:
+    from evosprig.plugins.document_library import DocumentConfig
+
+    document_config = DocumentConfig.model_validate(document_config or {}).model_dump()
     # Validate and include only the declared bindings, never unrelated deployment data.
     bindings = {}
     for tool in version.spec.tools.values():
@@ -276,7 +280,7 @@ def export_python(
     try:
         root = Path(__file__).resolve().parents[1]
         modules = MODULES + (
-            ("server/__init__.py", "server/worker.py", "server/standalone.py")
+            ("server/__init__.py", "server/worker.py", "server/standalone.py", "server/document_api.py")
             if target != "python"
             else ()
         )
@@ -312,11 +316,12 @@ def export_python(
                 {
                     "models": model_examples,
                     "tools": bindings,
+                    "documents": document_config,
                 },
                 sort_keys=False,
             ),
             "pyproject.toml": '[build-system]\nrequires = ["hatchling==1.27.0"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "evosprig-export-runtime"\nversion = "0.1.0"\nrequires-python = ">=3.12"\nlicense = "Apache-2.0"\nlicense-files = ["LICENSE", "NOTICE"]\ndependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3", "httpx==0.28.1"]\n\n[tool.hatch.build.targets.wheel]\npackages = ["src/evosprig"]\n',
-            "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, copy deployment.example.yaml to deployment.yaml, set each connection's provider URL, model ID and API-key environment variable, then pass --profile deployment.yaml and omit --mock. Vision bindings need a model that accepts images. Set environment variables in your terminal; .env.example is a template. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n\nFor document applications, load your own text collection with `python app.py --documents ./notes --workspace ./workspace`. Use the same `--workspace` for subsequent runs or the HTTP service. Exports do not contain your database or memory records.\n",
+            "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, copy deployment.example.yaml to deployment.yaml, set each connection's provider URL, model ID and API-key environment variable, then pass --profile deployment.yaml and omit --mock. Vision bindings need a model that accepts images. Set environment variables in your terminal; .env.example is a template. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n\nFor document applications, load files with `python app.py --documents ./notes --profile deployment.yaml --workspace ./workspace`. Install `requirements-documents.lock` for PDF/image support and Tesseract plus the desired language packs for OCR. Configure file limits, chunking, OCR and customer uploads in deployment.yaml. Use the same `--workspace` for subsequent runs or the HTTP service. Exports do not contain your database or memory records.\n",
             "DEPENDENCIES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
         operations = {binding.get("operation") for binding in bindings.values() if binding["kind"] == "artifact"}
@@ -328,6 +333,7 @@ def export_python(
             files["README.md"] += "\nCircuit tools require ngspice on PATH, or EVOSPRIG_NGSPICE pointing to its executable.\n"
         if any(binding["kind"] == "mcp" for binding in bindings.values()):
             files["requirements.lock"] += (Path(__file__).parent / "mcp.lock").read_text()
+        files["requirements-documents.lock"] = "pypdfium2==4.30.0\nPillow==12.0.0\n"
         if target != "python":
             files["requirements.lock"] += (Path(__file__).parent / "server.lock").read_text()
             files["serve.py"] = SERVICE
@@ -404,6 +410,17 @@ This is a single-agent, single-trust-domain service. Use a separate workspace pe
 exported version. Put TLS at a reverse proxy for remote access; browser origins are
 rejected. `/health` is public and contains no run data.
 
+## Customer knowledge library
+
+Enable `documents.customer_uploads: true` in deployment.yaml to let your application
+manage its knowledge library. Authenticate with the service token from your backend.
+Upload raw file bytes to `POST /documents/upload?filename=manual.pdf`, poll the returned
+job at `GET /documents/jobs/{id}`, list `GET /documents`, search
+`GET /documents/search?query=...`, or delete `DELETE /documents/{id}`.
+Uploading the same source replaces it atomically after successful parsing.
+The deployed graph stays unchanged and the next run uses the updated library.
+Keep service credentials in your application backend; do not embed them in browser code.
+
 ## Container target
 
 When a Dockerfile is present: `docker build -t my-agent .`, then
@@ -416,8 +433,14 @@ pin its digest in your deployment registry for immutable rebuilds.
 
 DOCKERFILE = """FROM python:3.12.12-slim
 WORKDIR /app
-COPY requirements.lock pyproject.toml ./
+ARG DOCUMENT_PARSERS=0
+ARG OCR_LANGUAGES="eng chi-sim"
+COPY requirements.lock requirements-documents.lock pyproject.toml ./
 RUN python -m pip install --no-cache-dir -r requirements.lock
+RUN if [ "$DOCUMENT_PARSERS" = "1" ]; then \
+    python -m pip install --no-cache-dir -r requirements-documents.lock && \
+    apt-get update && apt-get install -y --no-install-recommends tesseract-ocr $(for lang in $OCR_LANGUAGES; do echo tesseract-ocr-$lang; done) && \
+    rm -rf /var/lib/apt/lists/*; fi
 COPY . .
 RUN python -m pip install --no-cache-dir --no-deps . && mkdir /state && chown 10001:10001 /state
 USER 10001:10001

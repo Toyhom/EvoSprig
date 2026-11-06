@@ -93,6 +93,13 @@ def create_app(
     store = ProjectStore(workspace / "projects.sqlite")
     journal = SQLiteJournal(workspace / "runs.sqlite")
     memory = SQLiteMemory(workspace / "memory.sqlite")
+    from evosprig.core.memory import MemoryScope
+    from evosprig.plugins.document_library import DocumentLibrary
+
+    from .document_api import DocumentJobs, install_document_routes
+
+    library = DocumentLibrary(memory, read_profile(profile).get("documents", {}))
+    document_jobs = DocumentJobs(library, workspace / "document-intake")
     if token and principals:
         raise ValueError("choose either a workspace token or per-user principals")
     if principals is not None and not principals:
@@ -130,6 +137,7 @@ def create_app(
         from evosprig.local_services import prepare_services
 
         await asyncio.to_thread(prepare_services, profile)
+        await document_jobs.start()
         await worker.start()
         await study_worker.start()
         try:
@@ -137,6 +145,7 @@ def create_app(
         finally:
             await study_worker.stop()
             await worker.stop()
+            await document_jobs.stop()
 
     app = FastAPI(title="EvoSprig", version="0.1.0", lifespan=lifespan)
     from .model_connections import install_model_routes
@@ -149,6 +158,13 @@ def create_app(
     app.state.studies = studies
     app.state.study_worker = study_worker
     install_memory_routes(app, memory, store)
+
+    def document_scope(project_id):
+        principal = current_principal.get()
+        store.get(project_id, identity=principal.key)
+        return MemoryScope(principal.scope(project_id), namespace="documents")
+
+    install_document_routes(app, library, document_jobs, document_scope, prefix="/api/projects/{project_id}/documents")
     from evosprig.plugins.workspace_tools import WorkspaceStore
 
     from .workspace_api import install_workspace_routes
@@ -203,7 +219,8 @@ def create_app(
             size = int(request.headers.get("content-length", "0"))
         except ValueError:
             return JSONResponse({"detail": "invalid content length"}, status_code=400)
-        if size > 2_000_000:
+        document_upload = request.url.path.startswith("/api/projects/") and request.url.path.endswith("/documents/upload")
+        if size > 2_000_000 and not document_upload:
             return JSONResponse({"detail": "request exceeds 2 MB"}, status_code=413)
         context = current_principal.set(principal)
         try:
@@ -643,6 +660,7 @@ def create_app(
                 path,
                 target=target,
                 tool_bindings=tools_for(current_principal.get().scope(project_id)).bindings,
+                document_config=library.config(document_scope(project_id)).model_dump(),
             )
             output = io.BytesIO()
             with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:

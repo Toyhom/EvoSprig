@@ -50,7 +50,9 @@ From [Vera’s Melancholy, Volume I](https://wiki.biligame.com/ys/少女薇拉�
 | **Automatic review and retakes** | Check the generated image and clip, explain a mismatch and direct a bounded retry |
 | **Preserve tuned settings** | Agents change the shot prompt and necessary controls while keeping the render defaults |
 | **Continue a long production** | Background jobs and checkpoints preserve completed work through worker restarts |
+| **See the production progress** | Follow selected takes, completed shots and accumulated film duration |
 | **Redo one part** | Debug one node, shot or group with saved inputs; reuse the rest of the production |
+| **Plan a revision** | Compare changed cast, references, voices and shots; keep independent cuts and see the affected sequence before rendering |
 | **Choose each role’s model** | Mix API vendors and local models, with a multimodal connection for visual review |
 | **Keep tools ready** | Preload local services and share them across tasks; use a lower-memory deployment preset |
 | **Edit the whole application** | Move between canvas and Python; import, edit and export the ComfyUI render graph |
@@ -86,6 +88,8 @@ The installer creates the application/model environments, downloads the pinned w
 Before setup, edit `.evosprig/episode/model-api.json`: enter your provider's **base URL, model ID and API-key environment variable**. Use OpenAI, Kimi, MiniMax, Qwen/DashScope or another compatible endpoint. Configure `main` for the production team and optionally `vision` for a separate multimodal reviewer. Each node can select its own model in **Model connections → Model**; [configure API or resident local models](../../docs/model-connections.md).
 
 For smaller GPUs, add `--memory-profile low-vram`. The preset uses CPU offload, CPU video-text encoding, smaller image/render defaults and feed-forward chunking. See [GPU capacity and placement](../../apps/episode-studio/HARDWARE.md) for weight sizes, 16/24/32–48 GB planning and device assignments.
+
+Optional production controls: [revision planning](../../apps/episode-studio/revisions.md) · [H3 streaming decode](../../apps/episode-studio/streaming-decoder.md).
 
 For a fully local director, run setup with `--director local` and omit `--model-config`. Change GPU assignments and ports in `.evosprig/episode/services.json` after installation. The image and video model sources are listed in [models.json](../../apps/episode-studio/models.json).
 

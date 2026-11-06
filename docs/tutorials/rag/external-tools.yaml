@@ -1,0 +1,21 @@
+# Adapt the endpoint and response schema to your existing search service.
+# Add the corresponding alias/plugin in AgentSpec, then bind it here.
+tools:
+  company.search:
+    kind: http
+    name: company.search
+    description: Search the company's authorized document collection.
+    endpoint: https://your-search-service.example/search
+    method: POST
+    auth_env: SEARCH_API_KEY
+    input_schema:
+      type: object
+      properties:
+        query: {type: string}
+      required: [query]
+      additionalProperties: false
+    output_schema:
+      type: object
+      properties:
+        citations: {type: array, items: {type: object}}
+      required: [citations]

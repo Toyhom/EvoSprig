@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-from evosprig.config import make_models, make_tools, restore_models
+from evosprig.config import make_models, make_tools, read_profile, restore_models
 from evosprig.core.journal import Scope
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import Contract, canonical_json, load_spec
@@ -64,6 +64,15 @@ def create_service(
         )
 
     worker = Worker(journal, runtime, concurrency)
+    from evosprig.core.memory import MemoryScope
+    from evosprig.plugins.document_library import DocumentLibrary
+    from evosprig.plugins.sqlite_memory import SQLiteMemory
+
+    from .document_api import DocumentJobs, install_document_routes
+
+    library = DocumentLibrary(SQLiteMemory(workspace / "memory.sqlite"), read_profile(profile).get("documents", {}))
+    document_jobs = DocumentJobs(library, workspace / "document-intake")
+    document_scope = MemoryScope(scope, namespace="documents")
 
     @asynccontextmanager
     async def lifespan(app):
@@ -71,13 +80,16 @@ def create_service(
             from evosprig.local_services import prepare_services
 
             await asyncio.to_thread(prepare_services, profile)
+        await document_jobs.start()
         await worker.start()
         try:
             yield
         finally:
             await worker.stop()
+            await document_jobs.stop()
 
     app = FastAPI(title="Exported EvoSprig agent", lifespan=lifespan)
+    install_document_routes(app, library, document_jobs, lambda _: document_scope, prefix="/documents", editable=False)
 
     @app.middleware("http")
     async def boundary(request: Request, call_next):
@@ -88,6 +100,8 @@ def create_service(
                 return JSONResponse({"detail": "authentication required"}, status_code=401)
         if request.headers.get("origin"):
             return JSONResponse({"detail": "browser origins are disabled"}, status_code=403)
+        if request.url.path == "/documents/upload":
+            return await call_next(request)
         body = bytearray()
         async for chunk in request.stream():
             body.extend(chunk)

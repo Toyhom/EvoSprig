@@ -44,7 +44,7 @@ evosprig serve --project examples/document-chat/agent.yaml \
   --workspace .evosprig/docs --profile deployment.yaml --studio-dir apps/studio/dist
 ```
 
-Use the same workspace and project ID for ingestion and execution. Each import accepts up to 128 Markdown/TXT files of at most 1 MB each; repeat imports for separate batches. Extract PDF, Word or scanned content to text first. The default store ranks chunks with BM25. `HybridMemory` adds embedding-based ranking through the SDK; external vector databases can be bound through a custom retrieval tool. See [Document Chat](../examples/document-chat/) for complete setup.
+Use the same workspace and project ID for ingestion and execution. Import Markdown/TXT, PDF, Word and scanned documents with configurable quotas, chunking and OCR. Studio, CLI, SDK and exported HTTP services share the same knowledge library. Customers can update deployed libraries when enabled by the developer. See [Knowledge libraries and RAG](rag.md) for configuration and API routes.
 
 
 ## Deletion and restore
@@ -140,13 +140,7 @@ Install the `models` extra for the HTTP client. This synchronous memory adapter 
 evosprig data add-documents ./documents --project document-chat --workspace .evosprig/docs
 ```
 
-The shared loader accepts a text file or a folder of `.md`/`.txt` files (up to 128
-files, 1 MB each). It preserves source labels and excerpt offsets for citations.
-Adding unchanged files is idempotent. A changed file creates a new document version;
-remove obsolete records in Studio when replacing a collection. The CLI uses the
-local identity. In an authenticated deployment, add documents through the signed-in
-user's Studio/API to retain that user's scope. Run the agent with the same workspace
-and project ID. See [Chat with your documents](../examples/document-chat/).
+The shared loader supports documents and folders, retains sources and page/character citations, and replaces an updated source after successful parsing. Configure parser, chunking and upload quotas in the deployment profile. See [Knowledge libraries and RAG](rag.md).
 
 ## Experience recall and linked summaries
 

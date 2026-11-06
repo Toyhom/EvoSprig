@@ -9,7 +9,10 @@ Interface webfonts: Manrope, Plus Jakarta Sans, IBM Plex Mono and Noto Sans SC,
 under the SIL Open Font License 1.1. Copyright notices and licenses are included
 with the fonts in apps/studio/public/fonts and apps/cowork/fonts.
 
-Tutorial 02 music: "Inspired" (USUAN1600022) and "On My Way" (USUAN1600062)
+Tutorials 02 and 03 music: "Inspired" (USUAN1600022) and "On My Way" (USUAN1600062)
 by Kevin MacLeod (https://incompetech.com), licensed under CC BY 4.0:
 https://creativecommons.org/licenses/by/4.0/
 The tracks are excerpted, crossfaded and mixed under narration.
+
+Optional H3 streaming decode integrates SolarX H3-Streaming-VAE-Decoder
+(Apache-2.0): https://github.com/SolarX-Team/H3-Streaming-VAE-Decoder

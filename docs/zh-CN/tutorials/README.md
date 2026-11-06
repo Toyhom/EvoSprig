@@ -11,6 +11,7 @@
 | [你的第一个智能体](first-agent.md) | 一个可在 Studio 中运行和编辑的已保存工作流 | 5 分钟 |
 | [画布上的 Comic Studio](comic-studio.md) | 从空白画布到可部署、可复用的漫画应用 | 10 分钟 |
 | [第二期：小红书写作台](xiaohongshu-studio.md) | 八个节点 → 可独立使用的写作、审核与改稿应用 | 10 分钟 |
+| [RAG 开发全流程](rag-development.md) | 三种检索结构 → 客户可持续更新资料的独立服务 | 10 分钟 |
 | [从画布迁移到 Python](canvas-to-python.md) | 一个导出的应用和一处小型 SDK 更改 | 10 分钟 |
 | [在你的任务上改进智能体](improve-an-agent.md) | 一个任务套件、一个候选版本和一次版本比较 | 15 分钟 |
 | [只进化团队中的一个智能体](scoped-evolution.md) | 单独搜索审核节点的提示词，再查看结果和部署版本 | 10 分钟 |

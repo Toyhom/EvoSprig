@@ -85,7 +85,7 @@ Also explore **[SQL analysis](examples/data-analyst/)**, **[document chat](examp
 - **Evaluation that fits your application.** Start with task inputs and an LLM judge, or bring reference answers, business checks and a sandbox. Score outputs, steps, tools and environment outcomes.
 - **Code and canvas, one application.** Build typed workflows with parallel agents, dynamic map, loops and human approvals. Organize large teams with nested groups and edit executable subflows.
 - **Build the environment as well as the agent.** Turn a finance, government or manufacturing scenario into schemas, procedures, tools and data drafts. Connect the validated business sandbox to task evaluation and self-evolution. [Get started](docs/industry-environments.md).
-- **Memory agents can use.** Scoped facts, hybrid retrieval, context blocks, temporal relations, linked experiences and source-aware summaries.
+- **Knowledge that stays current.** Import PDFs, Word files and scans; combine keyword and vector retrieval. Let customers update the deployed knowledge library. Add scoped facts, shared context and persistent memory. [Build a RAG application](docs/tutorials/rag-development.md).
 - **Tools for real work.** Vision inputs, MCP, HTTP, SQL and Python plugins; optional code execution, browser checks and OCR; read-only concurrency and recoverable tool feedback.
 - **Run, recover and ship.** Checkpoints and external job receipts preserve progress. Export standalone Python, HTTP applications or container build projects.
 

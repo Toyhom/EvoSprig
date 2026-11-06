@@ -56,10 +56,38 @@ class SQLiteMemory:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS ledger.namespaces (scope TEXT PRIMARY KEY, deleted_at REAL NOT NULL)"
             )
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS ledger.document_sources (scope TEXT, source TEXT, deleted_at REAL NOT NULL, PRIMARY KEY(scope,source))"
+            )
+            # A materialized lexical index avoids reading/tokenizing an entire knowledge base
+            # on each request. Triggers also cover restores and ordinary memory updates.
+            indexed = db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='memory_fts'"
+            ).fetchone()
+            db.execute("CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts USING fts5(terms, scope UNINDEXED, id UNINDEXED)")
+            statements = """
+                CREATE TRIGGER IF NOT EXISTS memory_fts_insert AFTER INSERT ON memories BEGIN
+                    INSERT INTO memory_fts(rowid,terms,scope,id) VALUES(new.rowid,evosprig_terms(json_extract(new.body,'$.content')),new.scope,new.id);
+                END;
+                CREATE TRIGGER IF NOT EXISTS memory_fts_delete AFTER DELETE ON memories BEGIN
+                    DELETE FROM memory_fts WHERE rowid=old.rowid;
+                END;
+                CREATE TRIGGER IF NOT EXISTS memory_fts_update AFTER UPDATE ON memories BEGIN
+                    DELETE FROM memory_fts WHERE rowid=old.rowid;
+                    INSERT INTO memory_fts(rowid,terms,scope,id) VALUES(new.rowid,evosprig_terms(json_extract(new.body,'$.content')),new.scope,new.id);
+                END;
+            """
+            for statement in statements.strip().split("END;"):
+                if statement.strip():
+                    db.execute(statement + "END;")
+            db.execute("CREATE INDEX IF NOT EXISTS memory_documents ON memories(scope,json_extract(body,'$.source'),json_extract(body,'$.content_type'))")
+            if not indexed:
+                db.execute("INSERT INTO memory_fts(rowid,terms,scope,id) SELECT rowid,evosprig_terms(json_extract(body,'$.content')),scope,id FROM memories")
 
     @contextmanager
     def _transaction(self, write=True):
         db = sqlite3.connect(self.path, timeout=10)
+        db.create_function("evosprig_terms", 1, lambda text: " ".join(tokens(text)), deterministic=True)
         try:
             db.execute("ATTACH DATABASE ? AS ledger", (str(self.ledger_path),))
             if write:
@@ -86,6 +114,14 @@ class SQLiteMemory:
         ).fetchone()
         if row is not None and record["created_at"] <= row[0]:
             return False
+        if record.get("content_type") == "document":
+            row = db.execute(
+                "SELECT deleted_at FROM ledger.document_sources WHERE scope=? AND source=?",
+                (scope.key, record.get("source")),
+            ).fetchone()
+            submitted = record.get("metadata", {}).get("submitted_at", record["created_at"])
+            if row is not None and submitted <= row[0]:
+                return False
         seen = set() if seen is None else set(seen)
         if record["id"] in seen or len(seen) >= 64:
             return False
@@ -199,6 +235,40 @@ class SQLiteMemory:
         with self._transaction(False) as db:
             return self._read(db, scope, record_id)
 
+    def replace_documents(self, scope, records, *, source=None):
+        """Commit a whole parsed document at once; failed replacements leave the old copy intact."""
+        records = [MemoryRecord.model_validate(record).model_dump() for record in records]
+        if any(canonical_json(r["scope"]) != scope.key or r["content_type"] != "document" for r in records):
+            raise ValueError("document records have a different scope or type")
+        with self._transaction() as db:
+            old_ids = []
+            if source is not None:
+                newest = db.execute("SELECT MAX(json_extract(body,'$.metadata.submitted_at')) FROM memories WHERE scope=? AND json_extract(body,'$.source')=? AND json_extract(body,'$.content_type')='document'", (scope.key, source)).fetchone()[0]
+                incoming = max((r["metadata"].get("submitted_at", 0) for r in records), default=0)
+                deleted = db.execute("SELECT deleted_at FROM ledger.document_sources WHERE scope=? AND source=?", (scope.key, source)).fetchone()
+                if deleted and incoming <= deleted[0]:
+                    raise MemoryConflict("this source was deleted after the upload began")
+                if newest is not None and incoming < newest:
+                    raise MemoryConflict("a newer upload of this source has already been indexed")
+                old_ids = [r[0] for r in db.execute(
+                    "SELECT id FROM memories WHERE scope=? AND json_extract(body,'$.content_type')='document' AND json_extract(body,'$.source')=?",
+                    (scope.key, source),
+                )]
+            for record in records:
+                if not self._visible(db, scope, record):
+                    raise MemoryConflict("deleted operation cannot recreate memory")
+                existing = db.execute("SELECT body FROM memories WHERE scope=? AND id=?", (scope.key, record["id"])).fetchone()
+                if existing:
+                    if self._fingerprint(json.loads(existing[0])) != self._fingerprint(record):
+                        raise MemoryConflict("document key belongs to different content")
+                else:
+                    db.execute("INSERT INTO memories VALUES (?,?,?,?)", (scope.key, record["id"], self._fingerprint(record), canonical_json(record)))
+            retained = {r["id"] for r in records}
+            for identifier in set(old_ids) - retained:
+                db.execute("INSERT OR REPLACE INTO ledger.tombstones VALUES (?,?,?)", (scope.key, identifier, time.time()))
+                db.execute("DELETE FROM memories WHERE scope=? AND id=?", (scope.key, identifier))
+        return records
+
     def export(self, scope):
         with self._transaction(False) as db:
             records = [
@@ -239,6 +309,30 @@ class SQLiteMemory:
             )
             hits.append({**record, "score": score})
         return sorted(hits, key=lambda item: (-item["score"], item["id"]))[:limit]
+
+    def search_indexed(self, scope, query, *, limit=5, at=None, content_type=None):
+        """FTS5 BM25, with scope and deletion checks before returning any record."""
+        if not isinstance(query, str) or len(query) > 4096 or not 1 <= limit <= 100:
+            raise ValueError("invalid search bounds")
+        words = terms(query)
+        match = " OR ".join('"' + word + '"' for word in sorted(words))
+        with self._transaction(False) as db:
+            if match:
+                rows = db.execute(
+                    "SELECT m.body,-f.rank FROM memory_fts f JOIN memories m ON m.scope=f.scope AND m.id=f.id "
+                    "WHERE memory_fts MATCH ? AND f.scope=? ORDER BY f.rank,f.id",
+                    (match, scope.key),
+                )
+            else:
+                rows = db.execute("SELECT body,0 FROM memories WHERE scope=? ORDER BY id", (scope.key,))
+            hits = []
+            for body, score in rows:
+                record = json.loads(body)
+                if (content_type is None or record["content_type"] == content_type) and self._active(record, at) and self._visible(db, scope, record):
+                    hits.append({**record, "score": score})
+                    if len(hits) == limit:
+                        break
+            return hits
 
     def update(self, scope, record_id, content, *, revision):
         with self._transaction() as db:

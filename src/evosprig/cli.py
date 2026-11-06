@@ -10,7 +10,7 @@ from pathlib import Path
 from jsonschema.exceptions import ValidationError as JSONValidationError
 from pydantic import ValidationError
 
-from evosprig.config import load_principals, make_models, make_tools, restore_models
+from evosprig.config import load_principals, make_models, make_tools, read_profile, restore_models
 from evosprig.core.journal import Scope
 from evosprig.core.protocols import ExecutionError
 from evosprig.core.runtime import Runtime
@@ -94,6 +94,9 @@ def main():
                     path = args.out / resource.path
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text(version.resources[key])
+                import yaml
+                (args.out / "deployment.example.yaml").write_text(yaml.safe_dump(
+                    {"tools": report["tool_bindings"], "documents": report["documents"]}, sort_keys=False))
             print(json.dumps(report, indent=2))
             return
         if args.command in {
@@ -223,7 +226,8 @@ def main():
                 bindings = yaml.safe_load(args.profile.read_text()).get("tools", {})
             print(
                 json.dumps(
-                    export_python(version, args.out, target=args.target, tool_bindings=bindings),
+                    export_python(version, args.out, target=args.target, tool_bindings=bindings,
+                                  document_config=read_profile(args.profile).get("documents", {})),
                     indent=2,
                 )
             )

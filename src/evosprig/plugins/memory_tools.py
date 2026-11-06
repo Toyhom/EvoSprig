@@ -22,7 +22,7 @@ MEMORY_TOOL_NAMES = frozenset(
 )
 
 
-def register_memory_tools(registry, memory, scope):
+def register_memory_tools(registry, memory, scope, *, documents_library=None):
     facts = MemoryScope(scope)
     documents = MemoryScope(scope, namespace="documents")
     query_schema = {
@@ -38,8 +38,11 @@ def register_memory_tools(registry, memory, scope):
     def search(query, limit=5):
         return {"records": memory.search(facts, query, limit=limit)}
 
+    def retriever():
+        return documents_library.retriever(documents) if documents_library else DocumentRetriever(memory)
+
     def retrieve(query, limit=5):
-        return {"citations": DocumentRetriever(memory).search(documents, query, limit=limit)}
+        return {"citations": retriever().search(documents, query, limit=limit)}
 
     def write(content, source, idempotency_key):
         return memory.write(facts, content, source=source, idempotency_key=idempotency_key)
@@ -140,7 +143,7 @@ def register_memory_tools(registry, memory, scope):
             {"type": "object"},
             lambda queries, limit=5, diversity=0.25: {
                 "citations": retrieve_many(
-                    DocumentRetriever(memory), documents, queries, limit=limit, diversity=diversity
+                    retriever(), documents, queries, limit=limit, diversity=diversity
                 )
             },
         )

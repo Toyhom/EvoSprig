@@ -34,7 +34,7 @@ evosprig serve --project examples/document-chat/agent.yaml \
   --workspace .evosprig/docs --profile deployment.yaml --studio-dir apps/studio/dist
 ```
 
-导入和运行使用相同的 workspace 与项目 ID。每批支持最多 128 个 Markdown/TXT 文件，每个不超过 1 MB；更多文档分批导入。PDF、Word 和扫描件先抽取为文字。默认使用 BM25，SDK 的 `HybridMemory` 可加入向量语义检索；已有向量数据库也可以封装成自定义检索工具。完整配置见[文档问答样例](../../examples/document-chat/)。
+导入和运行使用相同的 workspace 与项目 ID。支持 Markdown/TXT、PDF、Word 和扫描件，开发者可配置配额、分块、OCR、混合检索及部署后的客户上传权限。配置和接口见[知识库与 RAG](rag.md)。
 
 
 ## 删除与恢复
@@ -121,7 +121,7 @@ semantic = HybridMemory(memory, provider)
 evosprig data add-documents ./documents --project document-chat --workspace .evosprig/docs
 ```
 
-共享加载器接受文本文件或由 `.md`/`.txt` 文件组成的文件夹（最多 128 个文件，每个 1 MB）。它会保留来源标签和用于引文的摘录偏移量。添加未更改的文件是幂等的。更改过的文件会创建新的文档版本；替换集合时，在 Studio 中移除过时记录。CLI 使用本地身份。在已身份验证的部署中，通过已登录用户的 Studio/API 添加文档，以保留该用户的作用域。使用相同的工作区和项目 ID 运行 agent。参见[与你的文档聊天](../../examples/document-chat)。
+共享加载器支持文件和文件夹，保留来源、页码和字符位置。相同来源解析成功后整份替换，失败保留旧版本。CLI 使用本地身份；带认证的 Studio/API 使用服务器绑定的用户作用域。配置与部署后文档管理见[知识库与 RAG](rag.md)。
 
 <a id="experience-recall-and-linked-summaries"></a>
 

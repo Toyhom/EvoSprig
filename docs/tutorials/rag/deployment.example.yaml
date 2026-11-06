@@ -1,0 +1,15 @@
+models:
+  main:
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-flash
+    api_key_env: MODEL_API_KEY
+    capabilities: [text, structured_output, tool_calling]
+documents:
+  customer_uploads: true
+  max_file_bytes: 52428800
+  max_batch_files: 1000
+  chunk_size: 800
+  chunk_overlap: 100
+  ocr: auto
+  ocr_languages: chi_sim+eng
+  retrieval: lexical

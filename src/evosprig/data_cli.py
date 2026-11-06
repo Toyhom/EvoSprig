@@ -6,9 +6,10 @@ import re
 import sqlite3
 from pathlib import Path
 
+from evosprig.config import read_profile
 from evosprig.core.journal import Scope
 from evosprig.core.memory import MemoryScope
-from evosprig.plugins.documents import DocumentRetriever
+from evosprig.plugins.document_library import DocumentLibrary, check_size
 from evosprig.plugins.sqlite_memory import SQLiteMemory
 
 
@@ -22,6 +23,7 @@ def add_commands(commands):
     docs = kinds.add_parser("add-documents", help="Add text documents to project memory")
     docs.add_argument("path", type=Path)
     docs.add_argument("--project", required=True)
+    docs.add_argument("--profile", type=Path, help="Deployment YAML with document parsing and retrieval settings")
     docs.add_argument("--workspace", type=Path, default=Path(".evosprig"))
 
 
@@ -67,46 +69,28 @@ def load_csv(path, database, table):
             db.close()
 
 
-def add_documents(path, workspace, project):
+def add_documents(path, workspace, project, *, profile=None):
     path = Path(path)
-    if not path.exists():
-        raise ValueError("document path does not exist")
-    files = (
-        [path]
-        if path.is_file()
-        else sorted(
-            file
-            for file in path.rglob("*")
-            if file.is_file()
-            and not file.is_symlink()
-            and file.suffix.lower() in {".txt", ".md"}
-            and not any(part.startswith(".") for part in file.relative_to(path).parts)
-        )
-    )
-    if not 1 <= len(files) <= 128:
-        raise ValueError("choose 1..128 text documents")
-    documents = []
-    for file in files:
-        if file.stat().st_size > 1000000:
-            raise ValueError("document exceeds 1 MB")
-        text = file.read_text(encoding="utf-8")
-        if not text.strip():
-            raise ValueError("document is empty")
-        documents.append((file, text))
-    retriever = DocumentRetriever(SQLiteMemory(Path(workspace) / "memory.sqlite"))
+    if not path.exists() or path.is_symlink():
+        raise ValueError("document path must exist and not be a symlink")
+    library = DocumentLibrary(SQLiteMemory(Path(workspace) / "memory.sqlite"), read_profile(profile).get("documents", {}))
     scope = MemoryScope(Scope(project), namespace="documents")
-    return {
-        "documents": [
-            retriever.ingest(
-                scope,
-                title=file.stem,
-                text=text,
-                source="documents/"
-                + (file.relative_to(path).as_posix() if path.is_dir() else file.name),
-            )
-            for file, text in documents
-        ]
-    }
+    config = library.config(scope)
+    files = [path] if path.is_file() else sorted(
+        file for file in path.rglob("*")
+        if file.is_file() and not file.is_symlink()
+        and file.suffix.lower() in config.allowed_extensions
+        and not any(part.startswith(".") for part in file.relative_to(path).parts)
+    )
+    if not files:
+        raise ValueError("no supported documents found")
+    check_size(len(files), config.max_batch_files, "batch files")
+    # Parse and commit one file at a time. A failed file never replaces its prior version.
+    results = []
+    for file in files:
+        source = "documents/" + (file.relative_to(path).as_posix() if path.is_dir() else file.name)
+        results.append(library.ingest_file(scope, file, source=source))
+    return {"documents": results}
 
 
 def run_command(args):
@@ -118,5 +102,5 @@ def run_command(args):
                 "CSV import failed; choose a new table in a writable database"
             ) from None
     else:
-        result = add_documents(args.path, args.workspace, args.project)
+        result = add_documents(args.path, args.workspace, args.project, profile=args.profile)
     print(json.dumps(result, indent=2))

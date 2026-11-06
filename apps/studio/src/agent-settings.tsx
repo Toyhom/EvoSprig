@@ -54,6 +54,7 @@ export function AgentSettings({api,id,node:originalNode,doc,lang,onChange}:Props
     {node.type==='agent'&&<><section hidden={section!=='tools'} className="setting-section"><h4><Icon name="tool"/>{say('工具','Tools')}<span>{node.tools?.length??0}</span></h4>
       {toolList(tools.filter(([,t])=>! /^(memory|documents)\./.test(t.plugin)))}
       {!tools.length&&<p className="hint">{say('在规格中声明工具，部署配置连接 HTTP、MCP 或 Python 插件。','Declare tools in the spec; connect HTTP, MCP or Python plugins in your deployment.')}</p>}
+    </section><section hidden={section!=='runtime'} className="setting-section"><h4><Icon name="tool"/>{say('工具执行','Tool execution')}</h4>
       <label>{say('工具选择','Tool selection')}<select aria-label="Tool selection" value={node.tool_selection??'all'} onChange={e=>change({tool_selection:e.target.value as 'all'|'relevant'})}><option value="all">{say('全部已选工具','All selected tools')}</option><option value="relevant">{say('按任务筛选','Match to the task')}</option></select></label>
       {node.tool_selection==='relevant'&&<label>{say('最多提供工具数','Tools per turn')}<input aria-label="Tool limit" type="number" min={1} max={64} value={node.tool_limit??8} onChange={e=>change({tool_limit:Number(e.target.value)})}/></label>}
       <label className="check"><input aria-label="Parallel read tools" type="checkbox" checked={node.parallel_tool_calls??false} onChange={e=>change({parallel_tool_calls:e.target.checked})}/>{say('并行执行只读工具','Run read tools concurrently')}</label>

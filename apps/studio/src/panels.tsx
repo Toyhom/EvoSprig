@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MemoryControls } from './memory-controls';
+import { DocumentsPanel } from './documents-panel';
 import { MediaPreview } from './media-preview';
 import { HumanResponse } from './human-response';
 import {RunSteps,type DebugTarget} from './run-steps';
@@ -54,26 +55,14 @@ export function ResourcesPanel({doc,lang,onChange,onError}:Props & {onChange:(do
 }
 
 type Memory = {id:string; content:string; source:string; revision:number};
-type DocumentInfo = {id:string; title:string; source:string; chunks:number};
-type Citation = {citation:string; title:string; source:string; text:string};
 export function MemoryPanel({doc,api,lang,onError}:Props) {
-  const [records,setRecords]=useState<Memory[]>([]); const [documents,setDocuments]=useState<DocumentInfo[]>([]);
-  const [content,setContent]=useState(''); const [source,setSource]=useState('user:explicit'); const [title,setTitle]=useState(''); const [text,setText]=useState('');
-  const [query,setQuery]=useState(''); const [hits,setHits]=useState<Citation[]>([]); const [busy,setBusy]=useState(false);
-  const path=`/projects/${doc.id}`;
-  async function refresh(){const [facts,docs]=await Promise.all([api(path+'/memory'),api(path+'/documents')]);setRecords(await facts.json());setDocuments(await docs.json());}
+  const [records,setRecords]=useState<Memory[]>([]),[content,setContent]=useState(''),[source,setSource]=useState('user:explicit'),[busy,setBusy]=useState(false);
+  const path=`/projects/${doc.id}/memory`;
+  async function refresh(){setRecords(await(await api(path)).json());}
   useEffect(()=>{refresh().catch(onError);},[doc.id,api]);
   async function action(fn:()=>Promise<void>){setBusy(true);try{await fn();await refresh();}catch(e){onError(e);}finally{setBusy(false);}}
-  return <section className="panel"><h2>{say(lang,'记忆与资料','Memory and documents')}</h2><p className="muted">{say(lang,'内容仅属于当前用户和项目。资料检索保留来源与引用位置。','Records belong to the current user and project. Document results retain sources and citation offsets.')}</p>
-    <div className="panel-grid"><article className="card"><h3>{say(lang,'新增事实','Add a fact')}</h3><label>{say(lang,'内容','Content')}<textarea aria-label="Memory content" value={content} onChange={e=>setContent(e.target.value)}/></label>
-      <label>{say(lang,'来源','Source')}<input aria-label="Memory source" value={source} onChange={e=>setSource(e.target.value)}/></label><button disabled={busy||!content.trim()} onClick={()=>action(async()=>{await api(path+'/memory',post({content,source}));setContent('');})}>{say(lang,'保存记忆','Save memory')}</button></article>
-      <article className="card"><h3>{say(lang,'添加文档','Add a document')}</h3><label>{say(lang,'标题','Title')}<input aria-label="Document title" value={title} onChange={e=>setTitle(e.target.value)}/></label>
-        <label>{say(lang,'正文','Text')}<textarea aria-label="Document text" value={text} onChange={e=>setText(e.target.value)}/></label><button disabled={busy||!text.trim()||!title.trim()} onClick={()=>action(async()=>{await api(path+'/documents',post({title,text,source:source||'user:document'}));setText('');setTitle('');})}>{say(lang,'保存文档','Save document')}</button></article></div>
-    <div className="panel-grid"><article className="card"><h3>{say(lang,'事实记录','Facts')}</h3>{!records.length&&<Empty>{say(lang,'暂无记忆','No memory yet')}</Empty>}{records.map(record=><div className="record" key={record.id}><p>{record.content}</p><small>{record.source}</small><button aria-label={`Delete memory ${record.id}`} onClick={()=>action(async()=>{await api(path+'/memory/'+record.id,{method:'DELETE'});})}>{say(lang,'删除','Delete')}</button></div>)}</article>
-    <article className="card"><h3>{say(lang,'项目资料','Project documents')}</h3>{!documents.length&&<Empty>{say(lang,'暂无资料','No documents yet')}</Empty>}{documents.map(record=><div className="record" key={record.id}><strong>{record.title}</strong><small>{record.source} · {record.chunks} chunks</small><button aria-label={`Delete document ${record.title}`} onClick={()=>action(async()=>{await api(path+'/documents/'+record.id,{method:'DELETE'});setHits([]);})}>{say(lang,'删除','Delete')}</button></div>)}</article></div>
-    <MemoryControls project={doc.id} api={api} lang={lang} onError={onError}/>
-    <article className="card"><h3>{say(lang,'检索引用','Search citations')}</h3><div className="inline-form"><input aria-label="Document query" value={query} onChange={e=>setQuery(e.target.value)} placeholder={say(lang,'输入关键词','Enter keywords')}/><button onClick={()=>api(path+'/documents/search?query='+encodeURIComponent(query)).then(r=>r.json()).then(setHits).catch(onError)}>{say(lang,'检索','Search')}</button></div>
-      {hits.map(hit=><blockquote key={hit.citation}><strong>{hit.title}</strong><p>{hit.text}</p><cite>{hit.citation} · {hit.source}</cite></blockquote>)}</article>
+  return <section className="panel"><DocumentsPanel key={doc.id} project={doc.id} api={api} lang={lang} onError={onError}/>
+    <details className="knowledge-paste"><summary>{say(lang,'事实记忆与共享上下文','Fact memory and shared context')}</summary><div className="panel-grid"><article className="card"><h3>{say(lang,'新增事实','Add a fact')}</h3><label>{say(lang,'内容','Content')}<textarea aria-label="Memory content" value={content} onChange={e=>setContent(e.target.value)}/></label><label>{say(lang,'来源','Source')}<input aria-label="Memory source" value={source} onChange={e=>setSource(e.target.value)}/></label><button disabled={busy||!content.trim()} onClick={()=>action(async()=>{await api(path,post({content,source}));setContent('');})}>{say(lang,'保存记忆','Save memory')}</button></article><article className="card"><h3>{say(lang,'事实记录','Facts')}</h3>{records.map(record=><div className="record" key={record.id}><p>{record.content}</p><small>{record.source}</small><button aria-label={`Delete memory ${record.id}`} onClick={()=>action(async()=>{await api(path+'/'+record.id,{method:'DELETE'});})}>{say(lang,'删除','Delete')}</button></div>)}</article></div><MemoryControls project={doc.id} api={api} lang={lang} onError={onError}/></details>
   </section>;
 }
 
