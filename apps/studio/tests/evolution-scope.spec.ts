@@ -53,6 +53,7 @@ test('node settings keep sections separate and context policy survives save',asy
  await expect(page.getByLabel('Tool rounds',{exact:true})).toBeHidden();
  await page.getByRole('button',{name:'Runtime',exact:true}).click();
  await page.getByLabel('Structured harness',{exact:true}).check();
+ await page.locator('.settings-sections').getByRole('button',{name:'Memory',exact:true}).click();
  await page.getByLabel('Prune tool history').check();
  await page.getByLabel('Tool history budget').fill('12000');
  await page.getByLabel('Keep recent tool rounds').fill('1');

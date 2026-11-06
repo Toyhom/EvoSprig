@@ -103,7 +103,7 @@ test('view navigation waits for project creation to finish before editing a spec
     const id = (await (await created).json()).id;
     await expect(page.locator('h1')).toHaveText(id);
     await expect(page.locator('.editor')).toHaveAttribute('aria-busy', 'true');
-    for (const view of ['Canvas', 'Spec', 'Python', 'Resources', 'History', 'Memory', 'Improve', 'Versions']) {
+    for (const view of ['Canvas', 'Spec', 'Python', 'Resources', 'History', 'Knowledge', 'Memory', 'Improve', 'Versions']) {
       await expect(page.getByRole('button', { name: view, exact: true })).toBeDisabled();
     }
     releaseRefresh();

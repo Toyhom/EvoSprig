@@ -24,7 +24,7 @@ Open `http://127.0.0.1:18766`. Configure your model connection, edit the request
 5. Add **human** nodes where a person reviews or edits an output. Use loops for bounded revision cycles.
 6. Group related nodes; open nested subflows to edit their execution logic. Save and run.
 
-**History** shows the active step and waiting requests. Respond to an approval to continue the same run. **Memory** manages persistent facts and documents. See the [Studio guide](studio.md) for controls and keyboard shortcuts.
+**History** shows the active step and waiting requests. Respond to an approval to continue the same run. **Memory** manages agent facts and working context; **Knowledge** manages business documents and retrieval. See the [Studio guide](studio.md) for controls and keyboard shortcuts.
 
 Select one or more nodes and choose **Debug selection** to test that section. Fill the generated input form or reuse outputs from the last run. Inside a map or retry loop, select the saved item or take to restore its inputs and prior state. Collapsed groups can be selected together. The debug run uses the same model, tools and permissions as the application.
 

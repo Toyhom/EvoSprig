@@ -11,6 +11,7 @@ Build something you can run, then learn the next feature by changing it. These t
 | [Xiaohongshu Studio on the canvas](xiaohongshu-studio.md) | Eight nodes → a deployed writing desk with review and revision | 10 minutes |
 | [RAG development](rag-development.md) | Three retrieval patterns → a service with customer-managed documents | 10 minutes |
 | [Move from canvas to Python](canvas-to-python.md) | An exported application and a small SDK change | 10 minutes |
+| [Carry working context](working-context.md) | Ordinary model nodes that summarize history and reuse it after deployment | 10 minutes |
 | [Improve an agent on your tasks](improve-an-agent.md) | A task suite, a candidate and a version comparison | 15 minutes |
 | [Evolve one agent in a team](scoped-evolution.md) | A search focused on one node's prompt | 10 minutes |
 

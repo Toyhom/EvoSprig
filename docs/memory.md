@@ -1,4 +1,6 @@
-# Memory and documents
+# Agent memory
+
+<a id="memory-and-documents"></a>
 
 [English](memory.md) · [简体中文](zh-CN/memory.md) · [Documentation](README.md)
 
@@ -28,24 +30,23 @@ three-part write opt-in as other effectful tools. Retrieval results are untruste
 data and retain source attribution; keep system policies in versioned prompt/skill
 resources.
 
-`DocumentRetriever.ingest` accepts bounded plain text, a title and source identifier.
-It creates deterministic chunks and citation references containing exact offsets.
-Default document search uses BM25, including Chinese characters. Wrap the store in
-`HybridMemory` to add semantic ranking. Documents use the `documents` namespace.
-A citation can be verified by slicing the original text at `[start:end]`.
+## Memory, context and application data
 
-## Build a document assistant
+| Concern | Contents | Studio / runtime |
+| --- | --- | --- |
+| Long-term memory | Preferences, facts, experiences, relationships | **Memory**; `memory.*` tools |
+| Working context | Current goals, progress, conversation summary and recent turns | Context blocks, graph inputs and ordinary model/agent nodes |
+| Knowledge library | Manuals, contracts, business documents | **Knowledge**; `documents.search` / `documents.retrieve` |
 
-Declare `documents.search` for a single query, or `documents.retrieve` for up to eight queries with rank fusion and diverse results. Both can be explicit tool nodes in a required pipeline or tools an agent calls as needed. Results include source, title, excerpt and citation offsets.
+Agents can use memory without a knowledge library. Both can use the same storage or retrieval algorithms while retaining separate scopes and lifecycles. Documents remain application data that customers can update after deployment; see [Knowledge libraries and RAG](rag.md).
 
-```bash
-evosprig data add-documents ./knowledge --project document-chat --workspace .evosprig/docs
-evosprig serve --project examples/document-chat/agent.yaml \
-  --workspace .evosprig/docs --profile deployment.yaml --studio-dir apps/studio/dist
-```
+### Managing long conversations
 
-Use the same workspace and project ID for ingestion and execution. Import Markdown/TXT, PDF, Word and scanned documents with configurable quotas, chunking and OCR. Studio, CLI, SDK and exported HTTP services share the same knowledge library. Customers can update deployed libraries when enabled by the developer. See [Knowledge libraries and RAG](rag.md) for configuration and API routes.
+**Node settings → Memory** selects memory tools, pre-task recall and the tool-history budget. The budget shortens older tool observations sent to the model, preserving recent tool rounds, call/result pairs and the full run record. It counts characters, not model tokens. System and user messages are retained; protected content can exceed that budget.
 
+Semantic compression uses an ordinary model or agent node. Pass it an earlier summary and older messages; connect its output and the unchanged recent messages to the answering node. Choose its model and prompt independently. The application decides when to invoke it, such as after a length threshold or before the next turn. See the [working-context walkthrough](tutorials/working-context.md), with importable Python code and no document dependency.
+
+`memory.summarize` stores a model-written summary of selected memory records with their source IDs. It does not automatically compress a conversation. Context blocks hold bounded working notes; graph outputs let the deployed application retain a new summary between requests.
 
 ## Deletion and restore
 

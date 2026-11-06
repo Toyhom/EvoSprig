@@ -112,7 +112,7 @@ function GroupCard({data,selected}:NodeProps<Node<{group:Group;count:number;lang
   </div>;
 }
 export const nodeTypes = { workflow: WorkflowNode, groupCard:GroupCard };
-export const tabIcons: Record<string, IconName> = { canvas: 'grid', spec: 'file', code: 'code', resources: 'folder', runs: 'history', memory: 'database', improve: 'chart', versions: 'layers' };
+export const tabIcons: Record<string, IconName> = { canvas: 'grid', spec: 'file', code: 'code', resources: 'folder', runs: 'history', knowledge:'book', memory: 'database', improve: 'chart', versions: 'layers' };
 
 // Reframe after a container resize, while preserving user pan/zoom during editing.
 export function FitWorkflowView({revision=""}:{revision?:string}) {

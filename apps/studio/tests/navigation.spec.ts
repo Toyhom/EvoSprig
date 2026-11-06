@@ -53,7 +53,7 @@ test('project search, long names and keyboard navigation work across screen size
   const evidence = process.env.EVOSPRIG_EVIDENCE_DIR;
   if (evidence) await page.screenshot({ path: path.join(evidence, 'studio-mobile-navigation.png') });
   await page.locator('.project').click();
-  await page.getByRole('button', { name: '记忆与资料', exact: true }).click();
+  await page.getByRole('button', { name: '知识库', exact: true }).click();
   await noOverflow(page);
   await page.setViewportSize({ width: 320, height: 740 });
   await noOverflow(page);

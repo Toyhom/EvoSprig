@@ -35,7 +35,7 @@ evosprig serve --workspace .evosprig/rag-lesson --profile deployment.yaml \
 
 新建空白工程。在**资源**中导入 [library.json](../../tutorials/rag/library.json)，添加提示词、工具定义和模型声明；文件不包含节点或连线。将应用默认模型设为 **main**。
 
-进入**记忆与资料 → 导入与部署设置**：分块字符数 **800**、重叠 **100**、OCR 语言 **chi_sim+eng**，开启客户上传。按部署需求设置文件与批次配额；相应配额留空表示不限。保存，然后上传 [documents](../../tutorials/rag/documents/) 中的 `warranty.txt`、`delivery.docx`、`returns.md`、`support-hours.pdf` 和 `service-notice-scan.pdf`。
+进入**知识库 → 导入与部署设置**：分块字符数 **800**、重叠 **100**、OCR 语言 **chi_sim+eng**，开启客户上传。按部署需求设置文件与批次配额；相应配额留空表示不限。保存，然后上传 [documents](../../tutorials/rag/documents/) 中的 `warranty.txt`、`delivery.docx`、`returns.md`、`support-hours.pdf` 和 `service-notice-scan.pdf`。
 
 在**检索测试**中查询“电池保修期和申请材料”，检查标题、来源、正文和页码。扫描通知中包含十一月的新保修规则。重新上传同一来源会在解析成功后替换原版本。修改分块设置后，重新上传已有来源即可重建索引。
 

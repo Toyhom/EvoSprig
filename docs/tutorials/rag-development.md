@@ -37,7 +37,7 @@ Open `http://127.0.0.1:18777`. [Classroom files](rag/) include all three SDK gra
 
 Create an empty project. Import [library.json](rag/library.json) in **Resources**; it adds prompts, tool definitions and the model declaration, with no graph nodes. Set **main** as the application model.
 
-Open **Memory and documents → Intake & deployment**. Set chunks to **800**, overlap to **100**, OCR languages to **chi_sim+eng**, and enable customer uploads. Set file/batch quotas to fit your deployment; blank values remove those quotas. Save, then upload the classroom `warranty.txt`, `delivery.docx`, `returns.md`, `support-hours.pdf` and `service-notice-scan.pdf` from [documents](rag/documents/).
+Open **Knowledge → Intake & deployment**. Set chunks to **800**, overlap to **100**, OCR languages to **chi_sim+eng**, and enable customer uploads. Set file/batch quotas to fit your deployment; blank values remove those quotas. Save, then upload the classroom `warranty.txt`, `delivery.docx`, `returns.md`, `support-hours.pdf` and `service-notice-scan.pdf` from [documents](rag/documents/).
 
 Use **Retrieval test** for “电池保修期和申请材料”. Check the returned title, source, text and page. The scanned notice contains the November warranty update. Reuploading the same source replaces it after parsing succeeds. Chunk settings affect new imports; reupload to reindex an existing source.
 

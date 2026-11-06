@@ -2,7 +2,7 @@
 
 <a id="memory-and-documents"></a>
 
-# 记忆与文档
+# 智能体记忆
 
 SQLite 是基线 `MemoryStore`。每条记录都属于一个精确的 `tenant / user / project / role / namespace` 作用域。选择会在相关性排序之前应用该作用域。该基线支持显式写入、精确去重、带修订检查的更新、有效时间窗口、词法搜索、删除、导出和命名空间重置。冲突事实仍作为单独的记录保留，并附带其来源；自动语义冲突解决是一项扩展能力。
 
@@ -20,22 +20,25 @@ memory.delete(scope, record["id"])
 
 `memory.search`、`memory.write` 和 `documents.search` 可声明为工具插件。CLI、Studio 和独立导出在工具参数之外绑定其作用域。模型无法提供其他用户或项目。写入遵循与其他有副作用的工具相同的三部分写入选择加入机制。检索结果是不可信数据，并保留来源归属；将系统策略保存在带版本的 prompt/skill 资源中。
 
-`DocumentRetriever.ingest` 接受有界纯文本、标题和来源标识符。它会创建确定性分块以及包含精确偏移量的引文引用。默认文档搜索使用 BM25，包括中文字符。将存储包装在 `HybridMemory` 中以添加语义排序。文档使用 `documents` 命名空间。可通过在 `[start:end]` 处切分原始文本来验证引文。
+## 记忆、上下文与应用资料
+
+| 层次 | 内容 | Studio / 运行方式 |
+| --- | --- | --- |
+| 长期记忆 | 用户偏好、事实、经验、关系 | **记忆**页；`memory.*` 工具 |
+| 工作上下文 | 当前目标、进度、会话摘要、近期消息 | 上下文块、图输入、普通模型或智能体节点 |
+| 外部知识库 | 手册、合同和业务文档 | **知识库**页；`documents.search` / `documents.retrieve` |
+
+智能体可以不使用知识库而拥有记忆。二者可以共享存储和检索算法，但作用域和生命周期独立。知识库是应用资料，客户可在部署后更新，详见[知识库与 RAG](rag.md)。
+
+### 长对话如何处理
+
+**节点设置 → 记忆**可配置记忆工具、任务前召回和工具历史预算。预算会缩短发送给模型的旧工具结果，保留近期工具轮次、调用与结果的配对，以及完整运行记录。它按字符计数，不等同于模型 token。系统消息与用户消息会保留，因此受保护的内容可能超出该预算。
+
+语义压缩用普通模型或智能体节点完成。把旧摘要与较早的消息传给它，再把新摘要和未经修改的近期消息接到回答节点。摘要节点可单独选模型和提示词；应用自行决定何时触发，例如超过长度阈值时或下一轮交互前。参见[工作上下文教程](tutorials/working-context.md)，提供可导入的 Python 代码，不依赖文档库。
+
+`memory.summarize` 用于保存模型写出的经验摘要，并关联来源记录 ID；它不会自动压缩会话。上下文块可保存有长度限制的工作笔记；图输出可把新摘要交给部署后的业务应用，在下一次请求时复用。
 
 <a id="deletion-and-restore"></a>
-
-## 构建文档问答应用
-
-单次检索使用 `documents.search`；多查询使用 `documents.retrieve`，最多合并八条查询并做排序融合和结果去重。它们都可以放成必经的工具节点，也可以交给智能体按需调用。返回结果包含来源、标题、片段及引用位置。
-
-```bash
-evosprig data add-documents ./knowledge --project document-chat --workspace .evosprig/docs
-evosprig serve --project examples/document-chat/agent.yaml \
-  --workspace .evosprig/docs --profile deployment.yaml --studio-dir apps/studio/dist
-```
-
-导入和运行使用相同的 workspace 与项目 ID。支持 Markdown/TXT、PDF、Word 和扫描件，开发者可配置配额、分块、OCR、混合检索及部署后的客户上传权限。配置和接口见[知识库与 RAG](rag.md)。
-
 
 ## 删除与恢复
 

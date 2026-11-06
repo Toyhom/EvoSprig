@@ -53,7 +53,7 @@ documents:
   retrieval: lexical
 ```
 
-These are editable deployment defaults. Studio's **Memory and documents → Intake &
+These are editable deployment defaults. Studio's **Knowledge → Intake &
 deployment** saves project overrides and includes them in exports. Changing chunk
 settings affects subsequent imports; upload an existing source again to reindex it.
 Uploads stream to temporary files, then parse in worker threads. File byte limits are

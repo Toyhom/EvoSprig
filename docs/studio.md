@@ -4,6 +4,14 @@
 
 Open an AgentSpec in Studio, edit its nodes, then save and run the same application you use from Python. Studio starts in English and includes Chinese translations.
 
+## Arrange your workspace
+
+Drag the dividers beside the project sidebar and node inspector, or above the run panel. Double-click a divider to restore its default size. With a divider focused, arrow keys resize by 10 pixels, Shift + arrow by 40, Home / End select the minimum / maximum and Enter resets it. Sizes persist in this browser across reloads.
+
+Use **Workspace layout** in the top-right toolbar to hide panels or reset the layout. Clicking a canvas node reopens its inspector. The **Results and events** heading expands the run input, mode and outputs. Narrow screens stack the panes and open project navigation from the menu button.
+
+**Connection**, **Model connections** and **Local models & tools** in the sidebar are expandable action rows. The application model has its own section, with per-node overrides available. Node settings separate **Design / Tools & knowledge / Memory / Runtime**. **Knowledge** manages business documents; **Memory** manages persistent facts and working context.
+
 ## Create and configure nodes
 
 Give a new project a name, then add nodes by name and type. The first node on an empty canvas becomes the entry point. **Workflow settings** defines application input, output fields and the execution budget. Drag between node handles to connect execution order.

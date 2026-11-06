@@ -1,3 +1,4 @@
+import {Icon} from './studio-ui';
 import {useEffect,useState} from 'react';
 import type {Api,Document,Lang,NodeSpec,Spec} from './types';
 
@@ -18,7 +19,7 @@ export function ModelsPanel({api,lang}:{api:Api;lang:Lang}){
  const [catalog,setCatalog]=useState<Catalog>({editable:false,services:[],models:[]});const [form,setForm]=useState<Connection>(empty);const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
  const say=(en:string,zh:string)=>lang==='zh'?zh:en;
  async function refresh(){try{setCatalog(await(await api('/models')).json());}catch(e){setMessage(String(e));}}
- return <details className="connection-settings" onToggle={e=>{if(e.currentTarget.open)void refresh();}}><summary>{say('Model connections','模型连接')}</summary>
+ return <details className="connection-settings" onToggle={e=>{if(e.currentTarget.open)void refresh();}}><summary><Icon name="model"/>{say('Model connections','模型连接')}</summary>
   <p className="hint">{say('Configure API or local endpoints, then assign a connection to each agent.','配置 API 或本地服务，再为各智能体选择连接。')}</p>
   {catalog.models.map(item=><button className="text-action" key={item.name} onClick={()=>setForm(item)}>{item.name} · {item.model}</button>)}
   {!catalog.editable?<p className="hint">{say('Start Studio with --profile deployment.yaml to edit connections.','使用 --profile deployment.yaml 启动工作台后可编辑连接。')}</p>:<>

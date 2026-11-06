@@ -24,7 +24,7 @@
 | 画布与节点设计 | [Studio](studio.md) · [提示词、技能与 harness](agent-resources.md) |
 | 模型 | [全局默认与节点覆盖](model-connections.md) · [视觉与厂商参数](vision.md) · [预加载与 GPU 分配](local-models.md) · [模型来源](model-sources.md) |
 | 工具与集成 | [工具和 MCP](tools.md) · [代码仓库工具](repository-tools.md) · [ComfyUI 导入导出](comfyui.md) |
-| 记忆与协作 | [知识库与 RAG](rag.md) · [记忆](memory.md) · [共享文档与消息](shared-workspaces.md) |
+| 记忆与协作 | [知识库与 RAG](rag.md) · [记忆](memory.md) · [工作上下文](tutorials/working-context.md) · [共享文档与消息](shared-workspaces.md) |
 | 评估 | [任务、评分与评委](evaluation.md) · [行业模拟环境](industry-environments.md) |
 | 自进化 / RSI | [进化流程](evolution.md) · [可进化组件](evolution-components.md) · [Harness 与代码搜索](harness-search.md) · [算法数据要求](method-requirements.md) |
 | 部署 | [导出与部署](deployment.md) · [持久运行与恢复](durable-runtime.md) · [事件触发](triggers.md) · [Episode 性能](episode-performance.md) |

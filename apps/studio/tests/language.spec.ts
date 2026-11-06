@@ -24,7 +24,6 @@ test('context block edits and temporal relations are usable in Studio', async ({
   const project = await (await created).json();
   await expect(page.locator('h1')).toHaveText(project.id);
   await page.getByRole('button', {name:'Memory', exact:true}).click();
-  await page.getByText('Fact memory and shared context',{exact:true}).click();
   await page.getByLabel('Context block content').fill('Prefer concise replies.');
   await page.getByRole('button', {name:'Save context', exact:true}).click();
   await expect(page.getByRole('button', {name:'profile · r1'})).toBeVisible();

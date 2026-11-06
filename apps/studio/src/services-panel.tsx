@@ -1,3 +1,4 @@
+import {Icon} from './studio-ui';
 import { useState } from 'react';
 import type { Api, Lang } from './types';
 
@@ -13,7 +14,7 @@ export function ServicesPanel({api,lang}:{api:Api;lang:Lang}){
     catch(e){setError(String(e));}
   }
   return <details className="connection-settings" onToggle={e=>{if(e.currentTarget.open)void refresh();}}>
-    <summary>{say('Local models & tools','本地模型与工具')}</summary>
+    <summary><Icon name="tool"/>{say('Local models & tools','本地模型与工具')}</summary>
     <p className="hint">{say('Preload once. Reuse across runs and debugging.','预加载一次，在运行与调试之间复用。')}</p>
     {items.map(item=><div key={item.name} className="service-status"><strong>{item.name}</strong><small>{item.ready?say('Ready · retained','就绪 · 常驻'):item.reachable?say('Needs warmup','待预热'):say('Offline','未启动')}</small>
       <label>{say('GPU positions','GPU 位置')}<input aria-label={'GPUs '+item.name} disabled={item.managed||item.reachable||!!busy} placeholder={say('Inherit allocation','继承当前分配')} value={placements[item.name]??item.gpu_devices?.join(',')??''} onChange={e=>setPlacements({...placements,[item.name]:e.target.value})}/></label>
