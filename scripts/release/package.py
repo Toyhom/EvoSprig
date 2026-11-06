@@ -13,8 +13,9 @@ from audit import check, source_files
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[2]
+    root = args.root.resolve()
     version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
     args.out.mkdir(parents=True, exist_ok=True)
     path = args.out / f"evosprig-{version}-source.zip"
@@ -29,6 +30,9 @@ def main():
             archive.writestr(info, data)
     packages = []
     for line in (root / "requirements-dev.lock").read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
         name, pinned = line.split("==")
         packages.append(
             {
