@@ -61,7 +61,7 @@ models:
   local-vision:
     base_url: http://127.0.0.1:8000/v1
     model: your-vision-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     capabilities: [text, structured_output, vision]
     local_service: vision-server
 services:
@@ -75,3 +75,34 @@ services:
 `local_service` associates a model connection with its resident service. **Preload** appears on nodes using it; runs and exported applications also prepare autostart services from their deployment profile. Multiple nodes using this connection share the loaded server. See [preloading and retention](local-models.md).
 
 Start Studio with `--profile deployment.yaml` to edit these connections. Node-to-binding choices are versioned with the application; endpoints and credentials belong to deployment. In a server configured with multiple user identities, its operator maintains the shared connection file.
+
+## Separate applications from model deployments
+
+Application code declares **roles and capabilities**; the deployment operator supplies **endpoints, model IDs and credentials**. End users submit tasks to the application. They do not configure individual nodes.
+
+```text
+Node → model alias → deployment binding → local / self-hosted / cloud API
+```
+
+Every Python, HTTP and container export includes `model-contract.json`. It lists the OpenAI-compatible `/chat/completions` protocol and each binding's aliases and required capabilities, without provider URLs or credentials. Inspect it before provisioning models:
+
+```bash
+python app.py --model-contract
+```
+
+A deployment can start with `models: {}` in `deployment.yaml`. The HTTP service starts and exposes its contract at authenticated `GET /model-contract`; task submission returns 503 until its connections are configured. Fill the declared bindings once your models are available:
+
+```yaml
+models:
+  writing-api:
+    base_url: http://127.0.0.1:8000/v1
+    model: your-served-model
+    api_key_env: null
+    capabilities: [text, structured_output]
+```
+
+`api_key_env: null` sends no Authorization header, suitable for an unauthenticated local server. For an authenticated API, use an environment variable name such as `MODEL_API_KEY`. For an operator-managed server over HTTP, set `allow_http: true`; HTTPS and loopback HTTP work by default. In a container, `127.0.0.1` refers to that container: use the model service's network hostname when it runs separately.
+
+Start the exported backend with `python serve.py --profile deployment.yaml`. Each new run reads the current model connections. Replacing the endpoint or model ID needs no graph changes or new export; existing runs resume with their recorded connections. Keep the capabilities required by the application when switching models. Provider-specific sampling, JSON and reasoning options remain configurable per connection.
+
+For a centrally hosted application, its operator provisions the models and model keys. For a customer-installed application, its installer or operator supplies the profile and inference services once. Local process startup, GPU selection and preload are optional [service settings](local-models.md), independent of agent behavior. A model with a different wire protocol needs a provider adapter or an OpenAI-compatible gateway.

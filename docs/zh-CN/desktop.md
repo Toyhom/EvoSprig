@@ -6,16 +6,16 @@
 
 ## 安装
 
-打开最近一次成功的 [Desktop clients 构建](https://github.com/Toyhom/EvoSprig/actions/workflows/desktop.yml)，下载对应系统的附件。下载 GitHub 构建附件需要登录账号。
+从 [GitHub Releases](https://github.com/Toyhom/EvoSprig/releases/tag/v0.1.8) 下载安装包，无需登录 GitHub。
 
-| 系统 | 附件 | 安装方法 |
+| 系统 | 下载 | 安装方法 |
 | --- | --- | --- |
-| Windows x64 | `EvoSprig-Studio-win-x64` | 解压后运行 `.exe` 安装程序。 |
-| macOS Apple 芯片 | `EvoSprig-Studio-mac-arm64` | 打开 `.dmg`，将 EvoSprig Studio 拖入应用程序。 |
-| macOS Intel | `EvoSprig-Studio-mac-x64` | 打开 `.dmg`，将 EvoSprig Studio 拖入应用程序。 |
-| Linux x64 | `EvoSprig-Studio-linux-x64` | 安装 `.deb`，或给 AppImage 添加执行权限后运行。 |
+| Windows x64 | [安装程序](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-win-x64.exe) | 运行 `.exe`。 |
+| macOS Apple 芯片 | [DMG](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-mac-arm64.dmg) | 拖入应用程序。 |
+| macOS Intel | [DMG](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-mac-x64.dmg) | 拖入应用程序。 |
+| Linux x64 | [AppImage](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-linux-x86_64.AppImage) · [DEB](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-linux-amd64.deb) | 为 AppImage 添加执行权限，或安装 DEB。 |
 
-安装包包含 Python、本地后端和网页界面。本地模型服务和应用需要的外部工具单独安装。当前开发构建没有签名；macOS 首次打开时，可在“隐私与安全性”中使用针对该应用的“仍要打开”。
+安装包包含 Python、本地后端和网页界面。本地模型服务和应用需要的外部工具单独安装。安装程序尚未签名；macOS 首次打开时，可在“隐私与安全性”中使用针对该应用的“仍要打开”。
 
 ## 创建第一个项目
 
@@ -26,6 +26,16 @@
 5. 保存项目，将 **离线演示** 切换为 **真实模型**，点击运行。
 
 密钥通过操作系统密钥存储加密保存。Linux 未提供密钥存储时，密钥只保留在当前应用进程的内存中。也可以在启动应用时传入环境变量。
+
+## 模型与应用独立部署
+
+开发时只需给节点选择模型角色及能力，通常共用一个默认模型，特殊节点可以单独设置。部署者在工作区的 `deployment.yaml` 中统一绑定具体模型：本机推理服务、自己服务器上的 API 或云端 API 都使用相同的 OpenAI 兼容聊天协议。
+
+导出包提供 `model-contract.json`，列出应用需要的角色、能力和接口。可以先部署应用，再启动模型并填写连接。更换模型服务只改部署配置，无需修改或重新导出智能体。最终用户通过应用界面或业务 API 提交任务，不需要配置每个节点的模型或密钥。
+
+无密钥本地服务取消勾选 **服务需要 API 密钥**；自建 HTTP 服务勾选 **允许自建服务器使用 HTTP**。本机服务可关联预加载配置、指定 GPU，并跨任务保持常驻。推理引擎和模型权重由部署者准备，桌面安装包包含开发工作台和运行时。
+
+完整配置见[模型连接](model-connections.md#应用与模型解耦)与[本地模型](local-models.md)。
 
 ## 工作区与文件
 

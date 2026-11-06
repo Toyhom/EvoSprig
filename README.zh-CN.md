@@ -10,7 +10,7 @@
 
 [English](README.md) · **简体中文**
 
-[入门教程](docs/zh-CN/tutorials/README.md) · [快速开始](docs/zh-CN/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/zh-CN/evolution.md) · [文档](docs/zh-CN/README.md) · [论文引用](docs/zh-CN/references.md)
+[**桌面版**](docs/zh-CN/desktop.md) · [入门教程](docs/zh-CN/tutorials/README.md) · [快速开始](docs/zh-CN/quickstart.md) · [应用案例](examples/README.md) · [自进化](docs/zh-CN/evolution.md) · [文档](docs/zh-CN/README.md) · [论文引用](docs/zh-CN/references.md)
 
 </div>
 

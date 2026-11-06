@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evosprig"
-version = "0.1.7"
+version = "0.1.8"
 description = "Build and evolve agent applications with visual workflows, memory, tools and controlled self-improvement (RSI)."
 keywords = ["agents", "self-evolving", "self-improvement", "rsi", "multi-agent", "prompt-optimization"]
 readme = "README.md"

@@ -55,6 +55,7 @@ def inspect_archive(data: bytes):
             "manifest.json",
             "tool-bindings.json",
             "memory-config.json",
+            "model-contract.json",
             "app.py",
             "serve.py",
             "build_agent.py",

@@ -2,8 +2,7 @@ name: Desktop clients
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths: ['apps/desktop/**', 'apps/studio/**', 'src/**', '.github/workflows/desktop.yml']
+    tags: ['v*']
   pull_request:
     paths: ['apps/desktop/**', 'apps/studio/**', 'src/**', '.github/workflows/desktop.yml']
 permissions:
@@ -92,3 +91,63 @@ jobs:
             apps/desktop/dist/*.deb
           if-no-files-found: error
           retention-days: 30
+
+  release-assets:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PYCODE'
+          import json, os, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+          assert os.environ['RELEASE_TAG'] == 'v' + version
+          for app in ('desktop', 'studio'):
+              assert json.loads(Path(f'apps/{app}/package.json').read_text())['version'] == version
+          PYCODE
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: EvoSprig-Studio-*
+          path: ${{ runner.temp }}/desktop-installers
+          merge-multiple: true
+      - name: Build source and Python distributions
+        run: |
+          python -m pip install build
+          python -m build --outdir "$RUNNER_TEMP/release-assets"
+          python scripts/release/package.py --out "$RUNNER_TEMP/release-assets"
+          python scripts/release/audit.py --artifacts "$RUNNER_TEMP/release-assets"
+          python - <<'PYCODE'
+          import hashlib, os, shutil, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+          source = Path(os.environ['RUNNER_TEMP']) / 'desktop-installers'
+          output = source.parent / 'release-assets'
+          targets = ('win-x64.exe', 'mac-arm64.dmg', 'mac-arm64.zip', 'mac-x64.dmg', 'mac-x64.zip', 'linux-x86_64.AppImage', 'linux-amd64.deb')
+          for target in targets:
+              path = source / f'EvoSprig-Studio-{version}-{target}'
+              assert path.is_file() and path.stat().st_size > 1_000_000, path
+              shutil.copy2(path, output / path.name)
+          with (output / 'SHA256SUMS').open('w') as checksums:
+              for path in sorted(output.iterdir()):
+                  if path.is_file() and path.name != 'SHA256SUMS':
+                      with path.open('rb') as stream:
+                          checksum = hashlib.file_digest(stream, 'sha256').hexdigest()
+                      checksums.write(f'{checksum}  {path.name}\n')
+          PYCODE
+      - name: Attach verified installers to the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' | grep -qx true
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP"/release-assets/* --clobber

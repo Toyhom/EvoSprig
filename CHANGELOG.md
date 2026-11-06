@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8
+
+- Ship Desktop Studio for Windows, macOS (Apple silicon and Intel), and Linux, with a bundled backend, workspace persistence and OS credential storage.
+- Separate model contracts from deployment connections; bind local or hosted models after exporting an application, with default models, per-node overrides and persistent preload.
+- Add adjustable Studio panels, independent knowledge and memory libraries, customer document updates, and scoped node/module self-evolution.
+- Import, edit, debug and export ComfyUI workflows; add Episode Studio and practical applications for comics, office work and circuits.
+- Expand bilingual developer documentation and three hands-on tutorials from canvas construction to independent deployment.
+
 ## 0.1.7
 
 - Add native SkillOpt, Evo-Harness, AHE, Meta-Harness, RRSI, ADAS, DarwinX, ModularRSI and Arbor searches, bringing the catalog to 23 strategies across 21 families.

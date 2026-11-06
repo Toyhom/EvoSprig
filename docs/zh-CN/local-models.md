@@ -13,7 +13,7 @@ models:
   main:
     base_url: http://127.0.0.1:8000/v1
     model: your-local-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     local_service: director
 services:
   director:
@@ -29,7 +29,7 @@ services:
     retention: persistent
 ```
 
-将 `LOCAL_MODEL_API_KEY` 设置为本地服务器上配置的密钥。在 `command` 中使用相应环境的可执行文件；参数会直接传递，不经过 shell。相对的 `cwd` 值相对于配置目录解析。请在机器所分配的 GPU 范围内启动 GPU 服务。
+示例使用无需认证的回环服务。需要认证时设置 `api_key_env: LOCAL_MODEL_API_KEY`，并在环境中提供该变量。在 `command` 中使用相应环境的可执行文件；参数会直接传递，不经过 shell。相对的 `cwd` 值相对于配置目录解析。请在机器所分配的 GPU 范围内启动 GPU 服务。
 
 ```bash
 evosprig services start --profile deployment.yaml
@@ -61,12 +61,12 @@ models:
   writing-api:
     base_url: http://127.0.0.1:8000/v1
     model: your-text-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     local_service: writer
   local-vision:
     base_url: http://127.0.0.1:8001/v1
     model: your-vision-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     capabilities: [text, structured_output, vision]
     local_service: reviewer
 services:

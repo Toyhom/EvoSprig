@@ -6,16 +6,16 @@ Use the same canvas, code views and application exports in a desktop window. Evo
 
 ## Install
 
-Open the latest successful [Desktop clients build](https://github.com/Toyhom/EvoSprig/actions/workflows/desktop.yml), then download the artifact for your computer. GitHub requires a signed-in account to download build artifacts.
+Download an installer from [GitHub Releases](https://github.com/Toyhom/EvoSprig/releases/tag/v0.1.8). No GitHub account is needed.
 
 | Platform | Download | Install |
 | --- | --- | --- |
-| Windows x64 | `EvoSprig-Studio-win-x64` | Unzip and run the `.exe` installer. |
-| macOS Apple silicon | `EvoSprig-Studio-mac-arm64` | Open the `.dmg` and drag EvoSprig Studio to Applications. |
-| macOS Intel | `EvoSprig-Studio-mac-x64` | Open the `.dmg` and drag EvoSprig Studio to Applications. |
-| Linux x64 | `EvoSprig-Studio-linux-x64` | Install the `.deb`, or make the AppImage executable and run it. |
+| Windows x64 | [Installer](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-win-x64.exe) | Run the `.exe`. |
+| macOS Apple silicon | [DMG](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-mac-arm64.dmg) | Drag EvoSprig Studio to Applications. |
+| macOS Intel | [DMG](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-mac-x64.dmg) | Drag EvoSprig Studio to Applications. |
+| Linux x64 | [AppImage](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-linux-x86_64.AppImage) · [DEB](https://github.com/Toyhom/EvoSprig/releases/download/v0.1.8/EvoSprig-Studio-0.1.8-linux-amd64.deb) | Make the AppImage executable, or install the DEB. |
 
-Python, the local backend and the web interface are included. Local model servers and application-specific tools are installed separately. Current development builds are unsigned; on macOS, use the per-app **Open Anyway** option in Privacy & Security when opening a downloaded build.
+Python, the local backend and the web interface are included. Local model servers and application-specific tools are installed separately. Installers are unsigned; on macOS, use the per-app **Open Anyway** option in Privacy & Security when opening a downloaded build.
 
 ## First project
 
@@ -26,6 +26,16 @@ Python, the local backend and the web interface are included. Local model server
 5. Save the project, change **Offline demo** to **Live model**, and run.
 
 API keys are encrypted using the OS key store. On Linux without a key store, keys remain in memory for the current session. You can also provide environment variables when launching the application.
+
+## Deploy models independently
+
+Design nodes around model roles and capabilities. Most nodes share an application default; individual roles can override it. The operator binds those roles in the workspace's `deployment.yaml` to a local inference server, a self-hosted API or a cloud API using the OpenAI-compatible chat protocol.
+
+Exports include `model-contract.json`, listing required roles, capabilities and the interface. Deploy the application first, then start a model server and supply its connection. Switching model services changes deployment settings without editing or exporting the agent again. End users submit tasks through the application UI or business API; its operator manages model connections and credentials once.
+
+For a local service without authentication, uncheck **Service requires an API key**. For a self-hosted HTTP endpoint, enable **Allow HTTP for my self-hosted server**. Local services can preload on selected GPUs and stay resident across runs. The operator supplies inference engines and weights; the desktop installer includes Studio and its runtime.
+
+See [model connections](model-connections.md#separate-applications-from-model-deployments) and [local model services](local-models.md).
 
 ## Workspaces and files
 

@@ -21,6 +21,21 @@ def read_profile(path):
     return deepcopy(_parse_profile(Path(path).read_text())) if path else {}
 
 
+def model_contract(spec: AgentSpec) -> dict:
+    """Describe model roles without binding the application to a deployment."""
+    bindings = {}
+    for alias, requirement in spec.models.items():
+        entry = bindings.setdefault(requirement.binding, {"aliases": [], "requires": []})
+        entry["aliases"].append(alias)
+        entry["requires"] = sorted(set(entry["requires"]) | set(requirement.requires))
+    return {
+        "schema_version": "1",
+        "protocol": "openai-chat-completions",
+        "path": "/chat/completions",
+        "bindings": bindings,
+    }
+
+
 def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool = False) -> dict:
     bindings = {item.binding for item in spec.models.values()}
     if mock:

@@ -10,7 +10,7 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-[Tutorials](docs/tutorials/README.md) · [Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md) · [Research references](docs/references.md)
+[**Desktop**](docs/desktop.md) · [Tutorials](docs/tutorials/README.md) · [Quickstart](docs/quickstart.md) · [Examples](examples/README.md) · [Evolution](docs/evolution.md) · [Documentation](docs/README.md) · [Research references](docs/references.md)
 
 </div>
 

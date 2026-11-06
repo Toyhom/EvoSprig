@@ -58,3 +58,22 @@ test('GPU placement is chosen before preloading and becomes read-only while resi
  await expect(page.getByLabel('GPUs writer',{exact:true})).toBeDisabled();
  await expect(page.locator('.service-status')).toContainText('CUDA_VISIBLE_DEVICES=GPU-second');
 });
+
+test('self-hosted model connections can omit keys and opt into HTTP',async({page})=>{
+ let saved:any=null;
+ await page.route('**/api/models',async route=>{
+  if(route.request().method()==='PUT'){saved=route.request().postDataJSON();return route.fulfill({json:{saved:saved.name}});}
+  return route.fulfill({json:{editable:true,services:[],models:saved?[{name:saved.name,...saved.connection}]:[]}});
+ });
+ await page.goto('/');await page.getByText('Model connections',{exact:true}).click();
+ await page.getByLabel('Provider preset').selectOption('Local / Custom');
+ await page.getByLabel('Connection name',{exact:true}).fill('hosted');
+ await page.getByLabel('Connection model ID').fill('my-model');
+ await page.getByLabel('Model API URL').fill('http://inference.example:8000/v1');
+ await page.getByLabel('Model requires API key').uncheck();
+ await expect(page.getByLabel('Model key environment')).toBeDisabled();
+ await page.getByLabel('Allow self-hosted HTTP').check();
+ await page.getByRole('button',{name:'Save connection',exact:true}).click();
+ await expect(page.locator('.connection-settings [role="status"]')).toContainText('Connection saved');
+ expect(saved.connection.api_key_env).toBeNull();expect(saved.connection.allow_http).toBe(true);
+});

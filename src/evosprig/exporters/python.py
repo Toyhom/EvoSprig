@@ -95,6 +95,7 @@ inputs = parser.add_mutually_exclusive_group()
 inputs.add_argument("--input", help="JSON input object")
 inputs.add_argument("--input-file", type=Path, help="JSON task input file")
 parser.add_argument("--mock", action="store_true")
+parser.add_argument("--model-contract", action="store_true", help="Print required model roles without loading a model")
 parser.add_argument("--profile")
 parser.add_argument("--workspace", type=Path)
 parser.add_argument("--resume", help="Run ID to resume")
@@ -109,6 +110,10 @@ version = compile_agent(spec, root)
 expected = json.loads((root / "agent.lock.json").read_text())
 if version.lock != expected:
     raise SystemExit("Project changed: rebuild the export to update agent.lock.json")
+if args.model_contract:
+    from evosprig.config import model_contract
+    print(json.dumps(model_contract(spec), indent=2))
+    raise SystemExit(0)
 workspace = args.workspace or root / ".evosprig"
 memory_config = json.loads((root / "memory-config.json").read_text())
 if args.documents:
@@ -312,13 +317,15 @@ def export_python(
         for name, capabilities in requirements.items():
             vision = "vision" in capabilities
             model_examples[name] = {
-                "base_url": "https://your-provider.example/v1" if vision else "https://api.deepseek.com",
-                "model": "your-vision-model" if vision else "deepseek-flash",
-                "api_key_env": "VISION_MODEL_API_KEY" if vision else "DEEPSEEK_API_KEY",
+                "base_url": "https://your-provider.example/v1",
+                "model": "your-vision-model" if vision else "your-text-model",
+                "api_key_env": "MODEL_API_KEY",
                 "capabilities": sorted(capabilities),
-                **({} if vision else {"options": {"thinking": {"type": "disabled"}}}),
             }
+        from evosprig.config import model_contract
+
         files = {
+            "model-contract.json": json.dumps(model_contract(version.spec), indent=2) + "\n",
             "app.py": APP,
             "LICENSE": (Path(__file__).parent / "LICENSE").read_text(),
             "NOTICE": "EvoSprig\nCopyright 2026 EvoSprig contributors\n",
@@ -328,7 +335,7 @@ def export_python(
             "agent.lock.json": json.dumps(version.lock, indent=2) + "\n",
             "export-report.json": json.dumps(report, indent=2) + "\n",
             "requirements.lock": (Path(__file__).parent / "runtime.lock").read_text(),
-            ".env.example": "DEEPSEEK_API_KEY=\nVISION_MODEL_API_KEY=\nEVOSPRIG_BASE_URL=https://api.deepseek.com\nEVOSPRIG_MODEL=deepseek-flash\n",
+            ".env.example": "MODEL_API_KEY=\nEVOSPRIG_SERVICE_TOKEN=\n",
             "deployment.example.yaml": yaml.safe_dump(
                 {
                     "models": model_examples,
@@ -339,7 +346,7 @@ def export_python(
                 sort_keys=False,
             ),
             "pyproject.toml": '[build-system]\nrequires = ["hatchling==1.27.0"]\nbuild-backend = "hatchling.build"\n\n[project]\nname = "evosprig-export-runtime"\nversion = "0.1.0"\nrequires-python = ">=3.12"\nlicense = "Apache-2.0"\nlicense-files = ["LICENSE", "NOTICE"]\ndependencies = ["pydantic==2.12.3", "jsonschema==4.25.1", "PyYAML==6.0.3", "httpx==0.28.1"]\n\n[tool.hatch.build.targets.wheel]\npackages = ["src/evosprig"]\n',
-            "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nFor live calls, copy deployment.example.yaml to deployment.yaml, set each connection's provider URL, model ID and API-key environment variable, then pass --profile deployment.yaml and omit --mock. Vision bindings need a model that accepts images. Set environment variables in your terminal; .env.example is a template. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n\nFor document applications, load files with `python app.py --documents ./notes --profile deployment.yaml --workspace ./workspace`. Install `requirements-documents.lock` for PDF/image support and Tesseract plus the desired language packs for OCR. Configure file limits, chunking, OCR and customer uploads in deployment.yaml. Use the same `--workspace` for subsequent runs or the HTTP service. Exports do not contain your database or memory records.\n",
+            "README.md": "# Exported EvoSprig application\n\nCreate a Python 3.12+ environment, then run:\n\n```bash\npython -m pip install -r requirements.lock\npython -m pip install --no-deps .\npython app.py --mock --input '<JSON matching agent.yaml input_schema>'\n```\n\nThe application operator configures models once for all users. Inspect `model-contract.json` or run `python app.py --model-contract` to see the required roles and capabilities before deploying a model. Copy deployment.example.yaml to deployment.yaml and bind each role to an OpenAI-compatible API: set its URL, model ID and API-key environment variable. Use `api_key_env: null` for a service without authentication; opt in to `allow_http: true` for a self-hosted HTTP server outside loopback. Pass --profile deployment.yaml and omit --mock. Change the deployment file to switch model services without editing or exporting the agent again. End users send task input to the application; model credentials stay with its operator. Vision bindings need a model that accepts images. Set environment variables in your terminal; .env.example is a template. Runtime sources are bundled; installation and execution use no Studio or control plane. Review export-report.json for required external services. The selected version is fixed in agent.lock.json.\n\nFor document applications, load files with `python app.py --documents ./notes --profile deployment.yaml --workspace ./workspace`. Install `requirements-documents.lock` for PDF/image support and Tesseract plus the desired language packs for OCR. Configure file limits, chunking, OCR and customer uploads in deployment.yaml. Use the same `--workspace` for subsequent runs or the HTTP service. Exports do not contain your database or memory records.\n",
             "DEPENDENCIES.md": "# Dependencies\n\nPydantic (MIT), jsonschema (MIT), PyYAML (MIT), HTTPX (BSD-3-Clause), Hatchling build tooling (MIT). The lock records exact versions. Dependencies are installed separately with their original license metadata.\n",
         }
         operations = {binding.get("operation") for binding in bindings.values() if binding["kind"] == "artifact"}
@@ -420,6 +427,11 @@ The service listens on loopback port 8080. Use `--profile deployment.yaml` for l
 models, `--workspace PATH` for persistent SQLite, and `--concurrency N` for its bounded
 worker pool. Writes require both the spec policy and operator `--allow-writes`.
 
+The operator can start this service with `models: {}` in its deployment file, then
+add model connections when the inference servers are ready. New runs read the updated
+profile; existing runs retain their original connections. `GET /model-contract`
+returns the required roles and capabilities. End-user clients only send task input.
+
 Send `Authorization: Bearer <token>` to `POST /runs` with `{"input": {...}}`.
 Poll `GET /runs/{run_id}`, read `/runs/{run_id}/events` (SSE, Last-Event-ID),
 submit `POST /runs/{run_id}/input` with `{"path": "...", "response": {...}}`, or
@@ -442,9 +454,9 @@ Keep service credentials in your application backend; do not embed them in brows
 ## Container target
 
 When a Dockerfile is present: `docker build -t my-agent .`, then
-`docker run --rm -p 127.0.0.1:8080:8080 -e EVOSPRIG_SERVICE_TOKEN -e DEEPSEEK_API_KEY
+`docker run --rm -p 127.0.0.1:8080:8080 -e EVOSPRIG_SERVICE_TOKEN -e MODEL_API_KEY
 -v evosprig-state:/state my-agent --host 0.0.0.0 --workspace /state --mock`.
-Remove `--mock` for live calls. The image runs as UID 10001. Credentials, runtime
+For live calls, mount your deployment file with `-v /path/to/deployment.yaml:/app/deployment.yaml:ro` and replace `--mock` with `--profile /app/deployment.yaml`. The image runs as UID 10001. Credentials, runtime
 history and model weights are not build inputs. The Python base image is tag-pinned;
 pin its digest in your deployment registry for immutable rebuilds.
 """

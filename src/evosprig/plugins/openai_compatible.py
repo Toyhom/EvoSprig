@@ -20,7 +20,8 @@ from evosprig.core.spec import Contract
 class Connection(Contract):
     base_url: str
     model: str
-    api_key_env: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    api_key_env: str | None = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    allow_http: bool = False
     local_service: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_-]{1,80}$")
     timeout_seconds: float = Field(default=45.0, gt=0, le=3600)
     max_connections: int = Field(default=32, ge=1, le=1024)
@@ -43,9 +44,9 @@ class Connection(Contract):
         if url.username or url.password or url.query or url.fragment or not url.hostname:
             raise ValueError("base_url must be an endpoint without credentials, query or fragment")
         if url.scheme != "https" and not (
-            url.scheme == "http" and url.hostname in {"localhost", "127.0.0.1", "::1"}
+            url.scheme == "http" and (self.allow_http or url.hostname in {"localhost", "127.0.0.1", "::1"})
         ):
-            raise ValueError("use HTTPS, or HTTP for a loopback inference service")
+            raise ValueError("use HTTPS, loopback HTTP, or explicitly set allow_http for your inference server")
         if set(self.options) - {"thinking", "reasoning_effort", "chat_template_kwargs"}:
             raise ValueError("unsupported provider option")
         template = self.options.get("chat_template_kwargs")
@@ -69,8 +70,13 @@ class OpenAICompatibleProvider:
         self._shared_client = None
         self._sessions = 0
 
+    def _headers(self) -> dict[str, str]:
+        if self.connection.api_key_env is None:
+            return {}
+        return {"Authorization": "Bearer " + self._key()}
+
     def _key(self) -> str:
-        key = os.environ.get(self.connection.api_key_env)
+        key = os.environ.get(self.connection.api_key_env or "")
         if not key:
             raise ProviderError(
                 "configuration", f"missing environment variable {self.connection.api_key_env}"
@@ -184,7 +190,7 @@ class OpenAICompatibleProvider:
                 response = await client.post(
                     self.endpoint,
                     json=self._payload(request),
-                    headers={"Authorization": "Bearer " + self._key()},
+                    headers=self._headers(),
                 )
                 self._check_status(response)
                 return self._parse(response.json())
@@ -203,7 +209,7 @@ class OpenAICompatibleProvider:
                     "POST",
                     self.endpoint,
                     json=self._payload(request, True),
-                    headers={"Authorization": "Bearer " + self._key()},
+                    headers=self._headers(),
                 ) as response:
                     self._check_status(response)
                     async for line in response.aiter_lines():

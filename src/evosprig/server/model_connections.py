@@ -58,7 +58,7 @@ def install_model_routes(app, profile, *, editable=True):
         return {"editable": profile is not None and editable,
                 "services": list(data.get("services", {})),
                 "models": [{"name": name, **Connection.model_validate(value).model_dump(mode="json"),
-                            "key_configured": bool(os.environ.get(value.get("api_key_env", "")))}
+                            "key_configured": bool(os.environ.get(value.get("api_key_env") or ""))}
                            for name, value in data.get("models", {}).items()]}
 
     @app.put("/api/models")
@@ -70,6 +70,7 @@ def install_model_routes(app, profile, *, editable=True):
         from evosprig.core.version import check_public_text
 
         value = body.connection.model_dump(mode="json", exclude_none=True)
+        value["api_key_env"] = body.connection.api_key_env
         try:
             check_public_text(yaml.safe_dump(value))
         except ValueError as exc:

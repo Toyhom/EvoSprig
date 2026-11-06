@@ -88,3 +88,7 @@ For Qwen served by vLLM, set `json_mode: without_tools` in the model binding. Th
 ## Resident local models
 
 Declare model and tool servers in your deployment profile, preload them once and reuse them across runs. Studio shows their readiness; exported applications use the same service manager. See [Preload local models](local-models.md).
+
+## Bind models after delivery
+
+Exports include a provider-neutral `model-contract.json` and `deployment.example.yaml`. The application operator can provision local inference or an API later, then bind it without changing the exported agent. Business clients submit tasks; provider credentials stay in the application deployment. See [application/model separation](model-connections.md#separate-applications-from-model-deployments).

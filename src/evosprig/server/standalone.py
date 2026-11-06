@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-from evosprig.config import make_models, make_tools, read_profile, restore_models
+from evosprig.config import make_models, make_tools, model_contract, read_profile, restore_models
 from evosprig.core.journal import Scope
 from evosprig.core.runtime import Runtime
 from evosprig.core.spec import Contract, canonical_json, load_spec
@@ -135,10 +135,18 @@ def create_service(
             "agent_version": version.version_id,
         }
 
+    @app.get("/model-contract")
+    async def required_models():
+        return model_contract(version.spec)
+
     @app.post("/runs", status_code=202)
     async def start(body: RunInput):
         Draft202012Validator(version.spec.input_schema).validate(body.input)
-        run_id = runtime().create_run(version, body.input, scope=scope)
+        try:
+            runner = runtime()
+            run_id = runner.create_run(version, body.input, scope=scope)
+        except (ValueError, OSError):
+            raise HTTPException(503, "Deployment connections are not configured; contact the application operator") from None
         worker.dispatch(run_id)
         return {"run_id": run_id, "agent_version": version.version_id}
 

@@ -252,3 +252,29 @@ async def test_saved_connection_defaults_resume_without_allowing_behavior_change
     assert result.status == "succeeded", result.error
     assert result.output == {"answer": {"answer": "resumed"}}
     assert "json_mode" not in journal.get(run_id)["metadata"]["models"]["main"]["connection"]
+
+
+async def test_unauthenticated_local_model_omits_authorization_in_chat_and_stream():
+    def handle(request):
+        assert 'authorization' not in request.headers
+        if json.loads(request.content)['stream']:
+            return httpx.Response(200, text='data: {"choices":[{"delta":{"content":"local"}}]}\n\ndata: [DONE]\n\n')
+        return httpx.Response(200, json={'model': 'local', 'choices': [{'message': {'content': 'local'}}],
+                                        'usage': {'prompt_tokens': 1, 'completion_tokens': 1}})
+
+    provider = OpenAICompatibleProvider(Connection(base_url='http://localhost:8000/v1',
+        model='local', api_key_env=None), transport=httpx.MockTransport(handle))
+    request = ModelRequest([{'role': 'user', 'content': 'hello'}])
+    assert (await provider.complete(request)).text == 'local'
+    assert [event async for event in provider.stream(request)] == [{'type': 'text', 'text': 'local'}]
+
+
+def test_self_hosted_http_requires_explicit_opt_in():
+    values = {'base_url': 'http://inference.example:8000/v1', 'model': 'local', 'api_key_env': None}
+    with pytest.raises(ValueError, match='allow_http'):
+        Connection(**values)
+    assert Connection(**values, allow_http=True).allow_http
+    with pytest.raises(ValueError, match='loopback'):
+        Connection(**values, allow_http=True, local_service='remote')
+    with pytest.raises(ValueError):
+        Connection(**{**values, 'base_url': 'ftp://inference.example/v1'}, allow_http=True)

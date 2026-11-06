@@ -60,3 +60,18 @@ async def test_service_placement_is_saved_and_respects_the_parent_allocation(tmp
         assert yaml.safe_load(profile.read_text())['services']['writer']['gpu_devices'] == [1]
         assert (await client.put('/api/services/writer/placement', json={'gpu_devices': [2]})).status_code == 422
         assert (await client.put('/api/services/writer/placement', json={'gpu_devices': [-1]})).status_code == 422
+
+
+async def test_no_key_connection_roundtrips_without_inventing_credentials(tmp_path):
+    profile = tmp_path / 'deployment.yaml'
+    profile.write_text('models: {}\n')
+    app = create_app(tmp_path / 'workspace', profile=profile)
+    payload = {'name': 'self-hosted', 'connection': {'base_url': 'http://inference.example:8000/v1',
+        'model': 'my-model', 'api_key_env': None, 'allow_http': True}}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url='http://localhost') as client:
+        assert (await client.put('/api/models', json=payload)).status_code == 200
+        saved = (await client.get('/api/models')).json()['models'][0]
+        assert saved['api_key_env'] is None
+        assert saved['allow_http']
+        assert not saved['key_configured']
+        assert yaml.safe_load(profile.read_text())['models']['self-hosted']['api_key_env'] is None

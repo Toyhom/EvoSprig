@@ -28,6 +28,8 @@ test('desktop backend binds an ephemeral port, authenticates, persists and stops
   const headers={Authorization:'Bearer '+backend.token,'Content-Type':'application/json'};
   assert.equal((await fetch(origin+'/api/health',{headers})).status,200);
   assert.equal((await fetch(origin+'/api/models',{headers})).status,200);
+  const connection={name:'local-model',connection:{base_url:'http://localhost:8000/v1',model:'my-model',api_key_env:null}};
+  const saved=await fetch(origin+'/api/models',{method:'PUT',headers,body:JSON.stringify(connection)});assert.equal(saved.status,200,await saved.text());
   const spec={id:'desktop-test',spec_version:'0.3',input_schema:{type:'object'},output_schema:{},models:{},tools:{},resources:{},graph:{entry:'echo',nodes:{echo:{type:'transform',inputs:{message:{value:'desktop ready'}},output_schema:{type:'object'}}},edges:[],output:{result:{ref:'nodes.echo.output'}}}};
   const create=await fetch(origin+'/api/projects',{method:'POST',headers,body:JSON.stringify({spec})});assert.equal(create.status,201,await create.text());
   // Export requires Python module sources and lock files inside the frozen bundle.
@@ -35,6 +37,8 @@ test('desktop backend binds an ephemeral port, authenticates, persists and stops
   await backend.stop();assert.notEqual(backend.child.exitCode,null);
   backend=startBackend(options);const next=await backend.ready;
   const project=await fetch(next+'/api/projects/desktop-test',{headers:{Authorization:'Bearer '+backend.token}});assert.equal(project.status,200);
+  const models=await (await fetch(next+'/api/models',{headers:{Authorization:'Bearer '+backend.token}})).json();
+  assert.equal(models.models[0].name,'local-model');assert.equal(models.models[0].api_key_env,null);
  }finally{await backend?.stop();await rm(workspace,{recursive:true,force:true});}
 });
 

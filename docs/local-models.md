@@ -11,7 +11,7 @@ models:
   main:
     base_url: http://127.0.0.1:8000/v1
     model: your-local-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     local_service: director
 services:
   director:
@@ -27,7 +27,7 @@ services:
     retention: persistent
 ```
 
-Set `LOCAL_MODEL_API_KEY` to the key configured on your local server. Use the appropriate environment's executable in `command`; arguments are passed directly, without a shell. Relative `cwd` values resolve from the profile directory. Start GPU services within your machine's assigned GPU allocation.
+The example uses an unauthenticated loopback server. For an authenticated server, set `api_key_env: LOCAL_MODEL_API_KEY` and provide that variable in the environment. Use the appropriate environment's executable in `command`; arguments are passed directly, without a shell. Relative `cwd` values resolve from the profile directory. Start GPU services within your machine's assigned GPU allocation.
 
 ```bash
 evosprig services start --profile deployment.yaml
@@ -57,12 +57,12 @@ models:
   writing-api:
     base_url: http://127.0.0.1:8000/v1
     model: your-text-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     local_service: writer
   local-vision:
     base_url: http://127.0.0.1:8001/v1
     model: your-vision-model
-    api_key_env: LOCAL_MODEL_API_KEY
+    api_key_env: null
     capabilities: [text, structured_output, vision]
     local_service: reviewer
 services:

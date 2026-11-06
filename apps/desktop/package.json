@@ -1,7 +1,7 @@
 {
   "name": "evosprig-desktop",
   "productName": "EvoSprig Studio",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "description": "Build and evolve agents on your desktop.",
   "author": {
