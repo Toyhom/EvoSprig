@@ -31,10 +31,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200);self.end_headers()
         self.wfile.write(json.dumps({"loaded":self.loads>0,"loads":self.loads,"devices":os.environ.get("CUDA_VISIBLE_DEVICES")}).encode())
     def do_POST(self):
+        self.rfile.read(int(self.headers.get("Content-Length", "0")))
         if not self.headers.get("Idempotency-Key"):
             self.send_response(422);self.end_headers();return
         Handler.loads+=1
-        self.send_response(200);self.end_headers();self.wfile.write(b'{}')
+        self.send_response(200);self.send_header('Content-Length','2');self.end_headers();self.wfile.write(b'{}')
 HTTPServer(("127.0.0.1",'''+str(port)+'''),Handler).serve_forever()
 ''')
     profile = tmp_path / "deployment.yaml"
