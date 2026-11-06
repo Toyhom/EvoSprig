@@ -23,9 +23,9 @@
 
 使用 Python 或可视化画布开发智能体，再用自己的任务推动智能体持续改进。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
-[![观看 EvoSprig 宣传片：应用、可视化开发与自进化](docs/assets/evosprig-demo-zh.jpg)](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo-zh.mp4)
+[![观看 EvoSprig 宣传片：应用、可视化开发与自进化](docs/assets/evosprig-demo-zh.jpg)](https://cdn.jsdelivr.net/gh/Toyhom/EvoSprig@d9a7020c5dfaf1d8774b5a0b1260c6aa65549877/docs/assets/evosprig-demo-zh.mp4)
 
-[English narration](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo.mp4) · [中文配音](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo-zh.mp4)
+[English narration](https://cdn.jsdelivr.net/gh/Toyhom/EvoSprig@d9a7020c5dfaf1d8774b5a0b1260c6aa65549877/docs/assets/evosprig-demo.mp4) · [中文配音](https://cdn.jsdelivr.net/gh/Toyhom/EvoSprig@d9a7020c5dfaf1d8774b5a0b1260c6aa65549877/docs/assets/evosprig-demo-zh.mp4)
 
 
 ## 你可以开发什么？
