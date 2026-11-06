@@ -16,13 +16,16 @@
 
 ## News
 
+- **2026-11-06** · **[Desktop Studio](docs/desktop.md) and a broader development workflow** — Windows, macOS and Linux clients; scoped self-evolution; updatable RAG libraries and shared memory; three [hands-on tutorials](docs/tutorials/README.md).
 - **2026-11-04** · **[ComfyUI workflows](docs/comfyui.md)** — import workflow JSON, edit and debug its tool nodes on the canvas, and export back to ComfyUI.
 - **2026-11-04** · **[Episode Studio](examples/episode-studio/)** — a multi-agent production team that turns stories into animated films, with a recurring cast and automatic shot review.
 - **2026-11-02** · EvoSprig is open source: a platform for building and evolving agent applications with Python or a visual canvas.
 
 Build agents with Python or a visual canvas, then improve their behavior automatically on your own tasks. EvoSprig combines multi-agent workflows, tools, persistent memory and **controlled self-improvement (RSI)**: generate candidate versions, evaluate the running application, compare results and enable a version. Export your application to run independently.
 
-https://github.com/user-attachments/assets/7d70ff67-afae-4112-a85b-22d6d7a18f36
+[![Watch EvoSprig: applications, visual development and self-evolution](docs/assets/evosprig-demo.jpg)](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo.mp4)
+
+[English narration](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo.mp4) · [中文配音](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo-zh.mp4)
 
 
 ## What will you build?

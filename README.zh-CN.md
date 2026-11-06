@@ -16,13 +16,16 @@
 
 ## News · 项目动态
 
+- **2026-11-06** · **[桌面客户端与开发工作台更新](docs/zh-CN/desktop.md)**：支持 Windows、macOS、Linux；加入节点/模块级自进化、可持续更新的 RAG 知识库与共享记忆，并提供三期[动手开发教程](docs/zh-CN/tutorials/README.md)。
 - **2026-11-04** · **[ComfyUI 工作流](docs/zh-CN/comfyui.md)** — 导入工作流 JSON，在画布中编辑、调试工具节点，再导出到 ComfyUI。
 - **2026-11-04** · **[Episode Studio](examples/episode-studio/README.zh-CN.md)**：把小说或一句创意拍成动画，智能体团队负责剧本、固定角色、逐镜制作和自动检查。
 - **2026-11-02** · EvoSprig 初版开源：自进化智能体共性开发平台，支持代码与画布开发、任务评估和持续改进。
 
 使用 Python 或可视化画布开发智能体，再用自己的任务推动智能体持续改进。EvoSprig 将多智能体、工具、持久记忆与**可控自进化（Self-improvement / RSI）**连接起来：生成候选、运行评测、比较结果、启用版本，最后导出独立应用。
 
-https://github.com/user-attachments/assets/7d70ff67-afae-4112-a85b-22d6d7a18f36
+[![观看 EvoSprig 宣传片：应用、可视化开发与自进化](docs/assets/evosprig-demo-zh.jpg)](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo-zh.mp4)
+
+[English narration](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo.mp4) · [中文配音](https://github.com/Toyhom/EvoSprig/blob/main/docs/assets/evosprig-demo-zh.mp4)
 
 
 ## 你可以开发什么？
