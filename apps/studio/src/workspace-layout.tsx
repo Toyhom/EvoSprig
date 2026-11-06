@@ -56,6 +56,20 @@ export function LayoutMenu({lang,layout,onChange,onReset}:{lang:Lang;layout:Layo
 
 export function WorkspaceDialog({label,onClose,children}:{label:string;onClose:()=>void;children:ReactNode}) {
   const ref=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const dialog=ref.current!;dialog.showModal();return()=>dialog.close();},[]);
+  const opener=useRef<HTMLElement|null>(null);
+  useEffect(()=>{
+    const dialog=ref.current!;
+    if(!opener.current && document.activeElement instanceof HTMLElement)opener.current=document.activeElement;
+    dialog.showModal();
+    return()=>{
+      dialog.close();
+      queueMicrotask(()=>{
+        if(dialog.isConnected && dialog.open)return;
+        const target=opener.current;
+        if(target?.isConnected && target.getClientRects().length)target.focus();
+        else document.querySelector<HTMLButtonElement>('button[aria-controls="project-navigation"]')?.focus();
+      });
+    };
+  },[]);
   return <dialog ref={ref} className="workspace-dialog" aria-label={label} onCancel={event=>{event.preventDefault();onClose();}}>{children}</dialog>;
 }
