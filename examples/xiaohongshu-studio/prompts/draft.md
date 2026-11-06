@@ -15,3 +15,5 @@ Do not include editorial notes, a score, markdown headings, a report about your 
 Describe a supplied demonstration as what happens in that demonstration. “视频里更新保修通知后，回答从一年变成三年” is already specific; do not append “单次演示，不代表普遍效果”. If a tutorial only shows self-evolution setup, describe choosing a node, task set and algorithm. Omit scoring claims and internal notes about which claims were not advertised.
 
 When a personal source is short, keep the post short. Add a takeaway or future plan only if the source supplies one. A final supplied fact can be the ending.
+
+For a project video caption, use the opening to make the footage worth watching, then develop two or three different points. Do not repeat the same list of applications in the opening and the first section. Explain a feature through the reader's action: choose an agent and a component, provide tasks, inspect the changes. Configuration vocabulary belongs only when the requested audience needs it. Round a supplied 58.8-second demo to 59 seconds or "不到一分钟" rather than using its decimal duration as the headline.
