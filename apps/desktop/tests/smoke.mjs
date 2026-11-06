@@ -6,12 +6,12 @@ const data=await mkdtemp(join(tmpdir(),'evosprig-desktop-ui-'));
 let app;
 try{
  const env={...process.env,EVOSPRIG_DESKTOP_DATA:data};delete env.ELECTRON_RUN_AS_NODE;
- app=await electron.launch({...(process.env.EVOSPRIG_DESKTOP_EXECUTABLE?{executablePath:process.env.EVOSPRIG_DESKTOP_EXECUTABLE}:{}),args:[...(process.env.EVOSPRIG_DESKTOP_EXECUTABLE?[]:[resolve('.')]),...(process.env.EVOSPRIG_ELECTRON_NO_SANDBOX==='1'?['--no-sandbox']:[])],env,timeout:60000});
+ app=await electron.launch({...(process.env.EVOSPRIG_DESKTOP_EXECUTABLE?{executablePath:process.env.EVOSPRIG_DESKTOP_EXECUTABLE}:{}),args:['--disable-gpu',...(process.env.EVOSPRIG_DESKTOP_EXECUTABLE?[]:[resolve('.')]),...(process.env.EVOSPRIG_ELECTRON_NO_SANDBOX==='1'?['--no-sandbox']:[])],env,timeout:60000});
  const page=await app.firstWindow();await page.waitForURL('http://127.0.0.1:**',{timeout:90000});
  await expect(page.getByRole('button',{name:'＋ New project'})).toBeVisible();
  await page.getByLabel('New project name').fill('desktop-smoke');await page.getByRole('button',{name:'＋ New project'}).click();
  await expect(page.locator('h1')).toHaveText('desktop-smoke');
- await page.getByRole('button',{name:'▷ Run',exact:true}).click();await expect(page.locator('.results .status-succeeded')).toBeVisible({timeout:30000});
+ await page.getByRole('button',{name:'▷ Run',exact:true}).click();await expect(page.locator('.results-heading .status-succeeded')).toBeVisible({timeout:30000});
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export Python ↗'}).click();const file=await download;expect(file.suggestedFilename()).toBe('desktop-smoke.zip');await file.saveAs(join(data,'project.zip'));
  // Native key settings are isolated from the main renderer.
  const keyWindow=app.waitForEvent('window');
