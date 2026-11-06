@@ -43,6 +43,8 @@ def create_service(
     scope = Scope(version.spec.id)
     journal = SQLiteJournal(workspace / "runs.sqlite")
     bindings = json.loads((root / "tool-bindings.json").read_text())
+    memory_path = root / "memory-config.json"
+    memory_config = json.loads(memory_path.read_text()) if memory_path.exists() else {}
 
     def runtime(record=None):
         if record and record["version"]["version_id"] != version.version_id:
@@ -55,6 +57,7 @@ def create_service(
                 workspace,
                 scope,
                 profile=profile,
+                memory_config=memory_config,
                 bindings=record["metadata"].get("tools", {})
                 if record
                 else (None if profile else bindings),

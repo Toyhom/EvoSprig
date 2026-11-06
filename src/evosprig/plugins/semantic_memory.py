@@ -44,10 +44,14 @@ class HybridMemory:
     """
 
     def __init__(self, memory, embedder: Embeddings, *, cache_size=4096, batch_size=64,
-                 cache_path=None, persistent_cache_size=100000):
+                 cache_path=None, persistent_cache_size=100000, mode="hybrid", min_similarity=None):
         if cache_size < 1 or not 1 <= batch_size <= 256:
             raise ValueError("invalid embedding cache/batch size")
+        if mode not in {"semantic", "hybrid"} or (min_similarity is not None and
+                (not math.isfinite(min_similarity) or not -1 <= min_similarity <= 1)):
+            raise ValueError("invalid vector retrieval policy")
         self.memory, self.embedder = memory, embedder
+        self.mode, self.min_similarity = mode, min_similarity
         self.cache_size, self.batch_size, self.cache = cache_size, batch_size, {}
         self.cache_path, self.persistent_cache_size = cache_path, persistent_cache_size
         if cache_path:
@@ -98,20 +102,26 @@ class HybridMemory:
         q = vectors(self.embedder.embed([query]), 1)[0]
         if any(len(embeddings[key]) != len(q) for key in keys):
             raise ValueError("query and document embedding dimensions differ")
+        similarities = {r["id"]: sum(a * b for a, b in zip(q, embeddings[key], strict=True))
+                        for r, key in zip(records, keys, strict=True)}
         semantic = sorted(
             zip(records, keys, strict=True),
             key=lambda pair: (
-                -sum(a * b for a, b in zip(q, embeddings[pair[1]], strict=True)),
+                -similarities[pair[0]["id"]],
                 pair[0]["id"],
             ),
         )
-        lexical = self.memory.search(scope, query, limit=100, at=at, content_type=content_type)
-        scores = {r["id"]: 1 / (60 + rank) for rank, (r, _) in enumerate(semantic, 1)}
+        semantic = [(r, key) for r, key in semantic
+                    if self.min_similarity is None or similarities[r["id"]] >= self.min_similarity]
+        lexical = self.memory.search(scope, query, limit=100, at=at, content_type=content_type) if self.mode == "hybrid" else []
+        scores = {r["id"]: (similarities[r["id"]] if self.mode == "semantic" else 1 / (60 + rank))
+                  for rank, (r, _) in enumerate(semantic, 1)}
         for rank, r in enumerate(lexical, 1):
-            scores[r["id"]] += 1 / (60 + rank)
+            if r["id"] in similarities:
+                scores[r["id"]] = scores.get(r["id"], 0) + 1 / (60 + rank)
         self.cache.update(embeddings)
         while len(self.cache) > self.cache_size:
             del self.cache[next(iter(self.cache))]
         return sorted(
-            ({**r, "score": scores[r["id"]]} for r in records), key=lambda r: (-r["score"], r["id"])
+            ({**r, "score": scores[r["id"]], "similarity": similarities[r["id"]]} for r in records if r["id"] in scores), key=lambda r: (-r["score"], r["id"])
         )[:limit]

@@ -1,6 +1,6 @@
 import {Icon} from './studio-ui';
 import { useEffect, useState } from 'react';
-import { MemoryControls } from './memory-controls';
+export {MemoryPanel} from './memory-panel';
 import { MediaPreview } from './media-preview';
 import { HumanResponse } from './human-response';
 import {RunSteps,type DebugTarget} from './run-steps';
@@ -51,19 +51,6 @@ export function ResourcesPanel({doc,lang,onChange,onError}:Props & {onChange:(do
     {!Object.keys(doc.spec.resources).length && <Empty>{say(lang,'先将模型指令保存为资源，即可运行改进。','Create an instruction resource to enable improvement.')}</Empty>}
     {Object.entries(doc.spec.resources).map(([key,meta])=><article className="card" key={key}><h3>{key} <span className="pill">{meta.role}</span></h3><p className="mono muted">{meta.path}</p>
       <textarea className="resource-editor" aria-label={`Resource ${key}`} value={resources[key]??''} onChange={e=>onChange({...doc,resources:{...resources,[key]:e.target.value}})}/></article>)}
-  </section>;
-}
-
-type Memory = {id:string; content:string; source:string; revision:number};
-export function MemoryPanel({doc,api,lang,onError}:Props) {
-  const [records,setRecords]=useState<Memory[]>([]),[content,setContent]=useState(''),[source,setSource]=useState('user:explicit'),[busy,setBusy]=useState(false);
-  const path=`/projects/${doc.id}/memory`;
-  async function refresh(){setRecords(await(await api(path)).json());}
-  useEffect(()=>{refresh().catch(onError);},[doc.id,api]);
-  async function action(fn:()=>Promise<void>){setBusy(true);try{await fn();await refresh();}catch(e){onError(e);}finally{setBusy(false);}}
-  return <section className="panel memory-page"><h2>{say(lang,'智能体记忆','Agent memory')}</h2><p className="muted">{say(lang,'保存偏好、事实与经验，让智能体跨任务延续工作。每个用户和项目有独立作用域。','Carry preferences, facts and experiences across tasks. Each user and project has its own scope.')}</p>
-    <div className="memory-overview"><article><Icon name="database"/><h3>{say(lang,'长期记忆','Long-term memory')}</h3><p>{say(lang,'事实、经验与时序关系，由智能体按需读写。','Facts, experiences and relationships that agents read and write as needed.')}</p></article><article><Icon name="layers"/><h3>{say(lang,'工作上下文','Working context')}</h3><p>{say(lang,'保存当前目标和进度；历史较长时，用普通智能体提炼摘要。','Keep goals and progress in context blocks; use an ordinary agent to summarize longer histories.')}</p></article><article><Icon name="settings"/><h3>{say(lang,'上下文策略','Context policy')}</h3><p>{say(lang,'在节点的“记忆”设置中选择工具历史预算，或用普通智能体节点对历史生成摘要。','Set a tool-history budget in the node’s Memory settings, or configure an ordinary agent node to summarize the history.')}</p></article></div>
-    <div><div className="panel-grid"><article className="card"><h3>{say(lang,'新增事实','Add a fact')}</h3><label>{say(lang,'内容','Content')}<textarea aria-label="Memory content" value={content} onChange={e=>setContent(e.target.value)}/></label><label>{say(lang,'来源','Source')}<input aria-label="Memory source" value={source} onChange={e=>setSource(e.target.value)}/></label><button disabled={busy||!content.trim()} onClick={()=>action(async()=>{await api(path,post({content,source}));setContent('');})}>{say(lang,'保存记忆','Save memory')}</button></article><article className="card"><h3>{say(lang,'事实记录','Facts')}</h3>{!records.length&&<p className="muted">{say(lang,'还没有保存的事实。可以在此添加，也可以让智能体通过 memory.write 写入。','No saved facts yet. Add one here or let an agent use memory.write.')}</p>}{records.map(record=><div className="record" key={record.id}><p>{record.content}</p><small>{record.source}</small><button aria-label={`Delete memory ${record.id}`} onClick={()=>action(async()=>{await api(path+'/'+record.id,{method:'DELETE'});})}>{say(lang,'删除','Delete')}</button></div>)}</article></div><MemoryControls project={doc.id} api={api} lang={lang} onError={onError}/></div>
   </section>;
 }
 

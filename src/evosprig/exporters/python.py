@@ -15,6 +15,7 @@ from evosprig import __version__
 from evosprig.core.spec import canonical_json, save_spec
 from evosprig.core.version import AgentVersion, check_public_text
 from evosprig.plugins.builtin_tools import BUILTIN_NAMES
+from evosprig.plugins.memory_banks import MemoryBanksConfig, plugin_bank
 from evosprig.plugins.memory_tools import MEMORY_TOOL_NAMES
 from evosprig.plugins.message_tools import MESSAGE_TOOL_NAMES
 from evosprig.plugins.workspace_tools import WORKSPACE_TOOL_NAMES
@@ -61,6 +62,7 @@ MODULES = (
     "plugins/semantic_memory.py",
     "plugins/embeddings.py",
     "plugins/memory_tools.py",
+    "plugins/memory_banks.py",
     "plugins/workspace_tools.py",
     "plugins/message_tools.py",
     "plugins/python_tool.py",
@@ -108,6 +110,7 @@ expected = json.loads((root / "agent.lock.json").read_text())
 if version.lock != expected:
     raise SystemExit("Project changed: rebuild the export to update agent.lock.json")
 workspace = args.workspace or root / ".evosprig"
+memory_config = json.loads((root / "memory-config.json").read_text())
 if args.documents:
     if args.input or args.input_file or args.resume or args.path or args.response:
         parser.error("load documents separately from running or resuming the agent")
@@ -126,14 +129,14 @@ if args.resume:
         parser.error("--path and --response must be supplied together")
     if args.response:
         journal.respond(args.resume, args.path, json.loads(args.response))
-    runtime = Runtime(restore_models(record["metadata"]["models"]), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=record["metadata"].get("tools", {})), journal=journal,
+    runtime = Runtime(restore_models(record["metadata"]["models"]), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=record["metadata"].get("tools", {}), memory_config=memory_config), journal=journal,
                       allow_writes=record["metadata"]["allow_writes"])
     result = asyncio.run(runtime.resume(args.resume))
 else:
     if args.input is None and args.input_file is None:
         parser.error("provide --input for a new run")
     bindings = None if args.profile else json.loads((root / "tool-bindings.json").read_text())
-    runtime = Runtime(make_models(spec, args.profile, args.mock), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=bindings), journal=journal,
+    runtime = Runtime(make_models(spec, args.profile, args.mock), make_tools(workspace, Scope(spec.id), profile=args.profile, bindings=bindings, memory_config=memory_config), journal=journal,
                       allow_writes=args.allow_writes)
     result = asyncio.run(runtime.run(version, json.loads(args.input_file.read_text() if args.input_file else args.input)))
 print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
@@ -190,6 +193,8 @@ def compatibility_report(
                 and config.get("version", "1") == binding.version
             ):
                 continue
+        if plugin_bank(binding.plugin) is not None and binding.version == "1":
+            continue
         if (
             binding.plugin
             not in BUILTIN_NAMES
@@ -214,11 +219,22 @@ def compatibility_report(
 
 
 def export_python(
-    version: AgentVersion, destination: str | Path, *, target: str = "python", tool_bindings=None, document_config=None
+    version: AgentVersion, destination: str | Path, *, target: str = "python", tool_bindings=None, document_config=None, memory_config=None
 ) -> dict:
     from evosprig.plugins.document_library import DocumentConfig
 
     document_config = DocumentConfig.model_validate(document_config or {}).model_dump()
+    configured_memory = MemoryBanksConfig.model_validate(memory_config or {})
+    selected_banks = {bank for tool in version.spec.tools.values() if (bank := plugin_bank(tool.plugin)) is not None}
+    for tool in version.spec.tools.values():
+        bank = plugin_bank(tool.plugin)
+        if bank is not None:
+            if bank not in configured_memory.banks:
+                raise ValueError(f"memory bank {bank} needs deployment configuration")
+            if tool.plugin.split(".")[-1] in {"write", "remember", "summarize"} and not configured_memory.banks[bank].agent_writes:
+                raise ValueError(f"memory bank {bank} disables agent writes")
+    memory_config = {"banks": {name: value.model_dump() for name, value in configured_memory.banks.items() if name in selected_banks}}
+
     # Validate and include only the declared bindings, never unrelated deployment data.
     bindings = {}
     for tool in version.spec.tools.values():
@@ -307,6 +323,7 @@ def export_python(
             "LICENSE": (Path(__file__).parent / "LICENSE").read_text(),
             "NOTICE": "EvoSprig\nCopyright 2026 EvoSprig contributors\n",
             "tool-bindings.json": json.dumps(bindings, indent=2) + "\n",
+            "memory-config.json": json.dumps(memory_config, indent=2) + "\n",
             "build_agent.py": builder_source(version),
             "agent.lock.json": json.dumps(version.lock, indent=2) + "\n",
             "export-report.json": json.dumps(report, indent=2) + "\n",
@@ -317,6 +334,7 @@ def export_python(
                     "models": model_examples,
                     "tools": bindings,
                     "documents": document_config,
+                    "memory": memory_config,
                 },
                 sort_keys=False,
             ),
@@ -341,7 +359,7 @@ def export_python(
         if target == "container":
             files["Dockerfile"] = DOCKERFILE
             files[".dockerignore"] = (
-                "**\n!src/**\n!agent.yaml\n!agent.lock.json\n!tool-bindings.json\n!serve.py\n!requirements.lock\n!pyproject.toml\n!LICENSE\n!NOTICE\n"
+                "**\n!src/**\n!agent.yaml\n!agent.lock.json\n!tool-bindings.json\n!memory-config.json\n!serve.py\n!requirements.lock\n!pyproject.toml\n!LICENSE\n!NOTICE\n"
                 + "".join(
                     "!" + resource.path + "\n" for resource in version.spec.resources.values()
                 )

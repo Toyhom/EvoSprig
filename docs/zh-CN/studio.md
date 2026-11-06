@@ -75,3 +75,5 @@ Studio 分组使用 [React Flow](https://reactflow.dev/learn/layouting/sub-flows
 ## Agent 配置
 
 选择 agent 以编辑其主提示、附加可复用技能、选择工具和内存访问，并设置模型参数。**Make prompt evolvable** 会将内联指令转为资源。Improve 页面可以优化提示或附加技能，并在应用输出旁显示其更改。请参阅 [agent 配置](agent-resources.md)。
+
+在 **记忆** 页创建外部记忆库，配置关键词、向量或混合检索。各智能体在 **节点设置 → 记忆** 中选择库，可开启任务前召回及写入工具。详见[智能体记忆](memory.md#配置基于检索的外部记忆)。

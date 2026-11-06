@@ -33,10 +33,10 @@ def make_models(spec: AgentSpec, profile: str | Path | None = None, mock: bool =
         raw = read_profile(profile)
         if (
             not isinstance(raw, dict)
-            or set(raw) - {"models", "tools", "evaluation", "services", "documents"}
+            or set(raw) - {"models", "tools", "evaluation", "services", "documents", "memory"}
             or "models" not in raw
         ):
-            raise ValueError("deployment profile needs models and optional tools, evaluation, services or documents")
+            raise ValueError("deployment profile needs models and optional tools, evaluation, services, documents or memory")
         profiles = raw["models"]
         for name in bindings & profiles.keys():
             service = profiles[name].get("local_service")
@@ -78,15 +78,23 @@ def restore_models(metadata: dict) -> dict:
     return models
 
 
-def make_tools(workspace, scope, *, profile=None, bindings=None):
+def make_tools(workspace, scope, *, profile=None, bindings=None, memory_config=None):
     from evosprig.plugins.builtin_tools import builtin_registry
     from evosprig.plugins.document_library import DocumentLibrary
+    from evosprig.plugins.memory_banks import MemoryBanks
     from evosprig.plugins.memory_tools import register_memory_tools
     from evosprig.plugins.sqlite_memory import SQLiteMemory
 
     memory = SQLiteMemory(Path(workspace) / "memory.sqlite")
     library = DocumentLibrary(memory, read_profile(profile).get("documents", {}))
-    registry = register_memory_tools(builtin_registry(), memory, scope, documents_library=library)
+    banks = MemoryBanks(memory, read_profile(profile).get("memory", memory_config or {}))
+    registry = builtin_registry()
+    for bank, config in banks.config(scope).banks.items():
+        register_memory_tools(registry, banks.backend(scope, bank), scope,
+                              documents_library=library, bank=bank,
+                              facts_scope=banks.scope(scope, bank),
+                              include_documents=bank == "default", allow_writes=config.agent_writes,
+                              retrieval_timeout_seconds=config.retrieval_timeout_seconds)
     from evosprig.plugins.workspace_tools import WorkspaceStore, register_workspace_tools
 
     register_workspace_tools(registry, WorkspaceStore(Path(workspace) / "documents.sqlite"), scope)

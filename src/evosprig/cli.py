@@ -96,7 +96,7 @@ def main():
                     path.write_text(version.resources[key])
                 import yaml
                 (args.out / "deployment.example.yaml").write_text(yaml.safe_dump(
-                    {"tools": report["tool_bindings"], "documents": report["documents"]}, sort_keys=False))
+                    {"tools": report["tool_bindings"], "documents": report["documents"], "memory": report["memory"]}, sort_keys=False))
             print(json.dumps(report, indent=2))
             return
         if args.command in {
@@ -227,7 +227,8 @@ def main():
             print(
                 json.dumps(
                     export_python(version, args.out, target=args.target, tool_bindings=bindings,
-                                  document_config=read_profile(args.profile).get("documents", {})),
+                                  document_config=read_profile(args.profile).get("documents", {}),
+                                  memory_config=read_profile(args.profile).get("memory", {})),
                     indent=2,
                 )
             )

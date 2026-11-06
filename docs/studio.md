@@ -63,3 +63,5 @@ Studio grouping uses the [React Flow](https://reactflow.dev/learn/layouting/sub-
 ## Agent configuration
 
 Select an agent to edit its main prompt, attach reusable skills, choose tools and memory access, and set model parameters. **Make prompt evolvable** turns an inline instruction into a resource. The Improve page can optimize either prompts or attached skills and show their changes beside the application outputs. See [agent configuration](agent-resources.md).
+
+In **Memory**, configure named external memory banks with keyword, vector or hybrid retrieval. Each agent selects its banks in **Node settings → Memory**, with optional automatic recall and write tools. See [agent memory](memory.md#configure-retrieval-based-external-memory).

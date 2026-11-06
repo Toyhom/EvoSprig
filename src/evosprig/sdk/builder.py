@@ -32,6 +32,12 @@ class Builder:
         self.data["tools"][name] = {"plugin": plugin, "version": version}
         return self
 
+    def memory_tool(self, name: str, *, bank: str = "default", operation: str = "search"):
+        """Declare a tool for a named deployment memory bank; attach it with node(tools=...)."""
+        from evosprig.plugins.memory_banks import memory_plugin
+
+        return self.tool(name, memory_plugin(bank, operation))
+
     def resource(self, name: str, path: str, role: str = "prompt"):
         if name in self.data["resources"]:
             raise ValueError(f"duplicate resource: {name}")

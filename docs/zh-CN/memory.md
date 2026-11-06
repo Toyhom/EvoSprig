@@ -40,6 +40,82 @@ memory.delete(scope, record["id"])
 
 <a id="deletion-and-restore"></a>
 
+## 配置基于检索的外部记忆
+
+外部记忆将记录保存在模型上下文之外，再按任务检索相关内容。它与业务知识库独立配置。在 **记忆** 页新建记忆库、添加事实或经验，然后打开 **检索与读写设置**：
+
+| 模式 | 召回方式 | 额外服务 |
+| --- | --- | --- |
+| `lexical` | BM25 关键词匹配 | 不需要 |
+| `semantic` | 向量余弦相似度 | 本地或 API 向量模型 |
+| `hybrid` | BM25 与向量排名通过 RRF 融合 | 本地或 API 向量模型 |
+
+在 **检索测试** 中查看当前记忆库的命中记录与来源。最低余弦相似度用于过滤向量命中；混合模式仍可返回关键词命中的记录。向量模型与智能体使用的语言模型分别配置。
+
+打开智能体节点的 **记忆 → 检索式外部记忆**，选择库并点击 **接入记忆库**。开启 **每次任务开始前自动检索** 后，由 harness 先召回记忆；不开启时，由智能体按需调用搜索工具。自动召回可调整查询输入、条数和上下文字符预算。勾选 **附加记忆写入工具** 会附加写入工具，工作流和运行时也需要开放写入权限。
+
+同一用户和项目内，选用同一个库的节点共享记录；选择不同库即可分开记忆。记忆库设置中的 **智能体写入** 可关闭写入工具，开发者仍能在记录页维护内容。上下文块和时序关系也归属当前选中的记忆库。
+
+### 部署配置
+
+在 `deployment.yaml` 的 `models` 旁添加：
+
+```yaml
+memory:
+  banks:
+    default:
+      retrieval: lexical
+    writer:
+      retrieval: hybrid
+      embeddings:
+        base_url: http://127.0.0.1:8011/v1
+        model: your-embedding-model
+        api_key_env: MEMORY_EMBEDDING_API_KEY
+        timeout_seconds: 30
+      min_similarity: 0.3
+      embedding_batch_size: 64
+      embedding_cache_entries: 100000
+      retrieval_timeout_seconds: 120
+      agent_writes: true
+```
+
+使用兼容 OpenAI `/embeddings` 的接口，包括本地部署的向量模型。进程环境中设置 `MEMORY_EMBEDDING_API_KEY`；无需鉴权的本地服务可用占位值。服务地址、模型、批大小、缓存条数、相似度阈值和工具超时均可调整。Studio 将项目级配置保存在工作目录中，并覆盖部署文件里同名库的配置。
+
+### Python 开发
+
+```python
+from evosprig.sdk import Builder
+
+builder = Builder("remembering-assistant", {"type": "object"},
+                  {"type": "object"}, spec_version="0.3")
+builder.default_model("main", requires=["text", "tool_calling"])
+builder.memory_tool("recall_preferences", bank="writer", operation="search")
+builder.memory_tool("save_preference", bank="writer", operation="write")
+builder.node(
+    "assistant", "agent", instructions="Use the user's preferences when relevant.",
+    inputs={"question": {"ref": "input.question"}},
+    output_schema={"type": "object"},
+    tools=["recall_preferences", "save_preference"],
+    harness={"memory": {"tool": "recall_preferences", "query_input": "question",
+                        "limit": 5, "max_chars": 4000}},
+)
+builder.output(answer={"ref": "nodes.assistant.output.text"})
+builder.execution(allow_side_effects=True)
+spec = builder.build_spec()
+```
+
+在上述部署配置中声明 `writer`。运行时传入 `--profile deployment.yaml --allow-writes`，即可允许已选的写入工具执行。工具插件名为 `memory.writer.search` 和 `memory.writer.write`；默认库仍使用 `memory.search`、`memory.write`。其他操作包括 `recall`、`remember`、`summarize`、`context` 和 `relations`。命名库的 `recall` 先使用该库的检索策略，再结合经验的重要性与时间衰减排序。
+
+Python、HTTP 和容器导出会将所选库的配置写入 `memory-config.json` 和 `deployment.example.yaml`；ZIP 导回画布时恢复配置。记忆记录保存在运行工作目录中，跨会话复用该目录即可。应用导出只携带配置，不携带个人记忆。向量缓存会持久保存，重启后继续使用；每次检索都重新检查原记录的更新和删除状态。
+
+### Studio API
+
+- `GET /api/projects/{id}/memory/banks`：列出记忆库配置。
+- `PUT /api/projects/{id}/memory/banks/{name}`：创建或配置记忆库。
+- 在记忆记录、检索、导出、上下文和关系路由上添加 `?bank=writer` 选择库；省略时使用 `default`。
+
+服务器先确定用户和项目，再选择库。模型不能通过工具参数切换身份或其他记忆库。若需在 Python 中接入其他存储，实现 `MemoryStore` 协议，再通过 `register_memory_tools` 绑定；内置可配置记忆库使用 SQLite，向量模型可本地部署或通过 API 调用。
+
 ## 删除与恢复
 
 `memory.sqlite` 包含记录。`memory.deletions.sqlite` 是一个独立的单调删除账本，包含 ID、作用域和删除时间，但不包含被删除的内容。Delete 会删除活动行，并在一个附加的 SQLite 事务中记录墓碑。命名空间重置还会为较旧的备份记录截止点。每次读取、搜索、导出和恢复都会检查当前账本。

@@ -54,6 +54,7 @@ def inspect_archive(data: bytes):
             "agent.lock.json",
             "manifest.json",
             "tool-bindings.json",
+            "memory-config.json",
             "app.py",
             "serve.py",
             "build_agent.py",
@@ -111,6 +112,8 @@ def inspect_archive(data: bytes):
         from evosprig.plugins.document_library import DocumentConfig
         profile = yaml.safe_load(files.get("deployment.example.yaml", b"{}")) or {}
         documents = DocumentConfig.model_validate(profile.get("documents", {})).model_dump()
-        return version, report | {"tool_bindings": bindings, "documents": documents, "files": len(files)}
+        from evosprig.plugins.memory_banks import MemoryBanksConfig
+        memory = MemoryBanksConfig.model_validate(json.loads(files.get("memory-config.json", b"{}"))).model_dump()
+        return version, report | {"tool_bindings": bindings, "documents": documents, "memory": memory, "files": len(files)}
     except (KeyError, UnicodeError, TypeError, AttributeError, yaml.YAMLError):
         raise ValueError("archive is missing valid declarative export data") from None

@@ -48,6 +48,82 @@ Semantic compression uses an ordinary model or agent node. Pass it an earlier su
 
 `memory.summarize` stores a model-written summary of selected memory records with their source IDs. It does not automatically compress a conversation. Context blocks hold bounded working notes; graph outputs let the deployed application retain a new summary between requests.
 
+## Configure retrieval-based external memory
+
+External memory keeps records outside the model context window and retrieves relevant records for a task. Configure it separately from the business knowledge library. In **Memory**, create a bank, add facts or experiences, and choose **Retrieval & writes**:
+
+| Mode | How records are selected | Extra service |
+| --- | --- | --- |
+| `lexical` | BM25 keyword relevance | None |
+| `semantic` | Cosine similarity of embeddings | Local or API embedding model |
+| `hybrid` | BM25 and vector ranks fused with RRF | Local or API embedding model |
+
+Use **Retrieval test** to inspect the selected bank's hits and sources. A minimum cosine similarity can filter vector matches; hybrid search can still return keyword matches. The embedding model is separate from the agent's language model.
+
+On an agent node, open **Memory → Retrieval-based memory**, select the bank, and click **Connect memory bank**. Enable **Retrieve automatically before each task** for harness recall, or let the agent call the search tool as needed. Automatic recall exposes query input, result count and context character budget. **Add a memory write tool** attaches its write tool. Workflow and runtime write permissions still apply.
+
+Nodes attached to the same bank share records within the same user and project. Give nodes different banks for separate memories. A bank's **Agent writes** setting can disable agent write tools while developers continue maintaining records in Studio. Context blocks and temporal relationships also belong to the selected bank.
+
+### Deployment configuration
+
+Add `memory` beside `models` in `deployment.yaml`:
+
+```yaml
+memory:
+  banks:
+    default:
+      retrieval: lexical
+    writer:
+      retrieval: hybrid
+      embeddings:
+        base_url: http://127.0.0.1:8011/v1
+        model: your-embedding-model
+        api_key_env: MEMORY_EMBEDDING_API_KEY
+        timeout_seconds: 30
+      min_similarity: 0.3
+      embedding_batch_size: 64
+      embedding_cache_entries: 100000
+      retrieval_timeout_seconds: 120
+      agent_writes: true
+```
+
+Use an OpenAI-compatible `/embeddings` endpoint, including a local embedding server. Set `MEMORY_EMBEDDING_API_KEY` in the process environment; a local service without authentication can use a placeholder value. The URL, model, batch size, cache size, similarity threshold and tool timeout are configurable. Studio saves per-project bank settings in the workspace; those settings override the corresponding profile bank.
+
+### Use from Python
+
+```python
+from evosprig.sdk import Builder
+
+builder = Builder("remembering-assistant", {"type": "object"},
+                  {"type": "object"}, spec_version="0.3")
+builder.default_model("main", requires=["text", "tool_calling"])
+builder.memory_tool("recall_preferences", bank="writer", operation="search")
+builder.memory_tool("save_preference", bank="writer", operation="write")
+builder.node(
+    "assistant", "agent", instructions="Use the user's preferences when relevant.",
+    inputs={"question": {"ref": "input.question"}},
+    output_schema={"type": "object"},
+    tools=["recall_preferences", "save_preference"],
+    harness={"memory": {"tool": "recall_preferences", "query_input": "question",
+                        "limit": 5, "max_chars": 4000}},
+)
+builder.output(answer={"ref": "nodes.assistant.output.text"})
+builder.execution(allow_side_effects=True)
+spec = builder.build_spec()
+```
+
+Declare `writer` in the deployment profile above. Run with `--profile deployment.yaml --allow-writes` to allow the selected write tool. The tool plugins are `memory.writer.search` and `memory.writer.write`; the default bank retains `memory.search` and `memory.write`. Other operations are `recall`, `remember`, `summarize`, `context` and `relations`. Named `recall` uses the bank's retrieval strategy before applying experience relevance, importance and recency ranking.
+
+Python, HTTP and container exports carry the selected banks in `memory-config.json` and `deployment.example.yaml`. Importing the ZIP restores these settings. Records remain in the runtime workspace, so reuse that workspace across sessions; application exports contain configuration, not personal memories. Embedding vectors are cached on disk and reused after restart. Changed or deleted source records are checked again on each retrieval.
+
+### Studio API
+
+- `GET /api/projects/{id}/memory/banks`: list configured banks.
+- `PUT /api/projects/{id}/memory/banks/{name}`: create or configure a bank.
+- Add `?bank=writer` to memory record, search, export, context and relationship routes to select a bank. Omission selects `default`.
+
+The server derives user and project identity before selecting the bank. A model's tool arguments cannot change that identity or choose another bank. To connect a different storage implementation from Python, implement the `MemoryStore` contract and bind it with `register_memory_tools`; the built-in configurable banks use SQLite and local or API embeddings.
+
 ## Deletion and restore
 
 `memory.sqlite` contains records. `memory.deletions.sqlite` is an independent,

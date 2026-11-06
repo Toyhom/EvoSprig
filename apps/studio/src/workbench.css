@@ -221,3 +221,12 @@ footer { flex:0 0 28px; min-height:28px; margin:0; padding:4px 16px; border-top:
 .panel > .panel-empty { padding:22px; border:1px dashed #c5d0df; border-radius:8px; background:#f8fafc; color:#66768d; }
 
 .actions .render-graph-launch { position:static; z-index:auto; right:auto; top:auto; font-size:12px; }
+
+.memory-bank-bar { display:flex; align-items:flex-start; gap:18px; flex-wrap:wrap; padding:18px; background:#fff; border:1px solid #d4dce6; border-radius:8px; }
+.memory-bank-bar > label { min-width:220px; margin:0; }
+.memory-bank-bar > details { flex:1; min-width:220px; }
+.memory-bank-bar .inline-form { margin:12px 0 0; }
+.memory-bank-choice { padding:12px; margin:12px 0; border:1px solid #d9e1eb; border-radius:6px; background:#f8fafc; }
+.memory-bank-choice > button { width:100%; }
+
+.memory-bank-settings { border:0; padding:0; margin:0; min-width:0; }

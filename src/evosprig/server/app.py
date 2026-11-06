@@ -99,6 +99,8 @@ def create_app(
     from .document_api import DocumentJobs, install_document_routes
 
     library = DocumentLibrary(memory, read_profile(profile).get("documents", {}))
+    from evosprig.plugins.memory_banks import MemoryBanks
+    memory_banks = MemoryBanks(memory, read_profile(profile).get("memory", {}))
     document_jobs = DocumentJobs(library, workspace / "document-intake")
     if token and principals:
         raise ValueError("choose either a workspace token or per-user principals")
@@ -157,7 +159,7 @@ def create_app(
     app.state.memory = memory
     app.state.studies = studies
     app.state.study_worker = study_worker
-    install_memory_routes(app, memory, store)
+    install_memory_routes(app, memory, store, banks=memory_banks)
 
     def document_scope(project_id):
         principal = current_principal.get()
@@ -661,6 +663,7 @@ def create_app(
                 target=target,
                 tool_bindings=tools_for(current_principal.get().scope(project_id)).bindings,
                 document_config=library.config(document_scope(project_id)).model_dump(),
+                memory_config=memory_banks.config(current_principal.get().scope(project_id)).model_dump(),
             )
             output = io.BytesIO()
             with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
