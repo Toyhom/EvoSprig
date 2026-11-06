@@ -21,7 +21,9 @@ def service(tmp_path):
         port = sock.getsockname()[1]
     source = tmp_path / "model.py"
     source.write_text('''from http.server import HTTPServer,BaseHTTPRequestHandler
-import json,os
+import json,os,socket
+# The fixture tests service lifetime, independently of runner reverse DNS.
+socket.getfqdn=lambda host: "localhost"
 class Handler(BaseHTTPRequestHandler):
     loads=0
     def log_message(self,*args): pass

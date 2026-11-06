@@ -39,7 +39,7 @@ The default workspace is inside the app's user-data directory:
 
 **Import project** opens an exported ZIP. The toolbar exports Python, HTTP services or container projects; ComfyUI projects also support workflow JSON. Exported applications run independently of Desktop Studio.
 
-A desktop workspace uses the same files as the web Studio. Open it with either interface; run only one backend against a workspace at a time. Closing the desktop stops its backend. Managed model services keep their configured persistent lifetime and can be stopped explicitly from Studio.
+A desktop workspace uses the same files as the web Studio. Open it with either interface; run only one backend against a workspace at a time. Quitting the desktop stops its backend; closing a macOS window keeps the session available from the Dock. Managed model services keep their configured persistent lifetime and can be stopped explicitly from Studio.
 
 ## Build from source
 

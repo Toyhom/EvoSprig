@@ -1,5 +1,5 @@
 import {_electron as electron,expect} from 'playwright/test';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 const data=await mkdtemp(join(tmpdir(),'evosprig-desktop-ui-'));
@@ -12,7 +12,16 @@ try{
  await page.getByLabel('New project name').fill('desktop-smoke');await page.getByRole('button',{name:'＋ New project'}).click();
  await expect(page.locator('h1')).toHaveText('desktop-smoke');
  await page.getByRole('button',{name:'▷ Run',exact:true}).click();await expect(page.locator('.results-heading .status-succeeded')).toBeVisible({timeout:30000});
- const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export Python ↗'}).click();const file=await download;expect(file.suggestedFilename()).toBe('desktop-smoke.zip');await file.saveAs(join(data,'project.zip'));
+ // Electron downloads use the native session; choose a path as the user would.
+ await app.evaluate(({session},path)=>{
+   globalThis.desktopDownload=new Promise(resolve=>session.fromPartition('persist:evosprig-studio').once('will-download',(_event,item)=>{
+     item.setSavePath(path);item.once('done',(_event,state)=>resolve({state,name:item.getFilename()}));
+   }));
+ },join(data,'project.zip'));
+ await page.getByRole('button',{name:'Export Python ↗'}).click();
+ const file=await app.evaluate(()=>globalThis.desktopDownload);
+ expect(file).toEqual({state:'completed',name:'desktop-smoke.zip'});expect((await stat(join(data,'project.zip'))).size).toBeGreaterThan(1000);
+
  // Native key settings are isolated from the main renderer.
  const keyWindow=app.waitForEvent('window');
  await app.evaluate(({Menu})=>Menu.getApplicationMenu().items.find(item=>item.label==='File').submenu.items.find(item=>item.label==='API keys…').click());
@@ -23,6 +32,12 @@ try{
  await app.evaluate(({Menu})=>Menu.getApplicationMenu().items.find(item=>item.label==='File').submenu.items.find(item=>item.label==='Restart local backend').click());
  const reopened=await newWindow;await reopened.waitForURL('http://127.0.0.1:**',{timeout:90000});
  await expect(reopened.locator('h1')).toHaveText('desktop-smoke');
+ if(process.platform==='darwin'){
+   const origin=reopened.url();
+   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://127.0.0.1:')).close());
+   await app.evaluate(({app})=>app.emit('activate'));
+   expect(reopened.url()).toBe(origin);await expect(reopened.locator('h1')).toHaveText('desktop-smoke');
+ }
  if(process.env.EVOSPRIG_DESKTOP_SCREENSHOT)await reopened.screenshot({path:process.env.EVOSPRIG_DESKTOP_SCREENSHOT});
  await app.close();app=null;
  console.log('Desktop create → run → export and API-key dialog passed.');

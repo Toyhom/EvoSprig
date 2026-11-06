@@ -67,6 +67,8 @@ jobs:
         working-directory: apps/desktop
         env:
           EVOSPRIG_DESKTOP_EXECUTABLE: ${{ github.workspace }}/apps/desktop/dist/linux-unpacked/evosprig-desktop
+          EVOSPRIG_ELECTRON_NO_SANDBOX: '1'
+          DEBUG: 'pw:browser'
       - name: Smoke-test the packaged Windows application
         if: runner.os == 'Windows'
         run: npm run test:smoke

@@ -34,7 +34,7 @@ function startBackend({workspace,studio,credentials={},onLog=()=>{},...options})
     });
   });
   async function stop(){
-    if(child.exitCode!==null||child.signalCode)return;
+    if(!child.pid||child.exitCode!==null||child.signalCode)return;
     const exited=once(child,'exit').catch(()=>{});
     child.stdin.end();
     const timer=setTimeout(()=>child.kill(),12000);

@@ -37,3 +37,8 @@ test('desktop backend binds an ephemeral port, authenticates, persists and stops
   const project=await fetch(next+'/api/projects/desktop-test',{headers:{Authorization:'Bearer '+backend.token}});assert.equal(project.status,200);
  }finally{await backend?.stop();await rm(workspace,{recursive:true,force:true});}
 });
+
+test('a missing backend executable fails promptly and can be closed',{timeout:3000},async()=>{
+ const backend=startBackend({executable:join(tmpdir(),'evosprig-missing-executable'),workspace:tmpdir(),studio:tmpdir()});
+ await assert.rejects(backend.ready,/ENOENT/);await backend.stop();
+});

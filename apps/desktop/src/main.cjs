@@ -87,7 +87,11 @@ async function launch(){
     const choice=dialog.showMessageBoxSync(current,{type:'question',buttons:[translated('Keep editing','继续编辑'),translated('Discard changes','放弃修改')],defaultId:0,cancelId:0,message:translated('This project has unsaved changes.','这个项目有未保存的修改。')});
     if(choice===1)event.preventDefault();else current.emit('evosprig-close-cancelled');
   });
-  current.on('close',()=>{if(!current.isMaximized()){const [width,height]=current.getSize();settings={...settings,width,height};saveSettings();}});
+  current.on('close',event=>{
+    if(!current.isMaximized()){const [width,height]=current.getSize();settings={...settings,width,height};saveSettings();}
+    // Closing a Mac window keeps its live workflow; Cmd+Q still exits the backend.
+    if(process.platform==='darwin'&&!quitting&&!restarting&&!exiting){event.preventDefault();current.hide();}
+  });
   current.on('closed',()=>{if(window===current)window=null;});
   menu();
   await current.loadFile(join(__dirname,'loading.html'));current.show();
@@ -120,7 +124,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       return {names:Object.keys(credentials),persistent:saveCredentials()};
     });
     await launch();
-    app.on('activate',()=>{if(!window&&!restarting)void restart();});
+    app.on('activate',()=>{if(window){window.show();window.focus();}else if(!restarting)void restart();});
   }).catch(error=>{dialog.showErrorBox('EvoSprig Studio',error.message);app.quit();});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin'&&!restarting&&!exiting&&!quitting)app.quit();});
   app.on('before-quit',event=>{
