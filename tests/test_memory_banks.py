@@ -183,3 +183,33 @@ def test_memory_deployment_profile_accepts_provider_and_validates_config(tmp_pat
     assert "main" in make_models(agent_spec(), profile)
     with pytest.raises(ValueError):
         MemoryBanksConfig.model_validate({"banks": {"../bad": {}}})
+
+
+def test_keyword_memory_keeps_the_minimal_install_independent_of_httpx(tmp_path):
+    script = """
+import importlib.abc
+import sys
+class NoHTTP(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'httpx' or fullname.startswith('httpx.'):
+            raise ModuleNotFoundError('HTTP extra intentionally unavailable')
+sys.meta_path.insert(0, NoHTTP())
+from evosprig.sdk import Builder
+from evosprig.plugins.memory_banks import MemoryBanks
+from evosprig.plugins.sqlite_memory import SQLiteMemory
+from evosprig.exporters.python import export_python
+from evosprig.core.journal import Scope
+from evosprig.core.version import compile_snapshot
+b = Builder('minimal-memory', {'type':'object'}, {'type':'object'}, spec_version='0.3')
+b.memory_tool('search', bank='writer')
+b.node('recall', 'tool', tool='search', inputs={'query': {'value': 'concise'}}, output_schema={'type':'object'})
+b.output(records={'ref':'nodes.recall.output.records'})
+store=SQLiteMemory('memory.sqlite')
+banks=MemoryBanks(store, {'banks': {'writer': {}}})
+scope=banks.scope(Scope('minimal-memory'), 'writer')
+store.write(scope, 'Prefer concise answers', source='user')
+assert banks.backend(scope.identity, 'writer').search(scope, 'concise')
+export_python(compile_snapshot(b.build_spec(), {}), 'export', memory_config={'banks': {'writer': {}}})
+"""
+    subprocess.run([sys.executable, '-c', script], cwd=tmp_path,
+                   capture_output=True, text=True, check=True)

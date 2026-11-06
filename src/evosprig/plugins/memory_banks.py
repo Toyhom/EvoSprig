@@ -8,7 +8,6 @@ from pydantic import Field, model_validator
 
 from evosprig.core.memory import MemoryScope
 from evosprig.core.spec import Contract
-from evosprig.plugins.embeddings import EmbeddingConnection, OpenAIEmbeddings
 from evosprig.plugins.semantic_memory import HybridMemory
 
 BANK_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,47}$")
@@ -32,7 +31,7 @@ def plugin_bank(plugin):
 
 class MemoryBankConfig(Contract):
     retrieval: Literal["lexical", "semantic", "hybrid"] = "lexical"
-    embeddings: EmbeddingConnection | None = None
+    embeddings: dict | None = None
     min_similarity: float | None = Field(default=None, ge=-1, le=1, allow_inf_nan=False)
     embedding_batch_size: int = Field(default=64, ge=1, le=256)
     embedding_cache_entries: int = Field(default=100000, ge=1)
@@ -43,6 +42,10 @@ class MemoryBankConfig(Contract):
     def connection_required(self):
         if self.retrieval != "lexical" and self.embeddings is None:
             raise ValueError("vector memory retrieval needs an embeddings connection")
+        if self.embeddings is not None:
+            from evosprig.plugins.embeddings import EmbeddingConnection
+
+            self.embeddings = EmbeddingConnection.model_validate(self.embeddings).model_dump()
         return self
 
 
@@ -93,8 +96,10 @@ class MemoryBanks:
         config = self.config(identity).banks[bank]
         if config.retrieval == "lexical":
             return self.memory
+        from evosprig.plugins.embeddings import EmbeddingConnection, OpenAIEmbeddings
+
         return HybridMemory(
-            self.memory, OpenAIEmbeddings(config.embeddings), mode=config.retrieval,
+            self.memory, OpenAIEmbeddings(EmbeddingConnection.model_validate(config.embeddings)), mode=config.retrieval,
             min_similarity=config.min_similarity, batch_size=config.embedding_batch_size,
             cache_path=self.memory.path.with_suffix(".memory-embeddings.sqlite"),
             persistent_cache_size=config.embedding_cache_entries,
