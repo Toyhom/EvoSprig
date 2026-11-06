@@ -98,6 +98,8 @@ https://github.com/user-attachments/assets/7d70ff67-afae-4112-a85b-22d6d7a18f36
 
 ## 快速开始
 
+**桌面版：** [Windows、macOS、Linux](docs/zh-CN/desktop.md) · **网页版：** 在浏览器中运行 Studio。
+
 需要 Python 3.12+，Studio 还需要 Node.js 20+。
 
 ```bash

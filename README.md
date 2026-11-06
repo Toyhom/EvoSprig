@@ -97,6 +97,8 @@ Build the application on the canvas or in Python; both produce the same versione
 
 ## Get started
 
+**Desktop:** [Windows, macOS and Linux](docs/desktop.md) · **Web:** run Studio in your browser.
+
 Requires **Python 3.12+**. Studio also requires **Node.js 20+**.
 
 ```bash

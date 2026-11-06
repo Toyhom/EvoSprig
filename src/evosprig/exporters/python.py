@@ -23,7 +23,7 @@ from evosprig.plugins.workspace_tools import WORKSPACE_TOOL_NAMES
 MODULES = (
     "__init__.py",
     "config.py",
-    "local_services.py",
+    "local_services.py", "process_support.py",
     "core/context_window.py",
     "data_cli.py",
     "core/__init__.py",

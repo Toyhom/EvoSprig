@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
 import re
 import shutil
-import signal
 import subprocess
 import tempfile
 import threading
@@ -20,6 +18,7 @@ from pydantic import Field
 
 from evosprig.core.protocols import ExecutionError, Tool, ToolRejectedError
 from evosprig.core.spec import Contract, canonical_json, digest
+from evosprig.process_support import detached_process_options, file_lock, terminate_process_tree
 
 
 class RepositoryToolConfig(Contract):
@@ -62,7 +61,7 @@ class RepositoryWorkspace:
         environment.update(GIT_TERMINAL_PROMPT="0", GIT_CONFIG_NOSYSTEM="1",
                            GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
         process = subprocess.Popen(argv, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **detached_process_options())
         data = bytearray()
         def drain():
             with process.stdout:
@@ -80,7 +79,7 @@ class RepositoryWorkspace:
         finally:
             # Also reap background children left by an exited check process.
             try:
-                os.killpg(process.pid, signal.SIGKILL)
+                terminate_process_tree(process.pid, force=True)
             except ProcessLookupError:
                 pass
             process.wait()
@@ -104,8 +103,7 @@ class RepositoryWorkspace:
     def locked(self, workspace):
         if not re.fullmatch(r"[0-9a-f]{64}", workspace):
             raise ToolRejectedError("workspace", "Use the workspace ID returned by repository.open")
-        with (self.root / (workspace + ".lock")).open("a") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
+        with file_lock(self.root / (workspace + ".lock")):
             yield
 
     def path(self, workspace):

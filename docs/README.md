@@ -1,5 +1,6 @@
 # EvoSprig documentation
 
+- [Desktop Studio](desktop.md) — install, connect models and manage local workspaces.
 [English](README.md) · [简体中文](zh-CN/README.md)
 
 **Learn by building. Look up details when you need them.**

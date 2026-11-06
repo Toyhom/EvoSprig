@@ -1,0 +1,89 @@
+{
+  "name": "evosprig-desktop",
+  "productName": "EvoSprig Studio",
+  "version": "0.1.7",
+  "private": true,
+  "description": "Build and evolve agents on your desktop.",
+  "author": {
+    "name": "Toyhom",
+    "email": "48954862+Toyhom@users.noreply.github.com"
+  },
+  "license": "Apache-2.0",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "test:smoke": "node tests/smoke.mjs",
+    "pack": "electron-builder --dir --publish never",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0",
+    "playwright": "1.56.1"
+  },
+  "build": {
+    "appId": "io.evosprig.studio",
+    "productName": "EvoSprig Studio",
+    "artifactName": "EvoSprig-Studio-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "assets/icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "build/backend/evosprig-backend",
+        "to": "backend"
+      },
+      {
+        "from": "../studio/dist",
+        "to": "studio"
+      },
+      {
+        "from": "../../LICENSE",
+        "to": "LICENSE"
+      },
+      {
+        "from": "../../NOTICE",
+        "to": "NOTICE"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "icon": "assets/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development",
+      "maintainer": "Toyhom <48954862+Toyhom@users.noreply.github.com>",
+      "icon": "assets/icon.png",
+      "executableName": "evosprig-desktop"
+    }
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

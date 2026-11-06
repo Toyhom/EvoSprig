@@ -7,7 +7,6 @@ import hashlib
 import json
 import os
 import re
-import signal
 import subprocess
 import time
 import uuid
@@ -21,6 +20,12 @@ from urllib.request import ProxyHandler, Request, build_opener
 from pydantic import Field, model_validator
 
 from evosprig.core.spec import Contract
+from evosprig.process_support import (
+    detached_process_options,
+    file_lock,
+    process_identity,
+    terminate_process_tree,
+)
 
 
 class ServiceConfig(Contract):
@@ -71,13 +76,7 @@ def service_environment(config, inherited=None):
     return env
 
 
-def _identity(pid):
-    """Linux process birth time guards against killing a recycled PID."""
-    try:
-        rest = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
-        return None if rest[0] == "Z" else rest[19]
-    except (OSError, IndexError):
-        return None
+_identity = process_identity
 
 
 def _request(url, body=None, timeout=5, auth_env=None):
@@ -111,22 +110,8 @@ class ServiceManager:
 
     @contextmanager
     def _lock(self, name):
-        import fcntl
-
-        with (self.root / f"{name}.lock").open("a") as lock:
-            deadline = time.monotonic() + self.configs[name].timeout_seconds + 10
-            while True:
-                try:
-                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    break
-                except BlockingIOError:
-                    if time.monotonic() >= deadline:
-                        raise TimeoutError(f"{name}: another service operation is still active") from None
-                    time.sleep(0.05)
-            try:
-                yield
-            finally:
-                fcntl.flock(lock, fcntl.LOCK_UN)
+        with file_lock(self.root / f"{name}.lock", self.configs[name].timeout_seconds + 10):
+            yield
 
     def _read(self, name):
         try:
@@ -152,7 +137,7 @@ class ServiceManager:
         config = self.configs[name]
         state = self._read(name)
         health = self._health(config)
-        owned = bool(state.get("pid") and _identity(state["pid"]) == state.get("birth"))
+        owned = bool(state.get("pid") and state.get("birth") and _identity(state["pid"]) == state.get("birth"))
         ready = health is not None and all(health.get(k) == v for k, v in config.ready.items())
         if config.warmup_url and not config.ready:
             ready = ready and bool(state.get("warmed"))
@@ -171,7 +156,7 @@ class ServiceManager:
         with self._lock(name):
             state = self._read(name)
             health = self._health(config)
-            owned = bool(state.get("pid") and _identity(state["pid"]) == state.get("birth"))
+            owned = bool(state.get("pid") and state.get("birth") and _identity(state["pid"]) == state.get("birth"))
             if owned and state.get("signature") != signature:
                 raise ValueError(f"{name}: configuration changed; explicitly stop the old service first")
             if health is None and not owned:
@@ -181,7 +166,7 @@ class ServiceManager:
                 env = service_environment(config)
                 with (self.root / f"{name}.log").open("ab") as log:
                     child = subprocess.Popen(config.command, cwd=cwd, stdin=subprocess.DEVNULL,
-                                             stdout=log, stderr=subprocess.STDOUT, start_new_session=True, env=env)
+                                             stdout=log, stderr=subprocess.STDOUT, env=env, **detached_process_options())
                 state = {"pid": child.pid, "birth": _identity(child.pid),
                          "signature": signature, "warmed": False, "started": time.time(),
                          "cuda_visible_devices": env.get("CUDA_VISIBLE_DEVICES")}
@@ -220,14 +205,14 @@ class ServiceManager:
         with self._lock(name):
             state = self._read(name)
             pid = state.get("pid")
-            if not pid or _identity(pid) != state.get("birth"):
+            if not pid or not state.get("birth") or _identity(pid) != state.get("birth"):
                 return {"name": name, "stopped": False, "reason": "not a managed live process"}
-            os.killpg(pid, signal.SIGTERM)
+            terminate_process_tree(pid)
             deadline = time.monotonic() + 10
             while _identity(pid) == state["birth"] and time.monotonic() < deadline:
                 time.sleep(0.1)
             if _identity(pid) == state["birth"]:
-                os.killpg(pid, signal.SIGKILL)
+                terminate_process_tree(pid, force=True)
             self._write(name, {"stopped": time.time()})
             return {"name": name, "stopped": True}
 

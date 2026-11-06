@@ -1,5 +1,6 @@
 # EvoSprig 文档
 
+- [桌面版 Studio](desktop.md) — 安装、连接模型与管理本地工作区。
 [English](../README.md) · **简体中文**
 
 **跟着教程做一个应用，需要细节时查参考文档。**

@@ -53,3 +53,5 @@ et-xmlfile==2.0.0
 lxml==5.3.0
 
 pypdfium2==4.30.0
+
+psutil==7.1.3
